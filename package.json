@@ -1,0 +1,44 @@
+{
+  "name": "clux",
+  "version": "1.0.0",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clux-hub/clux.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/clux-hub/clux/issues"
+  },
+  "homepage": "https://github.com/clux-hub/clux#readme",
+  "main": "index.js",
+  "private": true,
+  "engines": {
+    "node": ">=9.0.0"
+  },
+  "scripts": {
+    "commit": "git-cz",
+    "pnpm": "verdaccio"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "lint-staged": {
+    "*.(ts|tsx|js|jsx)": "eslint",
+    "*.less": "stylelint"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "~12.1.1",
+    "@commitlint/config-conventional": "~12.1.1",
+    "commitizen": "~4.2.3",
+    "husky": "~4.3.8"
+  }
+}
