@@ -1,9 +1,7 @@
 {
   "extends": "../../../tsconfig-src.json",
   "compilerOptions": {
-    "baseUrl": "./",
-    "rootDir": "./",
-    "outDir": "../types",
+    "declarationDir": "../types",
   },
   "include": ["./"],
   "exclude": []

@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["es2018"],
+    "types": [],
+    "noEmit": true,
+    "experimentalDecorators": true
+  },
+  "include": ["./",".eslintrc.js"],
+  "exclude": ["**/dist","**/types","**/docs","./storage"]
+}

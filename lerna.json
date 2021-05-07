@@ -1,0 +1,23 @@
+{
+  "packages": [
+    "packages/core",
+    "packages/route-web",
+    "packages/route-browser",
+    "packages/route-mp",
+    "packages/react-web-router",
+    "packages/react-taro-router"
+  ],
+  "command": {
+    "publish": {
+      "message": "chore(release): publish %s",
+      "npmClient": "npm",
+      "ignoreChanges": [
+        "**/tests/**",
+        "**/dist/**"
+      ]
+    }
+  },
+  "npmClient": "yarn",
+  "useWorkspaces": true,
+  "version": "0.0.1"
+}

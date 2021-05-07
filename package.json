@@ -28,7 +28,8 @@
   "scripts": {
     "commit": "git-cz",
     "pnpm": "verdaccio",
-    "eslint": "eslint --cache ."
+    "eslint": "eslint --cache .",
+    "build:core": "lerna run build --scope @clux/core"
   },
   "husky": {
     "hooks": {

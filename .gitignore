@@ -4,4 +4,4 @@ dist/
 *.log
 .eslintcache
 .DS_Store
-
+tsconfig.tsbuildinfo

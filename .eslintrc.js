@@ -3,10 +3,10 @@ module.exports = {
   extends: ['plugin:@medux/recommended/common'],
   env: {
     browser: false,
-    node: true,
+    node: false,
   },
   parserOptions: {
-    project: `${__dirname}/tsconfig.json`,
+    project: './tsconfig-eslint.json',
   },
   rules: {},
   ignorePatterns: ['**/dist', '**/types', '**/docs', './storage'],
