@@ -29,6 +29,7 @@
     "commit": "git-cz",
     "pnpm": "verdaccio",
     "eslint": "eslint --cache .",
+    "lerna": "lerna publish",
     "build:core": "lerna run build --scope @clux/core"
   },
   "husky": {
