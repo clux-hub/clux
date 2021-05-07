@@ -19,7 +19,7 @@
   },
   "workspaces": [
     "packages/core",
-    "packages/route-web",
+    "packages/route",
     "packages/route-browser",
     "packages/route-mp",
     "packages/react-web-router",

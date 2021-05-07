@@ -1,18 +1,10 @@
 {
-  "name": "@clux/core",
+  "name": "@clux/route",
   "version": "0.0.1",
   "description": "",
-  "repository": "https://github.com/clux-hub/clux/tree/master/packages/core",
+  "repository": "https://github.com/clux-hub/clux/tree/master/packages/route-web",
   "author": "clux-hub <clux_hub@163.com>",
   "license": "MIT",
-  "keywords": [
-    "react",
-    "vue",
-    "redux",
-    "typescript",
-    "state container",
-    "state management"
-  ],
   "publishConfig": {
     "access": "public"
   },
@@ -26,7 +18,6 @@
   "files": [
     "env/",
     "types/",
-    "lib/",
     "dist/"
   ],
   "scripts": {
@@ -35,15 +26,11 @@
     "build:next": "cross-env NODE_TAG=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
     "build:esm": "cross-env NODE_TAG=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
     "build:cjs": "cross-env NODE_TAG=cjs babel ./src --out-dir ./dist/cjs  --extensions \".ts,.tsx\"",
-    "build:ts": "tsc -P ./src --module ESNext --isolatedModules false --noEmit false --outDir ./dist/ts",
     "build": "yarn build:next & yarn build:esm & yarn build:cjs"
   },
   "dependencies": {
-    "@babel/runtime": "~7.12.0"
-  },
-  "devDependencies": {
-    "redux": "^4.1.0",
-    "vuex": "next"
+    "@babel/runtime": "~7.13.17",
+    "@medux/core": "^2.0.0-beta.3.31"
   },
   "gitHead": "7d6eb6d666143271ba0575fea99cf3f927fce764"
 }
