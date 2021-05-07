@@ -4,8 +4,8 @@
     "packages/route",
     "packages/route-browser",
     "packages/route-mp",
-    "packages/react-web-router",
-    "packages/react-taro-router"
+    "packages/react-web",
+    "packages/react-taro"
   ],
   "command": {
     "publish": {

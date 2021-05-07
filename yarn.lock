@@ -934,7 +934,7 @@
     core-js-pure "^3.0.0"
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.1.2", "@babel/runtime@^7.10.2", "@babel/runtime@^7.11.2", "@babel/runtime@^7.8.4", "@babel/runtime@^7.9.2", "@babel/runtime@~7.12.0":
+"@babel/runtime@^7.1.2", "@babel/runtime@^7.10.2", "@babel/runtime@^7.11.2", "@babel/runtime@^7.12.1", "@babel/runtime@^7.8.4", "@babel/runtime@^7.9.2", "@babel/runtime@~7.12.0", "@babel/runtime@~7.12.18":
   version "7.12.18"
   resolved "http://localhost:4873/@babel%2fruntime/-/runtime-7.12.18.tgz#af137bd7e7d9705a412b3caaf991fe6aaa97831b"
   integrity sha512-BogPQ7ciE6SYAUPtlm9tWbgI9+2AgqSam6QivMgXgAT+fKbgppaj4ZX15MHeLC1PVF5sNk70huBu20XxWOs8Cg==
@@ -976,6 +976,76 @@
   version "0.2.3"
   resolved "http://localhost:4873/@bcoe%2fv8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
+
+"@clux/babel-preset-recommended@~0.0.1":
+  version "0.0.1"
+  resolved "http://localhost:4873/@clux%2fbabel-preset-recommended/-/babel-preset-recommended-0.0.1.tgz#eaa1121a4ea61166888e4c062a5ea625e0a04465"
+  integrity sha512-2WjrbBbj/jl3skiwHW43IklJsFzMMJgoW8vVJ6YwCAiQgHPYJ9lQDalUi0Qotc1A99F3436yhdDIN2okdoi+MA==
+  dependencies:
+    "@babel/core" "~7.12.0"
+    "@babel/plugin-proposal-class-properties" "~7.12.0"
+    "@babel/plugin-proposal-decorators" "~7.12.0"
+    "@babel/plugin-transform-runtime" "~7.12.0"
+    "@babel/plugin-transform-typescript" "~7.12.0"
+    "@babel/preset-env" "~7.12.0"
+    "@babel/preset-react" "~7.12.0"
+    "@babel/runtime" "~7.12.0"
+    babel-plugin-module-resolver "~4.1.0"
+    babel-plugin-root-import "~6.6.0"
+    core-js "*"
+
+"@clux/dev-pkg@~0.0.2":
+  version "0.0.2"
+  resolved "http://localhost:4873/@clux%2fdev-pkg/-/dev-pkg-0.0.2.tgz#3d20eef977621d951c9ebc07a694ef61222cf266"
+  integrity sha512-BSy8l+t9Gk7Juqcgrt62RNvjcyGh2L4WgEsZHl9ghGwom52tU4x3C6jjqhD9wEJJIzLmdsZ2HrzFpNmtawCivQ==
+  dependencies:
+    "@babel/cli" "~7.12.0"
+    "@clux/babel-preset-recommended" "~0.0.1"
+    "@clux/eslint-plugin-recommended" "~0.0.1"
+    "@clux/stylelint-config-recommended" "~0.0.1"
+    "@types/fs-extra" "^9.0.0"
+    chalk "^4.0.0"
+    copyfiles "^2.0.0"
+    cross-env "^7.0.0"
+    deep-extend "^0.6.0"
+    eslint "~7.25.0"
+    fast-deep-equal "^3.1.0"
+    fs-extra "^9.0.0"
+    indexof "^0.0.1"
+    json-format "^1.0.0"
+    nanoid "^3.0.0"
+    prettier "~2.2.0"
+    react-refresh "~0.10.0"
+    rimraf "^3.0.0"
+    stylelint "~13.13.0"
+    ts-node "^9.1.0"
+    tsconfig-paths "^3.9.0"
+
+"@clux/eslint-plugin-recommended@~0.0.1":
+  version "0.0.1"
+  resolved "http://localhost:4873/@clux%2feslint-plugin-recommended/-/eslint-plugin-recommended-0.0.1.tgz#284a6deacd9752f97c8f11c1b5dc06fba3fb63cd"
+  integrity sha512-kTxZjMAdOYwIIkLacDFqv231UpM1u2acf1Pyox1+PiKIXT+M9qpnyFyxRiO4PNlmvS0yxC6X3Rvq5Vg1RXSZhg==
+  dependencies:
+    "@typescript-eslint/eslint-plugin" "~4.22.0"
+    "@typescript-eslint/parser" "~4.22.0"
+    eslint-config-airbnb-typescript "~12.3.0"
+    eslint-config-prettier "~8.3.0"
+    eslint-plugin-babel "~5.3.0"
+    eslint-plugin-import "~2.22.0"
+    eslint-plugin-jsx-a11y "~6.4.0"
+    eslint-plugin-prettier "~3.4.0"
+    eslint-plugin-react "~7.23.0"
+    eslint-plugin-react-hooks "~4.2.0"
+
+"@clux/stylelint-config-recommended@~0.0.1":
+  version "0.0.1"
+  resolved "http://localhost:4873/@clux%2fstylelint-config-recommended/-/stylelint-config-recommended-0.0.1.tgz#13783b2c4641ddf76ade336a03f6bdceb7cf4fd0"
+  integrity sha512-SJSFNv6n1LUnYQYP3BtrnEv+CU9zHZXapEbkk6q/k95Erxa830xeWp97j1LNgOw7bw2eBevNiy1Qf5F9hn8EPQ==
+  dependencies:
+    stylelint-config-prettier "~8.0.2"
+    stylelint-config-standard "~22.0.0"
+    stylelint-declaration-block-no-ignored-properties "~2.3.0"
+    stylelint-prettier "~1.2.0"
 
 "@cnakazawa/watch@^1.0.3":
   version "1.0.4"
@@ -1996,76 +2066,6 @@
     npmlog "^4.1.2"
     write-file-atomic "^3.0.3"
 
-"@medux/babel-preset-recommended@~1.1.1":
-  version "1.1.1"
-  resolved "http://localhost:4873/@medux%2fbabel-preset-recommended/-/babel-preset-recommended-1.1.1.tgz#aeccddc541dd174fb93f637ac706984e663a8b6d"
-  integrity sha512-aQnqSjBcqa/mKRPXH12T4p0T6AH36EL+cbdJ5ZAPVV9GnUPOIiLGuzOYWzY5e/utwUs3tZm3cbjhp9Tm9z5H6Q==
-  dependencies:
-    "@babel/core" "~7.12.0"
-    "@babel/plugin-proposal-class-properties" "~7.12.0"
-    "@babel/plugin-proposal-decorators" "~7.12.0"
-    "@babel/plugin-transform-runtime" "~7.12.0"
-    "@babel/plugin-transform-typescript" "~7.12.0"
-    "@babel/preset-env" "~7.12.0"
-    "@babel/preset-react" "~7.12.0"
-    "@babel/runtime" "~7.12.0"
-    babel-plugin-module-resolver "~4.1.0"
-    babel-plugin-root-import "~6.6.0"
-    core-js "*"
-
-"@medux/dev-pkg@~2.1.8":
-  version "2.1.8"
-  resolved "http://localhost:4873/@medux%2fdev-pkg/-/dev-pkg-2.1.8.tgz#9725ce059d56911daead11299c49ccd1a76d4abd"
-  integrity sha512-SJkWMae0cXzdjklWWtDui9Z7jSDqG76DHZXMOP/9wcf3csNqyZB7EoN6lGUX+Xh6vMcjpM7k+hHjUNutyCtztA==
-  dependencies:
-    "@babel/cli" "~7.12.0"
-    "@medux/babel-preset-recommended" "~1.1.1"
-    "@medux/eslint-plugin-recommended" "~1.1.0"
-    "@medux/stylelint-config-recommended" "~1.0.1"
-    "@types/fs-extra" "^9.0.0"
-    chalk "^4.0.0"
-    copyfiles "^2.0.0"
-    cross-env "^7.0.0"
-    deep-extend "^0.6.0"
-    eslint "~7.25.0"
-    fast-deep-equal "^3.1.0"
-    fs-extra "^9.0.0"
-    indexof "^0.0.1"
-    json-format "^1.0.0"
-    nanoid "^3.0.0"
-    prettier "~2.2.0"
-    react-refresh "~0.10.0"
-    rimraf "^3.0.0"
-    stylelint "~13.13.0"
-    ts-node "^9.1.0"
-    tsconfig-paths "^3.9.0"
-
-"@medux/eslint-plugin-recommended@~1.1.0":
-  version "1.1.2"
-  resolved "http://localhost:4873/@medux%2feslint-plugin-recommended/-/eslint-plugin-recommended-1.1.2.tgz#258dfc7ab831fe1d0e8097598cd87175da9b13fb"
-  integrity sha512-AX0iuVeGemzSf8P9BCiFbJsIElP9ze6mDnmiNUlpzm2X3o3exUvAzk8RTZV9h8+ti7eeRYASJfcQDd27D1/yvA==
-  dependencies:
-    "@typescript-eslint/eslint-plugin" "~4.22.0"
-    "@typescript-eslint/parser" "~4.22.0"
-    eslint-config-airbnb-typescript "~12.3.0"
-    eslint-config-prettier "~8.3.0"
-    eslint-plugin-babel "~5.3.0"
-    eslint-plugin-import "~2.22.0"
-    eslint-plugin-jsx-a11y "~6.4.0"
-    eslint-plugin-prettier "~3.4.0"
-    eslint-plugin-react "~7.23.0"
-    eslint-plugin-react-hooks "~4.2.0"
-
-"@medux/stylelint-config-recommended@~1.0.1":
-  version "1.0.1"
-  resolved "http://localhost:4873/@medux%2fstylelint-config-recommended/-/stylelint-config-recommended-1.0.1.tgz#b61f497d6c04a42cda30e30fb729c32639fd816c"
-  integrity sha512-NPj0bMdU9CfnlbvkUTgWQzR+/Fr03CaFjOHme4fkZ5M+i/HkcrR2pHFg/5wVKwblY3BmNVPDjmnrFhtha44kHg==
-  dependencies:
-    stylelint-config-prettier "~8.0.2"
-    stylelint-config-standard "~22.0.0"
-    stylelint-declaration-block-no-ignored-properties "~2.3.0"
-    stylelint-prettier "~1.2.0"
-
 "@nicolo-ribaudo/chokidar-2@2.1.8-no-fsevents":
   version "2.1.8-no-fsevents"
   resolved "http://localhost:4873/@nicolo-ribaudo%2fchokidar-2/-/chokidar-2-2.1.8-no-fsevents.tgz#da7c3996b8e6e19ebd14d82eaced2313e7769f9b"
@@ -2576,7 +2576,7 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-redux@~7.1.16":
+"@types/react-redux@^7.1.16", "@types/react-redux@~7.1.16":
   version "7.1.16"
   resolved "http://localhost:4873/@types%2freact-redux/-/react-redux-7.1.16.tgz#0fbd04c2500c12105494c83d4a3e45c084e3cb21"
   integrity sha512-f/FKzIrZwZk7YEO9E1yoxIuDNRiDducxkFlkw/GNMGEnK9n4K8wJzlJBghpSuOVDgEUHoDkDF7Gi9lHNQR4siw==
@@ -5527,7 +5527,7 @@ history@~4.10.1:
     tiny-warning "^1.0.0"
     value-equal "^1.0.1"
 
-hoist-non-react-statics@^3.3.0:
+hoist-non-react-statics@^3.3.0, hoist-non-react-statics@^3.3.2:
   version "3.3.2"
   resolved "http://localhost:4873/hoist-non-react-statics/-/hoist-non-react-statics-3.3.2.tgz#ece0acaf71d62c2969c2ec59feff42a4b1a85b45"
   integrity sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==
@@ -7117,7 +7117,7 @@ longest@^2.0.1:
   resolved "http://localhost:4873/longest/-/longest-2.0.1.tgz#781e183296aa94f6d4d916dc335d0d17aefa23f8"
   integrity sha1-eB4YMpaqlPbU2RbcM10NF676I/g=
 
-loose-envify@^1.2.0, loose-envify@^1.4.0:
+loose-envify@^1.1.0, loose-envify@^1.2.0, loose-envify@^1.4.0:
   version "1.4.0"
   resolved "http://localhost:4873/loose-envify/-/loose-envify-1.4.0.tgz#71ee51fa7be4caec1a63839f7e682d8132d30caf"
   integrity sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==
@@ -8541,7 +8541,7 @@ promzard@^0.3.0:
   dependencies:
     read "1"
 
-prop-types@^15.7.2:
+prop-types@^15.6.2, prop-types@^15.7.2:
   version "15.7.2"
   resolved "http://localhost:4873/prop-types/-/prop-types-15.7.2.tgz#52c41e75b8c87e72b9d9360e0206b99dcbffa6c5"
   integrity sha512-8QQikdH7//R2vurIJSutZ1smHYTcLpRWEOlHnzcWHmBYrOGUysKwSsrC89BCiFj3CbrfJ/nXFdJepOVrY1GCHQ==
@@ -8622,7 +8622,17 @@ randombytes@^2.1.0:
   dependencies:
     safe-buffer "^5.1.0"
 
-react-is@^16.7.0, react-is@^16.8.1:
+react-dom@^16.14.0:
+  version "16.14.0"
+  resolved "http://localhost:4873/react-dom/-/react-dom-16.14.0.tgz#7ad838ec29a777fb3c75c3a190f661cf92ab8b89"
+  integrity sha512-1gCeQXDLoIqMgqD3IO2Ah9bnf0w9kzhwN5q4FGnHZ67hBm9yePzB5JJAIQCc8x3pFnNlwFq4RidZggNAAkzWWw==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+    prop-types "^15.6.2"
+    scheduler "^0.19.1"
+
+react-is@^16.13.1, react-is@^16.7.0, react-is@^16.8.1:
   version "16.13.1"
   resolved "http://localhost:4873/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
@@ -8632,10 +8642,31 @@ react-is@^17.0.1:
   resolved "http://localhost:4873/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
   integrity sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==
 
+react-redux@^7.2.2:
+  version "7.2.4"
+  resolved "http://localhost:4873/react-redux/-/react-redux-7.2.4.tgz#1ebb474032b72d806de2e0519cd07761e222e225"
+  integrity sha512-hOQ5eOSkEJEXdpIKbnRyl04LhaWabkDPV+Ix97wqQX3T3d2NQ8DUblNXXtNMavc7DpswyQM6xfaN4HQDKNY2JA==
+  dependencies:
+    "@babel/runtime" "^7.12.1"
+    "@types/react-redux" "^7.1.16"
+    hoist-non-react-statics "^3.3.2"
+    loose-envify "^1.4.0"
+    prop-types "^15.7.2"
+    react-is "^16.13.1"
+
 react-refresh@~0.10.0:
   version "0.10.0"
   resolved "http://localhost:4873/react-refresh/-/react-refresh-0.10.0.tgz#2f536c9660c0b9b1d500684d9e52a65e7404f7e3"
   integrity sha512-PgidR3wST3dDYKr6b4pJoqQFpPGNKDSCDx4cZoshjXipw3LzO7mG1My2pwEzz2JVkF+inx3xRpDeQLFQGH/hsQ==
+
+react@^16.14.0:
+  version "16.14.0"
+  resolved "http://localhost:4873/react/-/react-16.14.0.tgz#94d776ddd0aaa37da3eda8fc5b6b18a4c9a3114d"
+  integrity sha512-0X2CImDkJGApiAlcf0ODKIneSwBPhqJawOa5wCtKbu7ZECrmS26NvtSILynQ66cgkT/RJ4LidJOc3bUESwmU8g==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
+    prop-types "^15.6.2"
 
 read-cmd-shim@^2.0.0:
   version "2.0.0"
@@ -9226,6 +9257,14 @@ saxes@^5.0.1:
   integrity sha512-5LBh1Tls8c9xgGjw3QrMwETmTMVk0oFgvrFSvWx62llR2hcEInrKNZ2GZCCuuy2lvWrdl5jhbpeqc5hRYKFOcw==
   dependencies:
     xmlchars "^2.2.0"
+
+scheduler@^0.19.1:
+  version "0.19.1"
+  resolved "http://localhost:4873/scheduler/-/scheduler-0.19.1.tgz#4f3e2ed2c1a7d65681f4c854fa8c5a1ccb40f196"
+  integrity sha512-n/zwRWRYSUj0/3g/otKDRPMh6qv2SYMWNq85IEa8iZyAv8od9zDYpGSnpBEjNgcMNq6Scbu5KfIPxNF72R/2EA==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
 
 semver-compare@^1.0.0:
   version "1.0.0"

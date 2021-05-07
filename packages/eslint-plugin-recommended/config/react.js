@@ -19,6 +19,7 @@ module.exports = {
     'react/require-default-props': 'off',
     'react/jsx-props-no-spreading': 'off',
     'react/static-property-placement': 'off',
+    'react/sort-comp': 'off',
     'jsx-a11y/anchor-is-valid': 'off',
     'jsx-a11y/interactive-supports-focus': 'off',
     'jsx-a11y/click-events-have-key-events': 'off',

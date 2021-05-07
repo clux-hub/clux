@@ -3,9 +3,7 @@
   "compilerOptions": {
     "declarationDir": null,
     "noEmit": true,
-    "emitDeclarationOnly": false,
     "declaration": false,
-    "composite": false,
     "types": ["jest","node"],
     "paths": {
       "src/*": ["../src/*"]

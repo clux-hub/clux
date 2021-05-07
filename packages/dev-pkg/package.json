@@ -1,6 +1,6 @@
 {
   "name": "@clux/dev-pkg",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Common development tools",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/dev-pkg",
   "author": "clux-hub <clux_hub@163.com>",

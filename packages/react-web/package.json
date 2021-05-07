@@ -1,0 +1,50 @@
+{
+  "name": "@clux/react-web",
+  "version": "0.0.1",
+  "description": "The practice of clux on react + web",
+  "repository": "https://github.com/clux-hub/clux/tree/master/packages/react-web",
+  "author": "clux-hub <clux_hub@163.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=9.0.0"
+  },
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "jsnext:main": "dist/next/index.js",
+  "unpkg": "dist/umd/index.js",
+  "types": "types/",
+  "files": [
+    "env/",
+    "types/",
+    "dist/",
+    "lib/"
+  ],
+  "scripts": {
+    "prebuild": "rimraf ./dist ./types && tsc --build ./src",
+    "build:next": "cross-env NODE_TAG=next babel ./src/lib --out-dir ./dist/next/lib  --extensions \".ts,.tsx\" && cross-env NODE_TAG=next rollup -c",
+    "build:esm": "cross-env NODE_TAG=esm babel ./src/lib --out-dir ./dist/esm/lib  --extensions \".ts,.tsx\" && cross-env NODE_TAG=esm rollup -c",
+    "build:cjs": "cross-env NODE_TAG=cjs babel ./src/lib --out-dir ./dist/cjs/lib  --extensions \".ts,.tsx\"",
+    "build": "yarn build:next && yarn build:esm && yarn build:cjs"
+  },
+  "externals": {
+    "react": true,
+    "react-dom": true
+  },
+  "peerDependencies": {
+    "react": "^16.8.0",
+    "react-dom": "^16.8.0"
+  },
+  "dependencies": {
+    "@clux/core": "^0.0.1",
+    "@clux/route-browser": "^0.0.1"
+  },
+  "devDependencies": {
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0",
+    "react-redux": "^7.2.2"
+  },
+  "gitHead": "7d6eb6d666143271ba0575fea99cf3f927fce764"
+}

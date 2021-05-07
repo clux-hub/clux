@@ -9,7 +9,7 @@ const env = cfg[tag];
 
 module.exports = (presets = []) => {
   return {
-    presets: [['@medux/recommended', {...env, presets, rootImport: {rootPathPrefix: 'src/', rootPathSuffix: './src/'}}]],
+    presets: [['@clux/recommended', {...env, presets, rootImport: {rootPathPrefix: 'src/', rootPathSuffix: './src/'}}]],
     ignore: ['**/*.d.ts'],
     comments: false,
   };

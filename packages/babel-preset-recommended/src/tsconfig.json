@@ -7,7 +7,6 @@
     "noEmit": false,
     "emitDeclarationOnly": false,
     "declaration": false,
-    "composite": false,
     "esModuleInterop": false
   },
    "include": ["./"],

@@ -6,7 +6,6 @@
    "outDir": "../dist",
    "noEmit": false,
    "emitDeclarationOnly": false,
-   "composite": false,
    "esModuleInterop": false
  },
   "include": ["./"],

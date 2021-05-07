@@ -1,6 +1,6 @@
 module.exports = {
   root: true,
-  extends: ['plugin:@medux/recommended/common'],
+  extends: ['plugin:@clux/recommended/common'],
   env: {
     browser: false,
     node: false,

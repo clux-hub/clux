@@ -31,7 +31,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "prebuild": "node ../../preBuild && rimraf ./dist && tsc --build ./src",
+    "prebuild": "node ../../preBuild && rimraf ./dist ./types && tsc --build ./src",
     "build:next": "cross-env NODE_TAG=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
     "build:esm": "cross-env NODE_TAG=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
     "build:cjs": "cross-env NODE_TAG=cjs babel ./src --out-dir ./dist/cjs  --extensions \".ts,.tsx\"",
