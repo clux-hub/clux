@@ -2,7 +2,7 @@
   "name": "@clux/core",
   "version": "0.0.1",
   "description": "Modular state management,Suitable for various javascript frameworks.",
-  "repository": "https://github.com/wooline/clux-hub/tree/master/packages/core",
+  "repository": "https://github.com/clux-hub/clux/tree/master/packages/core",
   "author": "clux-hub <clux_hub@163.com>",
   "license": "MIT",
   "keywords": [

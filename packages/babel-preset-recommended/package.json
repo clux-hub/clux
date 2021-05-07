@@ -1,0 +1,36 @@
+{
+  "name": "@clux/babel-preset-recommended",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "description": "Common development tools",
+  "repository": "https://github.com/clux-hub/clux/tree/master/packages/babel-preset-recommended",
+  "author": "clux-hub <clux_hub@163.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=9.0.0"
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "prebuild": "../../node_modules/.bin/rimraf ./dist",
+    "build": "../../node_modules/.bin/tsc --build ./src"
+  },
+  "dependencies": {
+    "@babel/plugin-transform-typescript": "~7.12.0",
+    "@babel/plugin-proposal-class-properties": "~7.12.0",
+    "@babel/plugin-proposal-decorators": "~7.12.0",
+    "@babel/plugin-transform-runtime": "~7.12.0",
+    "@babel/preset-env": "~7.12.0",
+    "@babel/preset-react": "~7.12.0",
+    "@babel/core": "~7.12.0",
+    "@babel/runtime": "~7.12.0",
+    "babel-plugin-module-resolver": "~4.1.0",
+    "babel-plugin-root-import": "~6.6.0",
+    "core-js": "*"
+  },
+  "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
+}
