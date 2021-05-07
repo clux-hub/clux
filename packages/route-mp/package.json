@@ -1,6 +1,6 @@
 {
   "name": "@clux/route-mp",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Using @clux/route in mini-program",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/route-mp",
   "author": "clux-hub <clux_hub@163.com>",
@@ -29,9 +29,9 @@
     "build": "yarn build:next & yarn build:esm & yarn build:cjs"
   },
   "dependencies": {
-    "@clux/core": "^0.0.1",
-    "@clux/route": "^0.0.1",
-    "@babel/runtime": "~7.12.18"
+    "@babel/runtime": "~7.12.18",
+    "@clux/core": "^0.0.2",
+    "@clux/route": "^0.0.2"
   },
   "gitHead": "7d6eb6d666143271ba0575fea99cf3f927fce764"
 }
