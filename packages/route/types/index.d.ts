@@ -46,7 +46,7 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     private taskList;
     private _nativeData;
     private routeState;
-    private meduxUrl;
+    private cluxUrl;
     protected store: Store | undefined;
     readonly history: History;
     private _lid;
@@ -59,7 +59,7 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     getRouteState(): RouteState<P>;
     getPagename(): string;
     getParams(): Partial<P>;
-    getMeduxUrl(): string;
+    getCluxUrl(): string;
     getNativeLocation(): NativeLocation;
     getNativeUrl(): string;
     setStore(_store: Store): void;
@@ -72,7 +72,7 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     urlToLocation(url: string): Location<P>;
     nativeLocationToNativeUrl(nativeLocation: NativeLocation): string;
     locationToNativeUrl(location: PartialLocation<P>): string;
-    locationToMeduxUrl(location: PartialLocation<P>): string;
+    locationToCluxUrl(location: PartialLocation<P>): string;
     payloadToPartial(payload: PayloadLocation<P, N>): PartialLocation<P>;
     relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
     private _relaunch;
@@ -94,7 +94,7 @@ export interface IBaseRouter<P extends RootParams, N extends string> {
     getRouteState(): RouteState<P>;
     getPagename(): string;
     getParams(): Partial<P>;
-    getMeduxUrl(): string;
+    getCluxUrl(): string;
     getNativeLocation(): NativeLocation;
     getNativeUrl(): string;
     setStore(_store: Store): void;
@@ -106,7 +106,7 @@ export interface IBaseRouter<P extends RootParams, N extends string> {
     nativeLocationToNativeUrl(nativeLocation: NativeLocation): string;
     urlToLocation(url: string): Location<P>;
     locationToNativeUrl(location: PartialLocation<P>): string;
-    locationToMeduxUrl(location: PartialLocation<P>): string;
+    locationToCluxUrl(location: PartialLocation<P>): string;
     payloadToPartial(payload: PayloadLocation<P, N>): PartialLocation<P>;
     relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
     push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;

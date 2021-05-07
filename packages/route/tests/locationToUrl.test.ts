@@ -1,9 +1,9 @@
 import {router} from './tools';
 
 describe('/admin/member', () => {
-  test('locationToMeduxUrl', () => {
+  test('locationToCluxUrl', () => {
     expect(
-      router.locationToMeduxUrl({
+      router.locationToCluxUrl({
         pagename: '/admin/member',
         params: {
           admin: {},
@@ -25,7 +25,7 @@ describe('/admin/member', () => {
       '/admin/member?{"admin":{},"member":{"listSearchPre":{"pageSize":10,"pageCurrent":1},"listView":"","_listVerPre":0,"itemIdPre":"","itemView":"","_itemVerPre":0}}'
     );
     expect(
-      router.locationToMeduxUrl({
+      router.locationToCluxUrl({
         pagename: '/admin/member',
         params: {
           member: {
@@ -38,7 +38,7 @@ describe('/admin/member', () => {
       })
     ).toBe('/admin/member?{"member":{"listSearchPre":{"pageSize":10},"_itemVerPre":0}}');
     expect(
-      router.locationToMeduxUrl({
+      router.locationToCluxUrl({
         pagename: '/admin/member333',
         params: {
           member: {

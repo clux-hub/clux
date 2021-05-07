@@ -2,7 +2,7 @@ import {router} from './tools';
 
 describe('init', () => {
   test('init', () => {
-    expect(router.getMeduxUrl()).toBe(
+    expect(router.getCluxUrl()).toBe(
       '/admin/member?{"admin":{},"member":{"listSearchPre":{"pageSize":10,"pageCurrent":1,"term":null},"listView":"","_listVerPre":0,"itemIdPre":"","itemView":"","_itemVerPre":0}}'
     );
     expect(router.getNativeUrl()).toBe('/admin/member2');

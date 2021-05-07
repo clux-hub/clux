@@ -2,7 +2,7 @@
   "name": "@clux/route",
   "version": "0.0.1",
   "description": "",
-  "repository": "https://github.com/clux-hub/clux/tree/master/packages/route-web",
+  "repository": "https://github.com/clux-hub/clux/tree/master/packages/route",
   "author": "clux-hub <clux_hub@163.com>",
   "license": "MIT",
   "publishConfig": {
@@ -22,15 +22,15 @@
   ],
   "scripts": {
     "test": "jest",
-    "prebuild": "rimraf ./dist && tsc --build ./src",
+    "prebuild": "node ../../preBuild && rimraf ./dist && tsc --build ./src",
     "build:next": "cross-env NODE_TAG=next babel ./src --out-dir ./dist/next  --extensions \".ts,.tsx\"",
     "build:esm": "cross-env NODE_TAG=esm babel ./src --out-dir ./dist/esm  --extensions \".ts,.tsx\"",
     "build:cjs": "cross-env NODE_TAG=cjs babel ./src --out-dir ./dist/cjs  --extensions \".ts,.tsx\"",
     "build": "yarn build:next & yarn build:esm & yarn build:cjs"
   },
   "dependencies": {
-    "@babel/runtime": "~7.13.17",
-    "@medux/core": "^2.0.0-beta.3.31"
+    "@babel/runtime": "~7.12.18",
+    "@clux/core": "^0.0.1"
   },
   "gitHead": "7d6eb6d666143271ba0575fea99cf3f927fce764"
 }

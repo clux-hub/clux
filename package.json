@@ -15,7 +15,7 @@
   "main": "index.js",
   "private": true,
   "engines": {
-    "node": ">=11.0.0"
+    "node": ">=9.0.0"
   },
   "workspaces": [
     "packages/core",
@@ -78,6 +78,7 @@
     "@rollup/plugin-replace": "~2.4.0",
     "@babel/runtime": "~7.12.0",
     "@medux/dev-pkg": "~2.1.8",
+    "replace-in-file": "~6.2.0",
     "typescript": "~4.2.0"
   }
 }

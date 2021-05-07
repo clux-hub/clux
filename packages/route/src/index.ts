@@ -99,7 +99,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> impleme
 
   private routeState: RouteState<P>;
 
-  private meduxUrl: string;
+  private cluxUrl: string;
 
   protected store: Store | undefined;
 
@@ -122,9 +122,9 @@ export abstract class BaseRouter<P extends RootParams, N extends string> impleme
     const key = this._createKey();
     const routeState: RouteState<P> = {...location, action: 'RELAUNCH', key};
     this.routeState = routeState;
-    this.meduxUrl = this.locationToMeduxUrl(routeState);
+    this.cluxUrl = this.locationToCluxUrl(routeState);
     if (!routeConfig.indexUrl) {
-      setRouteConfig({indexUrl: this.meduxUrl});
+      setRouteConfig({indexUrl: this.cluxUrl});
     }
     this._nativeData = undefined;
     this.history = new History({location, key});
@@ -158,8 +158,8 @@ export abstract class BaseRouter<P extends RootParams, N extends string> impleme
     return this.routeState.params;
   }
 
-  getMeduxUrl() {
-    return this.meduxUrl;
+  getCluxUrl() {
+    return this.cluxUrl;
   }
 
   getNativeLocation() {
@@ -244,7 +244,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> impleme
     return this.nativeLocationToNativeUrl(nativeLocation);
   }
 
-  locationToMeduxUrl(location: PartialLocation<P>): string {
+  locationToCluxUrl(location: PartialLocation<P>): string {
     return [location.pagename, JSON.stringify(location.params || {})].join('?');
   }
 
@@ -299,7 +299,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> impleme
     }
     this._nativeData = nativeData;
     this.routeState = routeState;
-    this.meduxUrl = this.locationToMeduxUrl(routeState);
+    this.cluxUrl = this.locationToCluxUrl(routeState);
     this.store!.dispatch(routeChangeAction(routeState));
     if (internal) {
       this.history.getCurrentInternalHistory()!.relaunch(location, key);
@@ -343,7 +343,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> impleme
     }
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
-    this.meduxUrl = this.locationToMeduxUrl(routeState);
+    this.cluxUrl = this.locationToCluxUrl(routeState);
     if (internal) {
       this.history.getCurrentInternalHistory()!.push(location, key);
     } else {
@@ -387,7 +387,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> impleme
     }
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
-    this.meduxUrl = this.locationToMeduxUrl(routeState);
+    this.cluxUrl = this.locationToCluxUrl(routeState);
     if (internal) {
       this.history.getCurrentInternalHistory()!.replace(location, key);
     } else {
@@ -428,7 +428,7 @@ export abstract class BaseRouter<P extends RootParams, N extends string> impleme
     }
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
-    this.meduxUrl = this.locationToMeduxUrl(routeState);
+    this.cluxUrl = this.locationToCluxUrl(routeState);
     if (internal) {
       this.history.getCurrentInternalHistory()!.back(n);
     } else {
@@ -472,7 +472,7 @@ export interface IBaseRouter<P extends RootParams, N extends string> {
   getRouteState(): RouteState<P>;
   getPagename(): string;
   getParams(): Partial<P>;
-  getMeduxUrl(): string;
+  getCluxUrl(): string;
   getNativeLocation(): NativeLocation;
   getNativeUrl(): string;
   setStore(_store: Store): void;
@@ -484,7 +484,7 @@ export interface IBaseRouter<P extends RootParams, N extends string> {
   nativeLocationToNativeUrl(nativeLocation: NativeLocation): string;
   urlToLocation(url: string): Location<P>;
   locationToNativeUrl(location: PartialLocation<P>): string;
-  locationToMeduxUrl(location: PartialLocation<P>): string;
+  locationToCluxUrl(location: PartialLocation<P>): string;
   payloadToPartial(payload: PayloadLocation<P, N>): PartialLocation<P>;
   relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
   push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
