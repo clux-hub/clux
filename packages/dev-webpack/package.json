@@ -12,14 +12,14 @@
     "node": ">=9.0.0"
   },
   "files": [
-    "lib/"
+    "dist/"
   ],
   "scripts": {
     "prebuild": "../../node_modules/.bin/rimraf ./dist && ../../node_modules/.bin/copyfiles -f ./src/*.d.ts ./dist",
     "build": "../../node_modules/.bin/tsc --build ./src"
   },
   "peerDependencies": {
-    "@medux/core": "^2.0.0"
+    "@clux/core": "^1.0.0"
   },
   "dependencies": {
     "unionfs": "^4.4.0",

@@ -15,8 +15,8 @@
     "@types/node": "^14.0.0"
   },
   "dependencies": {
-    "@medux/eslint-plugin-recommended": "~1.1.0",
-    "@medux/stylelint-config-recommended": "~1.0.1",
+    "@clux/eslint-plugin-recommended": "~0.0.1",
+    "@clux/stylelint-config-recommended": "~0.0.1",
     "stylelint": "~13.13.0",
     "eslint": "~7.25.0",
     "prettier": "~2.2.0",
