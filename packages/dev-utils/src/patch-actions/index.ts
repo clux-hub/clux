@@ -31,7 +31,7 @@ export function patch(_tsconfig?: string | Object, _entryFilePath?: string, _ech
     const json = args2.join(',').trim();
     const files = [entryFilePath];
     console.info(`patchActions using type ${chalk.magenta(`${typeName.substr(1, typeName.length - 2)}`)} for ${chalk.underline(entryFilePath)}`);
-    const program = TJS.getProgramFromFiles(files, tsconfig.compilerOptions);
+    const program = TJS.getProgramFromFiles(files, {...tsconfig.compilerOptions, composite: false, sourceMap: false});
     const defineType = TJS.generateSchema(program, typeName.substr(1, typeName.length - 2), {ignoreErrors: false});
     const properties: any = defineType!.properties!;
     const actions = Object.keys(properties).reduce((obj, key) => {

@@ -173,7 +173,7 @@ export function patchActions(typeName: string, json?: string): void {
 }
 
 export type GetAPP<A extends RootModuleFacade> = {
-  State: {[M in keyof A]?: A[M]['state']};
+  State: {[M in keyof A]: A[M]['state']};
   GetRouter: () => IRouter<A['route']['state']['params'], A['route']['viewName']>;
   GetActions<N extends keyof A>(...args: N[]): {[K in N]: A[K]['actions']};
   LoadView: LoadView<A>;

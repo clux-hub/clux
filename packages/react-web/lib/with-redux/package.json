@@ -1,5 +1,5 @@
 {
-  "name": "with-redux",
+  "name": "@clux/react-web-with-redux",
   "version": "1.0.0",
   "description": "",
   "main": "../../dist/cjs/lib/with-redux",

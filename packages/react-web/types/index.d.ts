@@ -54,7 +54,7 @@ export declare function createApp(moduleGetter: ModuleGetter, middlewares?: Cont
 export declare function patchActions(typeName: string, json?: string): void;
 export declare type GetAPP<A extends RootModuleFacade> = {
     State: {
-        [M in keyof A]?: A[M]['state'];
+        [M in keyof A]: A[M]['state'];
     };
     GetRouter: () => IRouter<A['route']['state']['params'], A['route']['viewName']>;
     GetActions<N extends keyof A>(...args: N[]): {
