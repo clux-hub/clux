@@ -26,9 +26,12 @@ type Handler<F> = F extends (...args: infer P) => any
     }
   : never;
 
-type Actions<Ins> = {
-  [K in keyof Ins]: Ins[K] extends (...args: any) => any ? Handler<Ins[K]> : never;
-};
+type Actions<T> = Pick<
+  {[K in keyof T]: Handler<T[K]>},
+  {
+    [K in keyof T]: T[K] extends Function ? K : never;
+  }[keyof T]
+>;
 
 export interface Module<
   N extends string = string,
@@ -84,7 +87,6 @@ export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views
       store.injectedModules[moduleName] = moduleHandles;
       moduleHandles.moduleName = moduleName;
       moduleHandles.store = store;
-      moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
       injectActions(moduleName, moduleHandles as any);
       const initState = moduleHandles.initState;
       const preModuleState = store.getState(moduleName);
@@ -167,12 +169,6 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
  * 所有ModuleHandlers必须继承此基类
  */
 export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleState, R extends Record<string, any> = {}> implements IModuleHandlers {
-  /**
-   * - 引用本module的actions
-   * - this.actions相当于actions[this.moduleName]
-   */
-  actions!: Actions<this>;
-
   store!: IStore<R>;
 
   moduleName: string = '';
@@ -279,7 +275,6 @@ export function modelHotReplacement(
     store.injectedModules[moduleName] = moduleHandles;
     moduleHandles.moduleName = moduleName;
     moduleHandles.store = store;
-    moduleHandles.actions = MetaData.facadeMap[moduleName].actions;
     injectActions(moduleName, moduleHandles as any);
     env.console.log(`[HMR] @clux Updated model: ${moduleName}`);
   }
@@ -293,7 +288,7 @@ type ModuleFacade<M extends CommonModule> = {
   viewName: Extract<keyof M['default']['views'], string>;
   state: M['default']['initState'];
   actions: M['default']['actions'];
-  actionNames: {[key in keyof M['default']['actions']]: string};
+  actionNames: {[K in keyof M['default']['actions']]: string};
 };
 
 export type RootModuleFacade<
@@ -304,9 +299,9 @@ export type RootModuleFacade<
 
 export type RootModuleActions<A extends RootModuleFacade> = {[K in keyof A]: keyof A[K]['actions']};
 
-export type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {[key in keyof A]: Pick<A[key], 'name' | 'actions' | 'actionNames'>};
+export type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {[K in keyof A]: Pick<A[K], 'name' | 'actions' | 'actionNames'>};
 
-export type RootModuleState<A extends RootModuleFacade = RootModuleFacade> = {[key in keyof A]: A[key]['state']};
+export type RootModuleState<A extends RootModuleFacade = RootModuleFacade> = {[K in keyof A]: A[K]['state']};
 
 export function getRootModuleAPI<T extends RootModuleFacade = any>(data?: {[moduleName: string]: string[]}): RootModuleAPI<T> {
   if (!MetaData.facadeMap) {

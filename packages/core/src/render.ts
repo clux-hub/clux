@@ -35,7 +35,7 @@ export function renderApp<ST extends BStore = BStore>(
   preLoadModules: string[],
   moduleGetter: ModuleGetter,
   middlewares?: ControllerMiddleware[],
-  appModuleName: string = 'app',
+  appModuleName: string = 'stage',
   appViewName: string = 'main'
 ) {
   MetaData.appModuleName = appModuleName;
@@ -74,7 +74,7 @@ export function ssrApp<ST extends BStore = BStore>(
   preLoadModules: string[],
   moduleGetter: ModuleGetter,
   middlewares?: ControllerMiddleware[],
-  appModuleName: string = 'app',
+  appModuleName: string = 'stage',
   appViewName: string = 'main'
 ) {
   MetaData.appModuleName = appModuleName;

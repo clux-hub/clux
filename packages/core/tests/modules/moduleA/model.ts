@@ -1,5 +1,6 @@
 import {ActionTypes, CoreModuleHandlers, CoreModuleState, reducer, effect} from 'src/index';
 import {messages} from '../../utils';
+import {App} from '../index';
 
 export interface State extends CoreModuleState {
   count: number;
@@ -42,14 +43,13 @@ export class ModuleHandlers extends CoreModuleHandlers<State, {}> {
 
   @effect(null)
   public async effectReducerError(error: string) {
-    this.dispatch(this.actions.reducerError(error));
-    // this.dispatch(this.actions.simple());
+    this.dispatch(App.moduleA.actions.reducerError(error));
   }
 
   @effect(null)
   public async effectEffectError(error: string) {
-    this.dispatch(this.actions.effectError(error));
-    this.dispatch(this.actions.simple());
+    this.dispatch(App.moduleA.actions.effectError(error));
+    this.dispatch(App.moduleA.actions.simple());
   }
 
   @effect(null)

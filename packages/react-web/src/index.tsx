@@ -23,7 +23,7 @@ import type {RouteModule} from '@clux/route';
 import type {IRouter} from '@clux/route-browser';
 import type {LoadView} from './loadView';
 
-export type {RootModuleFacade as Facade, Dispatch, CoreModuleState} from '@clux/core';
+export type {RootModuleFacade as Facade, Dispatch, CoreModuleState as BaseModuleState} from '@clux/core';
 
 export type {RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial} from '@clux/route';
 export type {LoadView} from './loadView';
@@ -91,12 +91,7 @@ export interface SSROptions {
   url: string;
 }
 
-export function createApp(
-  moduleGetter: ModuleGetter,
-  middlewares: ControllerMiddleware[] = [],
-  appModuleName: string = 'app',
-  appViewName: string = 'main'
-) {
+export function createApp(moduleGetter: ModuleGetter, middlewares: ControllerMiddleware[] = [], appModuleName?: string, appViewName?: string) {
   const controllerMiddleware = [routeMiddleware, ...middlewares];
   const {locationTransform} = moduleGetter['route']() as RouteModule;
   return {

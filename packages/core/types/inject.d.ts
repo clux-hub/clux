@@ -2,9 +2,11 @@ import { Action, IModuleHandlers, CoreModuleState, CommonModule, Model, ModuleGe
 declare type Handler<F> = F extends (...args: infer P) => any ? (...args: P) => {
     type: string;
 } : never;
-declare type Actions<Ins> = {
-    [K in keyof Ins]: Ins[K] extends (...args: any) => any ? Handler<Ins[K]> : never;
-};
+declare type Actions<T> = Pick<{
+    [K in keyof T]: Handler<T[K]>;
+}, {
+    [K in keyof T]: T[K] extends Function ? K : never;
+}[keyof T]>;
 export interface Module<N extends string = string, H extends IModuleHandlers = IModuleHandlers, VS extends {
     [key: string]: any;
 } = {
@@ -30,7 +32,6 @@ export declare function getView<T>(moduleName: string, viewName: string): T | Pr
 export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, controller: IStore): void | Promise<void>;
 export declare abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleState, R extends Record<string, any> = {}> implements IModuleHandlers {
     readonly initState: S;
-    actions: Actions<this>;
     store: IStore<R>;
     moduleName: string;
     constructor(initState: S);
@@ -58,7 +59,7 @@ declare type ModuleFacade<M extends CommonModule> = {
     state: M['default']['initState'];
     actions: M['default']['actions'];
     actionNames: {
-        [key in keyof M['default']['actions']]: string;
+        [K in keyof M['default']['actions']]: string;
     };
 };
 export declare type RootModuleFacade<G extends {
@@ -70,10 +71,10 @@ export declare type RootModuleActions<A extends RootModuleFacade> = {
     [K in keyof A]: keyof A[K]['actions'];
 };
 export declare type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {
-    [key in keyof A]: Pick<A[key], 'name' | 'actions' | 'actionNames'>;
+    [K in keyof A]: Pick<A[K], 'name' | 'actions' | 'actionNames'>;
 };
 export declare type RootModuleState<A extends RootModuleFacade = RootModuleFacade> = {
-    [key in keyof A]: A[key]['state'];
+    [K in keyof A]: A[K]['state'];
 };
 export declare function getRootModuleAPI<T extends RootModuleFacade = any>(data?: {
     [moduleName: string]: string[];

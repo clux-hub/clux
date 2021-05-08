@@ -33,12 +33,7 @@ export declare function createRouteModule<P extends RootParams, G extends Pagena
         model: import("@clux/core").Model;
         initState: RouteState<P>;
         views: { [k in keyof G]: any; };
-        actions: {
-            initState: never;
-            moduleName: never;
-            store: never;
-            actions: never;
-        };
+        actions: {};
     };
     locationTransform: LocationTransform<P>;
 };

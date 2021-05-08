@@ -1,6 +1,6 @@
 {
   "name": "@clux/eslint-plugin-recommended",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "index.js",
   "description": "Common development tools",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/eslint-plugin-recommended",

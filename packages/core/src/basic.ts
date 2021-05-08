@@ -72,7 +72,6 @@ export interface IModuleHandlers {
   initState: any;
   moduleName: string;
   store: IStore;
-  actions: ActionCreatorList;
 }
 
 export type Dispatch = (action: Action) => void | Promise<void>;

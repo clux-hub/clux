@@ -3,7 +3,7 @@ import type { ComponentType } from 'react';
 import type { ModuleGetter, ExportModule, ControllerMiddleware, StoreBuilder, BStoreOptions, BStore, RootModuleFacade, RootModuleAPI, RootModuleActions } from '@clux/core';
 import type { IRouter } from '@clux/route-browser';
 import type { LoadView } from './loadView';
-export type { RootModuleFacade as Facade, Dispatch, CoreModuleState } from '@clux/core';
+export type { RootModuleFacade as Facade, Dispatch, CoreModuleState as BaseModuleState } from '@clux/core';
 export type { RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial } from '@clux/route';
 export type { LoadView } from './loadView';
 export { ActionTypes, LoadingState, modelHotReplacement, env, effect, errorAction, reducer, viewHotReplacement, setLoading, logger, isServer, serverSide, clientSide, deepMerge, deepMergeState, isProcessedError, setProcessedError, } from '@clux/core';

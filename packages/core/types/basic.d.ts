@@ -44,7 +44,6 @@ export interface IModuleHandlers {
     initState: any;
     moduleName: string;
     store: IStore;
-    actions: ActionCreatorList;
 }
 export declare type Dispatch = (action: Action) => void | Promise<void>;
 export declare type State = {
