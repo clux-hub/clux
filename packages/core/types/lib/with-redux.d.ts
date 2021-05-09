@@ -2,8 +2,8 @@ import { Unsubscribe, StoreEnhancer } from 'redux';
 import type { BStore } from '../basic';
 import type { StoreBuilder } from '../store';
 export interface ReduxOptions {
-    initState: any;
-    enhancers: StoreEnhancer[];
+    initState?: any;
+    enhancers?: StoreEnhancer[];
 }
 export interface ReduxStore extends BStore {
     subscribe(listener: () => void): Unsubscribe;

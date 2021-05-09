@@ -15,9 +15,9 @@ export function createMiddleware(mockFile: string, globalFile?: string) {
   }
   if (!globalFile) {
     const extname = path.extname(mockFile);
-    globalFile = path.join(mockDir, `./global${extname}`);
+    globalFile = path.join(mockDir, `./database${extname}`);
   }
-  console.info(`enable ${chalk.magenta('api mock')} \n api: ${chalk.underline(mockFile)} \n global: ${chalk.underline(globalFile)}`);
+  console.info(`enable ${chalk.magenta('api mock')} \n api: ${chalk.underline(mockFile)} \n database: ${chalk.underline(globalFile)}`);
   return (req: Request, res: Response, next: NextFunction) => {
     const str = fs
       .readFileSync(mockFile)

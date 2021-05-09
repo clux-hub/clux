@@ -4,8 +4,8 @@ import type {BStore} from '../basic';
 import type {StoreBuilder} from '../store';
 
 export interface ReduxOptions {
-  initState: any;
-  enhancers: StoreEnhancer[];
+  initState?: any;
+  enhancers?: StoreEnhancer[];
 }
 
 export interface ReduxStore extends BStore {
@@ -19,7 +19,7 @@ const reduxReducer: Reducer = (state, action) => {
 declare const process: any;
 
 export function storeCreator(storeOptions: ReduxOptions): ReduxStore {
-  const {initState, enhancers} = storeOptions;
+  const {initState = {}, enhancers = []} = storeOptions;
   if (process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
