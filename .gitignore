@@ -1,6 +1,5 @@
 node_modules/
 storage/
-dist/
 *.log
 .eslintcache
 .DS_Store
