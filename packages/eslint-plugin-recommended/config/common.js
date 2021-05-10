@@ -58,8 +58,8 @@ module.exports = {
         format: ['PascalCase'],
       },
     ],
-    '@typescript-eslint/no-unused-vars': process.env.NODE_ENV === 'production' ? ['warn', {args: 'none'}] : 'off',
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    '@typescript-eslint/no-unused-vars': process.env.NODE_ENV === 'production' ? ['error', {args: 'none'}] : 'off',
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
+    'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
   },
 };

@@ -46,6 +46,7 @@ export {
   deepMergeState,
   isProcessedError,
   setProcessedError,
+  delayPromise,
 } from '@clux/core';
 export {ModuleWithRouteHandlers as BaseModuleHandlers, RouteActionTypes, createRouteModule} from '@clux/route';
 
