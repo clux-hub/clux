@@ -1,6 +1,5 @@
 import {CoreModuleHandlers, CoreModuleState, effect, reducer} from 'src/index';
 import {messages} from '../../utils';
-import {App} from '../index';
 
 export interface State extends CoreModuleState {
   count: number;
@@ -26,21 +25,21 @@ export class ModuleHandlers extends CoreModuleHandlers<State, {}> {
   @effect()
   protected async triggerError() {
     const prevState = this.currentRootState;
-    this.dispatch(App.moduleB.actions.add());
+    this.dispatch(this.actions.add());
     messages.push(['moduleB/moduleA.add', JSON.stringify(this.rootState), JSON.stringify(prevState)]);
   }
 
   @effect()
   protected async ['moduleA.add']() {
     const prevState = this.currentRootState;
-    this.dispatch(App.moduleB.actions.add());
+    this.dispatch(this.actions.add());
     messages.push(['moduleB/moduleA.add', JSON.stringify(this.rootState), JSON.stringify(prevState)]);
   }
 
   @effect()
   protected async ['moduleA.add2']() {
     const prevState = this.currentRootState;
-    this.dispatch(App.moduleB.actions.add2());
+    this.dispatch(this.actions.add2());
     messages.push(['moduleB/moduleA.add2', JSON.stringify(this.rootState), JSON.stringify(prevState)]);
   }
 }
