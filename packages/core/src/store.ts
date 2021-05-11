@@ -75,8 +75,11 @@ export function enhanceStore<S extends State = any>(baseStore: BStore, middlewar
   };
   const preMiddleware: ControllerMiddleware = () => (next) => (action) => {
     if (action.type === ActionTypes.Error) {
-      const error = getActionData(action)[0];
-      setProcessedError(error, true);
+      const actionData = getActionData(action);
+      if (isProcessedError(actionData[0])) {
+        return undefined;
+      }
+      actionData[0] = setProcessedError(actionData[0], true);
     }
     const [moduleName, actionName] = action.type.split(config.NSP);
     if (env.isServer && actionName === ActionTypes.MLoading) {

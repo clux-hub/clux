@@ -108,8 +108,13 @@ function enhanceStore(baseStore, middlewares) {
     return function (next) {
       return function (action) {
         if (action.type === _basic.ActionTypes.Error) {
-          var error = getActionData(action)[0];
-          setProcessedError(error, true);
+          var actionData = getActionData(action);
+
+          if (isProcessedError(actionData[0])) {
+            return undefined;
+          }
+
+          actionData[0] = setProcessedError(actionData[0], true);
         }
 
         var _action$type$split = action.type.split(_basic.config.NSP),
