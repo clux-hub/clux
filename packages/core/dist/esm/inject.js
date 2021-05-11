@@ -117,6 +117,18 @@ export var CoreModuleHandlers = _decorate(null, function (_initialize) {
       }
     }, {
       kind: "get",
+      key: "actions",
+      value: function actions() {
+        return MetaData.facadeMap[this.moduleName].actions;
+      }
+    }, {
+      kind: "method",
+      key: "getPrivateActions",
+      value: function getPrivateActions(actionsMap) {
+        return MetaData.facadeMap[this.moduleName].actions;
+      }
+    }, {
+      kind: "get",
       key: "state",
       value: function state() {
         return this.store.getState(this.moduleName);

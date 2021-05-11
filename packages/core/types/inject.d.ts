@@ -30,11 +30,20 @@ export declare function cacheModule<T extends CommonModule>(module: T): () => T;
 export declare function getModuleByName(moduleName: string): Promise<CommonModule> | CommonModule;
 export declare function getView<T>(moduleName: string, viewName: string): T | Promise<T>;
 export declare function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, controller: IStore): void | Promise<void>;
+declare type ActionsThis<Ins> = {
+    [K in keyof Ins]: Ins[K] extends (args: never) => any ? Handler<Ins[K]> : never;
+};
 export declare abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleState, R extends Record<string, any> = {}> implements IModuleHandlers {
     readonly initState: S;
     store: IStore<R>;
     moduleName: string;
     constructor(initState: S);
+    protected get actions(): ActionsThis<this>;
+    protected getPrivateActions<T extends {
+        [key: string]: Function;
+    }>(actionsMap: T): {
+        [K in keyof T]: Handler<T[K]>;
+    };
     protected get state(): S;
     protected get rootState(): R;
     protected getCurrentActionName(): string;

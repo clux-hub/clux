@@ -164,6 +164,10 @@ export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG,
   return moduleOrPromise.default.model(controller);
 }
 
+type ActionsThis<Ins> = {
+  [K in keyof Ins]: Ins[K] extends (args: never) => any ? Handler<Ins[K]> : never;
+};
+
 /**
  * ModuleHandlers基类
  * 所有ModuleHandlers必须继承此基类
@@ -174,6 +178,14 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
   moduleName: string = '';
 
   constructor(public readonly initState: S) {}
+
+  protected get actions(): ActionsThis<this> {
+    return MetaData.facadeMap[this.moduleName].actions as any;
+  }
+
+  protected getPrivateActions<T extends {[key: string]: Function}>(actionsMap: T): {[K in keyof T]: Handler<T[K]>} {
+    return MetaData.facadeMap[this.moduleName].actions as any;
+  }
 
   /**
    * 获取本Model的state

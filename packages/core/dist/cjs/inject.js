@@ -139,6 +139,18 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
       }
     }, {
       kind: "get",
+      key: "actions",
+      value: function actions() {
+        return _basic.MetaData.facadeMap[this.moduleName].actions;
+      }
+    }, {
+      kind: "method",
+      key: "getPrivateActions",
+      value: function getPrivateActions(actionsMap) {
+        return _basic.MetaData.facadeMap[this.moduleName].actions;
+      }
+    }, {
+      kind: "get",
       key: "state",
       value: function state() {
         return this.store.getState(this.moduleName);
