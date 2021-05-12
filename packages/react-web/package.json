@@ -24,14 +24,15 @@
   ],
   "scripts": {
     "prebuild": "rimraf ./dist ./types && tsc --build ./src",
-    "build:next": "cross-env NODE_TAG=next babel ./src/lib --out-dir ./dist/next/lib  --extensions \".ts,.tsx\" && cross-env NODE_TAG=next rollup -c",
-    "build:esm": "cross-env NODE_TAG=esm babel ./src/lib --out-dir ./dist/esm/lib  --extensions \".ts,.tsx\" && cross-env NODE_TAG=esm rollup -c",
+    "build:next": "cross-env NODE_TAG=next rollup -c && cross-env NODE_TAG=next rollup -c",
+    "build:esm": "cross-env NODE_TAG=esm rollup -i src/lib/with-redux -c && cross-env NODE_TAG=esm rollup -c",
     "build:cjs": "cross-env NODE_TAG=cjs babel ./src/lib --out-dir ./dist/cjs/lib  --extensions \".ts,.tsx\"",
-    "build": "yarn build:next && yarn build:esm && yarn build:cjs"
+    "build": "yarn build:next && yarn build:esm"
   },
   "externals": {
     "react": true,
-    "react-dom": true
+    "react-dom": true,
+    "react-redux": true
   },
   "peerDependencies": {
     "react": "^16.8.0",

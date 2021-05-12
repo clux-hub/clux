@@ -2,8 +2,8 @@
   "name": "@clux/react-web-with-redux",
   "version": "1.0.0",
   "description": "",
-  "main": "../../dist/cjs/lib/with-redux",
-  "module": "../../dist/esm/lib/with-redux",
-  "jsnext:main": "../../dist/next/lib/with-redux",
+  "main": "../../dist/cjs/lib/with-redux/index.js",
+  "module": "../../dist/esm/lib/with-redux/index.js",
+  "jsnext:main": "../../dist/next/lib/with-redux/index.js",
   "types": "../../types/lib/with-redux"
 }

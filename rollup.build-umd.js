@@ -5,19 +5,20 @@ import commonjs from '@rollup/plugin-commonjs';
 import path from 'path';
 import replace from '@rollup/plugin-replace';
 import resolve from '@rollup/plugin-node-resolve';
+import {terser} from 'rollup-plugin-terser';
 import alias from '@rollup/plugin-alias';
-import * as fs from 'fs';
 
 const tag = process.env.NODE_TAG || process.env.NODE_ENV;
 
-function createConfig(inputFile, externals, aliasEntries) {
-  const outputFile = inputFile.replace('src/', '');
+export default function (root, moduleName, globals, aliasEntries) {
   const cfg = {
-    next: {output: [{file: `dist/next/${outputFile}index.js`, format: 'esm'}], mainFields: ['jsnext:main', 'module', 'main']},
+    next: {output: [{file: `dist/next/index.js`, format: 'esm'}], mainFields: ['jsnext:main', 'module', 'main']},
     esm: {
       output: [
-        {file: `dist/esm/${outputFile}index.js`, format: 'esm'},
-        {file: `dist/cjs/${outputFile}index.js`, format: 'cjs'},
+        {file: `dist/esm/index.js`, format: 'esm'},
+        {file: `dist/cjs/index.js`, format: 'cjs'},
+        moduleName && {file: `dist/umd/index.js`, format: 'umd', name: moduleName, globals},
+        moduleName && {file: `dist/umd/index.min.js`, format: 'umd', name: moduleName, globals, plugins: [terser()], sourcemap: true},
       ].filter(Boolean),
       mainFields: ['module', 'main'],
     },
@@ -25,9 +26,12 @@ function createConfig(inputFile, externals, aliasEntries) {
   const env = cfg[tag];
   const extensions = ['.js', '.ts', '.tsx'];
   const pkgResult = {include: {}, external: {}};
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const pkg = require(path.resolve(root, './package.json'));
 
+  const externals = Object.keys(pkg.externals ? pkg.externals : {...pkg.dependencies, ...pkg.peerDependencies});
   const config = {
-    input: inputFile,
+    input: 'src/',
     output: env.output,
     external: (id) => {
       const hit = externals.some((mod) => mod === id || id.startsWith(`${mod}/`));
@@ -60,18 +64,4 @@ function createConfig(inputFile, externals, aliasEntries) {
     ].filter(Boolean),
   };
   return config;
-}
-
-export default function (root, aliasEntries) {
-  const inputFiles = ['src/'];
-  const libsDir = path.resolve(root, './src/lib/');
-  if (fs.existsSync(libsDir)) {
-    const libs = fs.readdirSync(libsDir);
-    libs.forEach((item) => {
-      inputFiles.push(`src/lib/${item}/`);
-    });
-  }
-  const pkg = require(path.resolve(root, './package.json'));
-  const externals = Object.keys(pkg.externals ? pkg.externals : {...pkg.dependencies, ...pkg.peerDependencies});
-  return inputFiles.map((bundle) => createConfig(bundle, externals, aliasEntries));
 }

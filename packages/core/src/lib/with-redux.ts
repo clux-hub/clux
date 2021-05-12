@@ -1,4 +1,4 @@
-import {Reducer, compose, createStore, Unsubscribe, StoreEnhancer} from 'redux';
+import {compose, createStore, applyMiddleware, Reducer, Unsubscribe, StoreEnhancer, Middleware} from 'redux';
 import {env} from '../env';
 import type {BStore} from '../basic';
 import type {StoreBuilder} from '../store';
@@ -6,6 +6,7 @@ import type {StoreBuilder} from '../store';
 export interface ReduxOptions {
   initState?: any;
   enhancers?: StoreEnhancer[];
+  middlewares?: Middleware[];
 }
 
 export interface ReduxStore extends BStore {
@@ -19,7 +20,11 @@ const reduxReducer: Reducer = (state, action) => {
 declare const process: any;
 
 export function storeCreator(storeOptions: ReduxOptions): ReduxStore {
-  const {initState = {}, enhancers = []} = storeOptions;
+  const {initState = {}, enhancers = [], middlewares} = storeOptions;
+  if (middlewares) {
+    const middlewareEnhancer = applyMiddleware(...middlewares);
+    enhancers.push(middlewareEnhancer);
+  }
   if (process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
