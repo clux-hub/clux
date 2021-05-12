@@ -1,4 +1,4 @@
-import { compose, createStore } from 'redux';
+import { compose, createStore, applyMiddleware } from 'redux';
 import { env } from '../env';
 
 const reduxReducer = (state, action) => {
@@ -10,8 +10,14 @@ const reduxReducer = (state, action) => {
 export function storeCreator(storeOptions) {
   const {
     initState = {},
-    enhancers = []
+    enhancers = [],
+    middlewares
   } = storeOptions;
+
+  if (middlewares) {
+    const middlewareEnhancer = applyMiddleware(...middlewares);
+    enhancers.push(middlewareEnhancer);
+  }
 
   if (process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));

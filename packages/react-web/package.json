@@ -14,7 +14,6 @@
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "jsnext:main": "dist/next/index.js",
-  "unpkg": "dist/umd/index.js",
   "types": "types/",
   "files": [
     "env/",

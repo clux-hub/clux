@@ -1,9 +1,10 @@
-import { Unsubscribe, StoreEnhancer } from 'redux';
+import { Unsubscribe, StoreEnhancer, Middleware } from 'redux';
 import type { BStore } from '../basic';
 import type { StoreBuilder } from '../store';
 export interface ReduxOptions {
     initState?: any;
     enhancers?: StoreEnhancer[];
+    middlewares?: Middleware[];
 }
 export interface ReduxStore extends BStore {
     subscribe(listener: () => void): Unsubscribe;
