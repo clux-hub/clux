@@ -8,8 +8,6 @@ module.exports = {
   parserOptions: {
     project: `${__dirname}/tsconfig.json`,
   },
-  rules: {
-    'react/sort-comp': 'off',
-  },
+  rules: {},
   ignorePatterns: ['/.eslintrc.js'],
 };

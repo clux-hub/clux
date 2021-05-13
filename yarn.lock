@@ -994,14 +994,14 @@
     babel-plugin-root-import "~6.6.0"
     core-js "*"
 
-"@clux/dev-pkg@~0.0.2":
-  version "0.0.2"
-  resolved "http://localhost:4873/@clux%2fdev-pkg/-/dev-pkg-0.0.2.tgz#3d20eef977621d951c9ebc07a694ef61222cf266"
-  integrity sha512-BSy8l+t9Gk7Juqcgrt62RNvjcyGh2L4WgEsZHl9ghGwom52tU4x3C6jjqhD9wEJJIzLmdsZ2HrzFpNmtawCivQ==
+"@clux/dev-pkg@~0.0.3":
+  version "0.0.3"
+  resolved "http://localhost:4873/@clux%2fdev-pkg/-/dev-pkg-0.0.3.tgz#bf5083a4645234d4989fdac6135aaa12601c0a97"
+  integrity sha512-UlfiuvutBsTFe/CAwDPtvl5pF3QS5IcKQr+Y++XdVL3aioNsHqBREIqqV9i7zXIwqNJXV4129w6yhVHNC2SfYg==
   dependencies:
     "@babel/cli" "~7.12.0"
     "@clux/babel-preset-recommended" "~0.0.1"
-    "@clux/eslint-plugin-recommended" "~0.0.1"
+    "@clux/eslint-plugin-recommended" "~0.0.7"
     "@clux/stylelint-config-recommended" "~0.0.1"
     "@types/fs-extra" "^9.0.0"
     chalk "^4.0.0"
@@ -1021,10 +1021,10 @@
     ts-node "^9.1.0"
     tsconfig-paths "^3.9.0"
 
-"@clux/eslint-plugin-recommended@~0.0.1":
-  version "0.0.1"
-  resolved "http://localhost:4873/@clux%2feslint-plugin-recommended/-/eslint-plugin-recommended-0.0.1.tgz#284a6deacd9752f97c8f11c1b5dc06fba3fb63cd"
-  integrity sha512-kTxZjMAdOYwIIkLacDFqv231UpM1u2acf1Pyox1+PiKIXT+M9qpnyFyxRiO4PNlmvS0yxC6X3Rvq5Vg1RXSZhg==
+"@clux/eslint-plugin-recommended@~0.0.7":
+  version "0.0.7"
+  resolved "http://localhost:4873/@clux%2feslint-plugin-recommended/-/eslint-plugin-recommended-0.0.7.tgz#c0264f92254c077144f2e2c2d7419fe76d4806c5"
+  integrity sha512-yZInl5B/5w3H0gSjie5Kh8GyTuExAJBEgmuij7kTgkTpRjmNkAayqZRyJrFKihiAQwUzaMZyIRSPTwpSS3QypA==
   dependencies:
     "@typescript-eslint/eslint-plugin" "~4.22.0"
     "@typescript-eslint/parser" "~4.22.0"
@@ -1036,6 +1036,7 @@
     eslint-plugin-prettier "~3.4.0"
     eslint-plugin-react "~7.23.0"
     eslint-plugin-react-hooks "~4.2.0"
+    eslint-plugin-vue "~7.9.0"
 
 "@clux/stylelint-config-recommended@~0.0.1":
   version "0.0.1"
@@ -2733,7 +2734,7 @@ acorn-globals@^6.0.0:
     acorn "^7.1.1"
     acorn-walk "^7.1.1"
 
-acorn-jsx@^5.3.1:
+acorn-jsx@^5.2.0, acorn-jsx@^5.3.1:
   version "5.3.1"
   resolved "http://localhost:4873/acorn-jsx/-/acorn-jsx-5.3.1.tgz#fc8661e11b7ac1539c47dbfea2e72b3af34d267b"
   integrity sha512-K0Ptm/47OKfQRpNQ2J/oIN/3QYiK6FwW+eJbILhsdxh2WTLdl+30o8aGdTbm5JbffpFFAg/g+zi1E+jvJha5ng==
@@ -4567,6 +4568,16 @@ eslint-plugin-react@~7.23.0:
     resolve "^2.0.0-next.3"
     string.prototype.matchall "^4.0.4"
 
+eslint-plugin-vue@~7.9.0:
+  version "7.9.0"
+  resolved "http://localhost:4873/eslint-plugin-vue/-/eslint-plugin-vue-7.9.0.tgz#f8e83a2a908f4c43fc8304f5401d4ff671f3d560"
+  integrity sha512-2Q0qQp5+5h+pZvJKCbG1/jCRUYrdgAz5BYKGyTlp2NU8mx09u3Hp7PsH6d5qef6ojuPoCXMnrbbDxeoplihrSw==
+  dependencies:
+    eslint-utils "^2.1.0"
+    natural-compare "^1.4.0"
+    semver "^7.3.2"
+    vue-eslint-parser "^7.6.0"
+
 eslint-rule-composer@^0.3.0:
   version "0.3.0"
   resolved "http://localhost:4873/eslint-rule-composer/-/eslint-rule-composer-0.3.0.tgz#79320c927b0c5c0d3d3d2b76c8b4a488f25bbaf9"
@@ -4639,6 +4650,15 @@ eslint@~7.25.0:
     table "^6.0.4"
     text-table "^0.2.0"
     v8-compile-cache "^2.0.3"
+
+espree@^6.2.1:
+  version "6.2.1"
+  resolved "http://localhost:4873/espree/-/espree-6.2.1.tgz#77fc72e1fd744a2052c20f38a5b575832e82734a"
+  integrity sha512-ysCxRQY3WaXJz9tdbWOwuWr5Y/XrPTGX9Kiz3yoUXwW0VZ4w30HTkQLaGx/+ttFjF8i+ACbArnB4ce68a9m5hw==
+  dependencies:
+    acorn "^7.1.1"
+    acorn-jsx "^5.2.0"
+    eslint-visitor-keys "^1.1.0"
 
 espree@^7.3.0, espree@^7.3.1:
   version "7.3.1"
@@ -10565,6 +10585,18 @@ vfile@^4.0.0:
     is-buffer "^2.0.0"
     unist-util-stringify-position "^2.0.0"
     vfile-message "^2.0.0"
+
+vue-eslint-parser@^7.6.0:
+  version "7.6.0"
+  resolved "http://localhost:4873/vue-eslint-parser/-/vue-eslint-parser-7.6.0.tgz#01ea1a2932f581ff244336565d712801f8f72561"
+  integrity sha512-QXxqH8ZevBrtiZMZK0LpwaMfevQi9UL7lY6Kcp+ogWHC88AuwUPwwCIzkOUc1LR4XsYAt/F9yHXAB/QoD17QXA==
+  dependencies:
+    debug "^4.1.1"
+    eslint-scope "^5.0.0"
+    eslint-visitor-keys "^1.1.0"
+    espree "^6.2.1"
+    esquery "^1.4.0"
+    lodash "^4.17.15"
 
 vuex@next:
   version "4.0.0"

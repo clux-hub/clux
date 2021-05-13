@@ -5,25 +5,15 @@ module.exports = {
     node: false,
   },
   parser: '@typescript-eslint/parser',
-  extends: [
-    'airbnb-typescript/base',
-    'plugin:@typescript-eslint/recommended',
-    // 'prettier/@typescript-eslint', // 屏蔽eslint
-    'plugin:prettier/recommended', // 转eslint
-    // 'prettier/babel',
-  ],
-  plugins: [],
   parserOptions: {
-    ecmaVersion: 2018,
+    ecmaVersion: 2020,
     sourceType: 'module',
-    ecmaFeatures: {
-      jsx: true,
-    },
   },
+  extends: ['airbnb-typescript/base', 'plugin:@typescript-eslint/recommended', 'plugin:prettier/recommended'],
+  plugins: [],
   rules: {
     'no-plusplus': 'off',
     'func-names': 'off',
-    'no-undef': 'off',
     'class-methods-use-this': 'off',
     'no-template-curly-in-string': 'off',
     'max-classes-per-file': 'off',

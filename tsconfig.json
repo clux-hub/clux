@@ -6,6 +6,6 @@
     "noEmit": true,
     "experimentalDecorators": true
   },
-  "include": ["./",".eslintrc.js"],
-  "exclude": ["**/dist","**/types","**/docs","./storage"]
+  "include": ["./", "./**/*.vue", ".eslintrc.js"],
+  "exclude": ["**/dist", "**/types", "**/docs", "./storage"]
 }

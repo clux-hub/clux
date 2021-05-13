@@ -7,4 +7,3 @@
   "jsnext:main": "../../dist/next/lib/with-redux",
   "types": "../../types/lib/with-redux"
 }
-

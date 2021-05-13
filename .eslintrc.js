@@ -1,13 +1,15 @@
+const tsconfig = require('./tsconfig.json');
+
 module.exports = {
   root: true,
   extends: ['plugin:@clux/recommended/common'],
   env: {
     browser: false,
-    node: false,
+    node: true,
   },
   parserOptions: {
-    project: './tsconfig-eslint.json',
+    project: './tsconfig.json',
   },
   rules: {},
-  ignorePatterns: ['**/dist', '**/types', '**/docs', './storage'],
+  ignorePatterns: tsconfig.exclude,
 };
