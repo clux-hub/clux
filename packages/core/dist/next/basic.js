@@ -140,6 +140,8 @@ export function effect(loadingForGroupName, loadingForModuleName) {
     return target.descriptor === descriptor ? target : descriptor;
   };
 }
+export const mutation = reducer;
+export const action = effect;
 export function logger(before, after) {
   return (target, key, descriptor) => {
     if (!key && !descriptor) {

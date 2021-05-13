@@ -3,6 +3,7 @@
     "target": "ESNext",
     "lib": ["es2018"],
     "types": [],
+    "skipLibCheck": true,
     "noEmit": true,
     "experimentalDecorators": true
   },

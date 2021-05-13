@@ -152,6 +152,8 @@ export function effect(loadingForGroupName, loadingForModuleName) {
     return target.descriptor === descriptor ? target : descriptor;
   };
 }
+export var mutation = reducer;
+export var action = effect;
 export function logger(before, after) {
   return function (target, key, descriptor) {
     if (!key && !descriptor) {

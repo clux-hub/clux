@@ -9,7 +9,7 @@ exports.effect = effect;
 exports.logger = logger;
 exports.deepMergeState = deepMergeState;
 exports.mergeState = mergeState;
-exports.MetaData = exports.ActionTypes = exports.config = void 0;
+exports.action = exports.mutation = exports.MetaData = exports.ActionTypes = exports.config = void 0;
 
 var _env = require("./env");
 
@@ -176,6 +176,11 @@ function effect(loadingForGroupName, loadingForModuleName) {
     return target.descriptor === descriptor ? target : descriptor;
   };
 }
+
+var mutation = reducer;
+exports.mutation = mutation;
+var action = effect;
+exports.action = action;
 
 function logger(before, after) {
   return function (target, key, descriptor) {

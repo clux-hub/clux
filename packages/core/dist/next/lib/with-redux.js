@@ -11,7 +11,8 @@ export function storeCreator(storeOptions) {
   const {
     initState = {},
     enhancers = [],
-    middlewares
+    middlewares,
+    devtools = true
   } = storeOptions;
 
   if (middlewares) {
@@ -19,7 +20,7 @@ export function storeCreator(storeOptions) {
     enhancers.push(middlewareEnhancer);
   }
 
-  if (process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (devtools && process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 

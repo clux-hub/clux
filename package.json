@@ -31,7 +31,7 @@
     "eslint": "cross-env NODE_ENV=production eslint --cache **/*.{js,jsx,ts,tsx,vue}",
     "stylelint": "cross-env NODE_ENV=production stylelint --cache **/*.{css,less,vue}",
     "jsonlint": "prettier --write **/*.json",
-    "lint": "yarn eslint && yarn stylelint",
+    "lint": "yarn eslint && yarn stylelint && yarn jsonlint",
     "pre-lerna": "lerna publish --no-git-tag-version --no-push",
     "lerna": "lerna publish",
     "build:core": "lerna run build --scope @clux/core"

@@ -89,6 +89,7 @@ export interface BStoreOptions {
 export interface BStore {
   getState(): any;
   update: (actionName: string, state: any, actionData: any[]) => void;
+  dispatch: (action: Action) => any;
 }
 
 export interface IStore<S extends State = {}> {
@@ -291,6 +292,8 @@ export function effect(loadingForGroupName?: string | null, loadingForModuleName
     return target.descriptor === descriptor ? target : descriptor;
   };
 }
+export const mutation = reducer;
+export const action = effect;
 /**
  * 一个类方法的装饰器，用来向effect中注入before和after的钩子
  * - 注意不管该handler是否执行成功，前后钩子都会强制执行

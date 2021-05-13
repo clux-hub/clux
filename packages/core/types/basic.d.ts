@@ -65,6 +65,7 @@ export interface BStoreOptions {
 export interface BStore {
     getState(): any;
     update: (actionName: string, state: any, actionData: any[]) => void;
+    dispatch: (action: Action) => any;
 }
 export interface IStore<S extends State = {}> {
     dispatch: Dispatch;
@@ -131,6 +132,8 @@ export declare function injectActions(moduleName: string, handlers: ActionHandle
 export declare function setLoading<T extends Promise<any>>(item: T, moduleName?: string, groupName?: string): T;
 export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): any;
 export declare function effect(loadingForGroupName?: string | null, loadingForModuleName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => any;
+export declare const mutation: typeof reducer;
+export declare const action: typeof effect;
 export declare function logger(before: (action: Action, moduleName: string, promiseResult: Promise<any>) => void, after: null | ((status: 'Rejected' | 'Resolved', beforeResult: any, effectResult: any) => void)): (target: any, key: string, descriptor: PropertyDescriptor) => void;
 export declare function deepMergeState(target?: any, ...args: any[]): any;
 export declare function mergeState(target?: any, ...args: any[]): any;

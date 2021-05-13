@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "redux": "^4.1.0",
+    "vue": "^3.0.0",
     "vuex": "next"
   },
   "gitHead": "7d6eb6d666143271ba0575fea99cf3f927fce764"

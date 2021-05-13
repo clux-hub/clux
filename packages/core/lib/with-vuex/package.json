@@ -1,0 +1,9 @@
+{
+  "name": "@clux/core-with-vuex",
+  "version": "1.0.0",
+  "description": "",
+  "main": "../../dist/cjs/lib/with-vuex",
+  "module": "../../dist/esm/lib/with-vuex",
+  "jsnext:main": "../../dist/next/lib/with-vuex",
+  "types": "../../types/lib/with-vuex"
+}

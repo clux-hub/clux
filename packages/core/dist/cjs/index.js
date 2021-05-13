@@ -1,7 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.env = exports.viewHotReplacement = exports.ssrApp = exports.renderApp = exports.delayPromise = exports.clientSide = exports.serverSide = exports.isServer = exports.isPromise = exports.MultipleDispatcher = exports.SingleDispatcher = exports.deepMerge = exports.LoadingState = exports.modelHotReplacement = exports.getModuleByName = exports.getRootModuleAPI = exports.getView = exports.exportModule = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.isProcessedError = exports.setProcessedError = exports.getActionData = exports.setLoading = exports.setConfig = exports.deepMergeState = exports.mergeState = exports.logger = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
+exports.env = exports.viewHotReplacement = exports.ssrApp = exports.renderApp = exports.delayPromise = exports.clientSide = exports.serverSide = exports.isServer = exports.isPromise = exports.MultipleDispatcher = exports.SingleDispatcher = exports.deepMerge = exports.LoadingState = exports.modelHotReplacement = exports.getModuleByName = exports.getRootModuleAPI = exports.getView = exports.exportModule = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.isProcessedError = exports.setProcessedError = exports.getActionData = exports.setLoading = exports.setConfig = exports.deepMergeState = exports.mergeState = exports.logger = exports.action = exports.mutation = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
 
 var _actions = require("./actions");
 
@@ -13,6 +13,8 @@ exports.ActionTypes = _basic.ActionTypes;
 exports.reducer = _basic.reducer;
 exports.config = _basic.config;
 exports.effect = _basic.effect;
+exports.mutation = _basic.mutation;
+exports.action = _basic.action;
 exports.logger = _basic.logger;
 exports.mergeState = _basic.mergeState;
 exports.deepMergeState = _basic.deepMergeState;
