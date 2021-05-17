@@ -3,6 +3,8 @@ import type { Component } from 'vue';
 import type { ModuleGetter, ExportModule, ControllerMiddleware, StoreBuilder, BStoreOptions, BStore, RootModuleFacade, RootModuleAPI, RootModuleActions } from '@clux/core';
 import type { IRouter } from '@clux/route-browser';
 import type { LoadView } from './loadView';
+export { createVuex } from '@clux/core/lib/with-vuex';
+export type { VuexStore, VuexOptions } from '@clux/core/lib/with-vuex';
 export declare function setSsrHtmlTpl(tpl: string): void;
 export declare function setConfig(conf: {
     actionMaxHistory?: number;

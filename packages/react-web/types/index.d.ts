@@ -6,13 +6,15 @@ import type { LoadView } from './loadView';
 export type { RootModuleFacade as Facade, Dispatch, CoreModuleState as BaseModuleState } from '@clux/core';
 export type { RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial } from '@clux/route';
 export type { LoadView } from './loadView';
+export type { ConnectRedux } from './lib/with-redux';
+export type { ReduxStore, ReduxOptions } from '@clux/core/lib/with-redux';
 export { ActionTypes, LoadingState, modelHotReplacement, env, effect, errorAction, reducer, setLoading, logger, isServer, serverSide, clientSide, deepMerge, deepMergeState, isProcessedError, setProcessedError, delayPromise, } from '@clux/core';
 export { ModuleWithRouteHandlers as BaseModuleHandlers, RouteActionTypes, createRouteModule } from '@clux/route';
 export { DocumentHead } from './components/DocumentHead';
 export { Else } from './components/Else';
 export { Switch } from './components/Switch';
 export { Link } from './components/Link';
-export { connectRedux } from './lib/with-redux';
+export { connectRedux, createRedux, Provider } from './lib/with-redux';
 export declare function setSsrHtmlTpl(tpl: string): void;
 export declare function setConfig(conf: {
     actionMaxHistory?: number;

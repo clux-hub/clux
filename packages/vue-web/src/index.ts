@@ -22,6 +22,9 @@ import type {RouteModule} from '@clux/route';
 import type {IRouter} from '@clux/route-browser';
 import type {LoadView} from './loadView';
 
+export {createVuex} from '@clux/core/lib/with-vuex';
+export type {VuexStore, VuexOptions} from '@clux/core/lib/with-vuex';
+
 let SSRTPL: string;
 
 export function setSsrHtmlTpl(tpl: string) {

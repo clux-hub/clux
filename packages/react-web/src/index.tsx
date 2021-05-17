@@ -27,6 +27,8 @@ export type {RootModuleFacade as Facade, Dispatch, CoreModuleState as BaseModule
 
 export type {RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial} from '@clux/route';
 export type {LoadView} from './loadView';
+export type {ConnectRedux} from './lib/with-redux';
+export type {ReduxStore, ReduxOptions} from '@clux/core/lib/with-redux';
 
 export {
   ActionTypes,
@@ -53,7 +55,7 @@ export {DocumentHead} from './components/DocumentHead';
 export {Else} from './components/Else';
 export {Switch} from './components/Switch';
 export {Link} from './components/Link';
-export {connectRedux} from './lib/with-redux';
+export {connectRedux, createRedux, Provider} from './lib/with-redux';
 
 declare const require: any;
 

@@ -1,4 +1,5 @@
 import { h, defineAsyncComponent, createApp as createApp$1 } from 'vue';
+import { Store } from 'vuex';
 
 let root;
 
@@ -3412,6 +3413,45 @@ const MetaData = {
   router: undefined
 };
 
+const mutation = () => {};
+
+const UpdateMutationName = 'update';
+function storeCreator(storeOptions) {
+  const {
+    initState = {},
+    plugins,
+    devtools = true
+  } = storeOptions;
+  const store = new Store({
+    state: initState,
+    mutations: {
+      [UpdateMutationName]: mutation
+    },
+    plugins,
+    devtools
+  });
+  const vuexStore = store;
+
+  vuexStore.getState = () => {
+    return store.state;
+  };
+
+  vuexStore.update = (actionName, state, actionData) => {
+    store.commit(UpdateMutationName, {
+      actionName,
+      actionData
+    });
+  };
+
+  return vuexStore;
+}
+function createVuex(storeOptions) {
+  return {
+    storeOptions,
+    storeCreator
+  };
+}
+
 let SSRTPL;
 function setSsrHtmlTpl(tpl) {
   SSRTPL = tpl;
@@ -3536,4 +3576,4 @@ function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
   };
 }
 
-export { createApp, exportModule, getApp, patchActions, setConfig, setSsrHtmlTpl };
+export { createApp, createVuex, exportModule, getApp, patchActions, setConfig, setSsrHtmlTpl };

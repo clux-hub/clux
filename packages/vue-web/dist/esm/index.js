@@ -1,4 +1,5 @@
 import { h, defineAsyncComponent, createApp as createApp$1 } from 'vue';
+import { Store } from 'vuex';
 
 function _extends() {
   _extends = Object.assign || function (target) {
@@ -4788,6 +4789,45 @@ var MetaData = {
   router: undefined
 };
 
+var mutation = function mutation() {};
+
+var UpdateMutationName = 'update';
+function storeCreator(storeOptions) {
+  var _mutations;
+
+  var _storeOptions$initSta = storeOptions.initState,
+      initState = _storeOptions$initSta === void 0 ? {} : _storeOptions$initSta,
+      plugins = storeOptions.plugins,
+      _storeOptions$devtool = storeOptions.devtools,
+      devtools = _storeOptions$devtool === void 0 ? true : _storeOptions$devtool;
+  var store = new Store({
+    state: initState,
+    mutations: (_mutations = {}, _mutations[UpdateMutationName] = mutation, _mutations),
+    plugins: plugins,
+    devtools: devtools
+  });
+  var vuexStore = store;
+
+  vuexStore.getState = function () {
+    return store.state;
+  };
+
+  vuexStore.update = function (actionName, state, actionData) {
+    store.commit(UpdateMutationName, {
+      actionName: actionName,
+      actionData: actionData
+    });
+  };
+
+  return vuexStore;
+}
+function createVuex(storeOptions) {
+  return {
+    storeOptions: storeOptions,
+    storeCreator: storeCreator
+  };
+}
+
 var SSRTPL;
 function setSsrHtmlTpl(tpl) {
   SSRTPL = tpl;
@@ -4925,4 +4965,4 @@ function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
   };
 }
 
-export { createApp, exportModule, getApp, patchActions, setConfig, setSsrHtmlTpl };
+export { createApp, createVuex, exportModule, getApp, patchActions, setConfig, setSsrHtmlTpl };

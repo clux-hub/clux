@@ -32,7 +32,7 @@ export function storeCreator(storeOptions) {
 
   return vuexStore;
 }
-export function createRedux(storeOptions) {
+export function createVuex(storeOptions) {
   return {
     storeOptions: storeOptions,
     storeCreator: storeCreator

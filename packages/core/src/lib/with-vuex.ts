@@ -31,6 +31,6 @@ export function storeCreator(storeOptions: VuexOptions): VuexStore {
   return vuexStore;
 }
 
-export function createRedux(storeOptions: VuexOptions): StoreBuilder<VuexOptions, VuexStore> {
+export function createVuex(storeOptions: VuexOptions): StoreBuilder<VuexOptions, VuexStore> {
   return {storeOptions, storeCreator};
 }

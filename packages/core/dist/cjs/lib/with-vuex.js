@@ -2,7 +2,7 @@
 
 exports.__esModule = true;
 exports.storeCreator = storeCreator;
-exports.createRedux = createRedux;
+exports.createVuex = createVuex;
 
 var _vuex = require("vuex");
 
@@ -40,7 +40,7 @@ function storeCreator(storeOptions) {
   return vuexStore;
 }
 
-function createRedux(storeOptions) {
+function createVuex(storeOptions) {
   return {
     storeOptions: storeOptions,
     storeCreator: storeCreator

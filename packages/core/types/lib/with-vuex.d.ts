@@ -12,4 +12,4 @@ export interface VuexStore extends BStore {
     watch<T>(getter: (state: any, getters: any) => T, cb: (value: T, oldValue: T) => void, options?: WatchOptions): () => void;
 }
 export declare function storeCreator(storeOptions: VuexOptions): VuexStore;
-export declare function createRedux(storeOptions: VuexOptions): StoreBuilder<VuexOptions, VuexStore>;
+export declare function createVuex(storeOptions: VuexOptions): StoreBuilder<VuexOptions, VuexStore>;
