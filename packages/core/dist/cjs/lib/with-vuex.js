@@ -18,7 +18,7 @@ function storeCreator(storeOptions) {
       plugins = storeOptions.plugins,
       _storeOptions$devtool = storeOptions.devtools,
       devtools = _storeOptions$devtool === void 0 ? true : _storeOptions$devtool;
-  var store = (0, _vuex.createStore)({
+  var store = new _vuex.Store({
     state: initState,
     mutations: (_mutations = {}, _mutations[UpdateMutationName] = mutation, _mutations),
     plugins: plugins,

@@ -3,7 +3,6 @@
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 exports.__esModule = true;
-exports.viewHotReplacement = viewHotReplacement;
 exports.renderApp = renderApp;
 exports.ssrApp = ssrApp;
 
@@ -16,38 +15,6 @@ var _basic = require("./basic");
 var _inject = require("./inject");
 
 var _store = require("./store");
-
-var _env = require("./env");
-
-var reRender = function reRender() {
-  return undefined;
-};
-
-var reRenderTimer = 0;
-var appView = null;
-
-function viewHotReplacement(moduleName, views) {
-  var module = _basic.MetaData.moduleGetter[moduleName]();
-
-  if (module) {
-    module.default.views = views;
-
-    _env.env.console.warn("[HMR] @clux Updated views: " + moduleName);
-
-    appView = _basic.MetaData.moduleGetter[_basic.MetaData.appModuleName]().default.views[_basic.MetaData.appViewName];
-
-    if (!reRenderTimer) {
-      reRenderTimer = _env.env.setTimeout(function () {
-        reRenderTimer = 0;
-        reRender(appView);
-
-        _env.env.console.warn("[HMR] @clux view re rendering");
-      }, 0);
-    }
-  } else {
-    throw 'views cannot apply update for HMR.';
-  }
-}
 
 var defFun = function defFun() {
   return undefined;
@@ -82,32 +49,21 @@ function renderApp(baseStore, preLoadModules, moduleGetter, middlewares, appModu
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                if (reRenderTimer) {
-                  _env.env.clearTimeout(reRenderTimer);
-
-                  reRenderTimer = 0;
-                }
-
                 _basic.MetaData.clientStore = store;
-                _context.next = 4;
+                _context.next = 3;
                 return (0, _inject.loadModel)(appModuleName, store);
 
-              case 4:
-                _context.next = 6;
+              case 3:
+                _context.next = 5;
                 return Promise.all(preLoadModules.map(function (moduleName) {
                   return (0, _inject.loadModel)(moduleName, store);
                 }));
 
-              case 6:
+              case 5:
                 appModule = (0, _inject.getModuleByName)(appModuleName);
-                return _context.abrupt("return", {
-                  appView: appModule.default.views[appViewName],
-                  setReRender: function setReRender(hotRender) {
-                    reRender = hotRender;
-                  }
-                });
+                return _context.abrupt("return", appModule.default.views[appViewName]);
 
-              case 8:
+              case 7:
               case "end":
                 return _context.stop();
             }
@@ -159,9 +115,7 @@ function ssrApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleN
               case 4:
                 appModule = (0, _inject.getModuleByName)(appModuleName);
                 store.dispatch = defFun;
-                return _context2.abrupt("return", {
-                  appView: appModule.default.views[appViewName]
-                });
+                return _context2.abrupt("return", appModule.default.views[appViewName]);
 
               case 7:
               case "end":

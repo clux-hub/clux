@@ -1,7 +1,7 @@
 /* eslint-disable import/order */
 import './env';
 import React from 'react';
-import {unmountComponentAtNode, hydrate, render} from 'react-dom';
+import {hydrate, render} from 'react-dom';
 import {routeMiddleware, setRouteConfig, routeConfig} from '@clux/route';
 import {env, getRootModuleAPI, renderApp, ssrApp, setConfig as setCoreConfig, exportModule as baseExportModule} from '@clux/core';
 import {createRouter} from '@clux/route-browser';
@@ -36,7 +36,6 @@ export {
   effect,
   errorAction,
   reducer,
-  viewHotReplacement,
   setLoading,
   logger,
   isServer,
@@ -54,6 +53,7 @@ export {DocumentHead} from './components/DocumentHead';
 export {Else} from './components/Else';
 export {Switch} from './components/Switch';
 export {Link} from './components/Link';
+export {connectRedux} from './lib/with-redux';
 
 declare const require: any;
 
@@ -112,13 +112,8 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: ControllerMid
           return {
             store,
             run() {
-              return beforeRender().then(({appView, setReRender}) => {
-                const reRender = (View: ComponentType<any>) => {
-                  unmountComponentAtNode(panel!);
-                  renderFun(<View store={store} />, panel);
-                };
-                reRender(appView);
-                setReRender(reRender);
+              return beforeRender().then((AppView: ComponentType<any>) => {
+                renderFun(<AppView store={store} />, panel);
               });
             },
           };
@@ -144,7 +139,7 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: ControllerMid
           return {
             store,
             run() {
-              return beforeRender().then(({appView: AppView}) => {
+              return beforeRender().then((AppView: ComponentType<any>) => {
                 const data = store.getState();
                 let html: string = require('react-dom/server').renderToString(<AppView store={store} />);
 

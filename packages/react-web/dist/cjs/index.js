@@ -4,6 +4,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var React = require('react');
 var reactDom = require('react-dom');
+var reactRedux = require('react-redux');
 
 function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
 
@@ -2300,32 +2301,6 @@ function _asyncToGenerator(fn) {
   };
 }
 
-var reRender = function reRender() {
-  return undefined;
-};
-
-var reRenderTimer = 0;
-var appView = null;
-function viewHotReplacement(moduleName, views) {
-  var module = MetaData$1.moduleGetter[moduleName]();
-
-  if (module) {
-    module.default.views = views;
-    env.console.warn("[HMR] @clux Updated views: " + moduleName);
-    appView = MetaData$1.moduleGetter[MetaData$1.appModuleName]().default.views[MetaData$1.appViewName];
-
-    if (!reRenderTimer) {
-      reRenderTimer = env.setTimeout(function () {
-        reRenderTimer = 0;
-        reRender(appView);
-        env.console.warn("[HMR] @clux view re rendering");
-      }, 0);
-    }
-  } else {
-    throw 'views cannot apply update for HMR.';
-  }
-}
-
 var defFun = function defFun() {
   return undefined;
 };
@@ -2359,31 +2334,21 @@ function renderApp(baseStore, preLoadModules, moduleGetter, middlewares, appModu
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                if (reRenderTimer) {
-                  env.clearTimeout(reRenderTimer);
-                  reRenderTimer = 0;
-                }
-
                 MetaData$1.clientStore = store;
-                _context.next = 4;
+                _context.next = 3;
                 return _loadModel(appModuleName, store);
 
-              case 4:
-                _context.next = 6;
+              case 3:
+                _context.next = 5;
                 return Promise.all(preLoadModules.map(function (moduleName) {
                   return _loadModel(moduleName, store);
                 }));
 
-              case 6:
+              case 5:
                 appModule = getModuleByName(appModuleName);
-                return _context.abrupt("return", {
-                  appView: appModule.default.views[appViewName],
-                  setReRender: function setReRender(hotRender) {
-                    reRender = hotRender;
-                  }
-                });
+                return _context.abrupt("return", appModule.default.views[appViewName]);
 
-              case 8:
+              case 7:
               case "end":
                 return _context.stop();
             }
@@ -2434,9 +2399,7 @@ function ssrApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleN
               case 4:
                 appModule = getModuleByName(appModuleName);
                 store.dispatch = defFun;
-                return _context2.abrupt("return", {
-                  appView: appModule.default.views[appViewName]
-                });
+                return _context2.abrupt("return", appModule.default.views[appViewName]);
 
               case 7:
               case "end":
@@ -5484,6 +5447,8 @@ var Link = React__default['default'].forwardRef(function (_ref, ref) {
   }));
 });
 
+var connectRedux = reactRedux.connect;
+
 var SSRTPL;
 function setSsrHtmlTpl(tpl) {
   SSRTPL = tpl;
@@ -5539,29 +5504,20 @@ function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
           return {
             store: store,
             run: function run() {
-              return beforeRender().then(function (_ref4) {
-                var appView = _ref4.appView,
-                    setReRender = _ref4.setReRender;
-
-                var reRender = function reRender(View) {
-                  reactDom.unmountComponentAtNode(panel);
-                  renderFun(React__default['default'].createElement(View, {
-                    store: store
-                  }), panel);
-                };
-
-                reRender(appView);
-                setReRender(reRender);
+              return beforeRender().then(function (AppView) {
+                renderFun(React__default['default'].createElement(AppView, {
+                  store: store
+                }), panel);
               });
             }
           };
         },
-        ssr: function ssr(_ref5) {
-          var _ref5$id = _ref5.id,
-              id = _ref5$id === void 0 ? 'root' : _ref5$id,
-              _ref5$ssrKey = _ref5.ssrKey,
-              ssrKey = _ref5$ssrKey === void 0 ? 'cluxInitStore' : _ref5$ssrKey,
-              url = _ref5.url;
+        ssr: function ssr(_ref4) {
+          var _ref4$id = _ref4.id,
+              id = _ref4$id === void 0 ? 'root' : _ref4$id,
+              _ref4$ssrKey = _ref4.ssrKey,
+              ssrKey = _ref4$ssrKey === void 0 ? 'cluxInitStore' : _ref4$ssrKey,
+              url = _ref4.url;
 
           if (!SSRTPL) {
             SSRTPL = env.decodeBas64('process.env.CLUX_ENV_SSRTPL');
@@ -5587,8 +5543,7 @@ function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
           return {
             store: store,
             run: function run() {
-              return beforeRender().then(function (_ref6) {
-                var AppView = _ref6.appView;
+              return beforeRender().then(function (AppView) {
                 var data = store.getState();
 
                 var html = require('react-dom/server').renderToString(React__default['default'].createElement(AppView, {
@@ -5647,6 +5602,7 @@ exports.Link = Link;
 exports.RouteActionTypes = RouteActionTypes;
 exports.Switch = Switch;
 exports.clientSide = clientSide;
+exports.connectRedux = connectRedux;
 exports.createApp = createApp;
 exports.createRouteModule = createRouteModule;
 exports.deepMerge = deepMerge;
@@ -5668,4 +5624,3 @@ exports.setConfig = setConfig;
 exports.setLoading = setLoading;
 exports.setProcessedError = setProcessedError;
 exports.setSsrHtmlTpl = setSsrHtmlTpl;
-exports.viewHotReplacement = viewHotReplacement;

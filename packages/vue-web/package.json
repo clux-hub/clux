@@ -1,0 +1,47 @@
+{
+  "name": "@clux/vue-web",
+  "version": "0.0.1",
+  "description": "The practice of clux on vue + web",
+  "repository": "https://github.com/clux-hub/clux/tree/master/packages/vue-web",
+  "author": "clux-hub <clux_hub@163.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=9.0.0"
+  },
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "jsnext:main": "dist/next/index.js",
+  "types": "types/",
+  "files": [
+    "env/",
+    "types/",
+    "dist/",
+    "lib/"
+  ],
+  "scripts": {
+    "prebuild": "rimraf ./dist ./types && tsc --build ./src",
+    "build:next": "cross-env NODE_TAG=next rollup -c",
+    "build:esm": "cross-env NODE_TAG=esm rollup -c",
+    "build": "yarn build:next && yarn build:esm"
+  },
+  "externals": {
+    "vue": true,
+    "vuex": true
+  },
+  "peerDependencies": {
+    "vue": "^3.0.0",
+    "vuex": "^4.0.0"
+  },
+  "dependencies": {
+    "@clux/core": "^0.0.2",
+    "@clux/route-browser": "^0.0.2"
+  },
+  "devDependencies": {
+    "vue": "^3.0.0",
+    "vuex": "next"
+  },
+  "gitHead": "7d6eb6d666143271ba0575fea99cf3f927fce764"
+}

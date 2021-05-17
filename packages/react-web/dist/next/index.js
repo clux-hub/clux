@@ -1,5 +1,6 @@
 import React, { Component as Component$3, useEffect } from 'react';
-import { unmountComponentAtNode, hydrate, render } from 'react-dom';
+import { hydrate, render } from 'react-dom';
+import { connect } from 'react-redux';
 
 let root;
 
@@ -1385,30 +1386,6 @@ function enhanceStore(baseStore, middlewares) {
   return store;
 }
 
-let reRender = () => undefined;
-
-let reRenderTimer = 0;
-let appView = null;
-function viewHotReplacement(moduleName, views) {
-  const module = MetaData$1.moduleGetter[moduleName]();
-
-  if (module) {
-    module.default.views = views;
-    env.console.warn(`[HMR] @clux Updated views: ${moduleName}`);
-    appView = MetaData$1.moduleGetter[MetaData$1.appModuleName]().default.views[MetaData$1.appViewName];
-
-    if (!reRenderTimer) {
-      reRenderTimer = env.setTimeout(() => {
-        reRenderTimer = 0;
-        reRender(appView);
-        env.console.warn(`[HMR] @clux view re rendering`);
-      }, 0);
-    }
-  } else {
-    throw 'views cannot apply update for HMR.';
-  }
-}
-
 const defFun = () => undefined;
 
 function renderApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
@@ -1425,23 +1402,11 @@ function renderApp(baseStore, preLoadModules, moduleGetter, middlewares, appModu
     store,
 
     async beforeRender() {
-      if (reRenderTimer) {
-        env.clearTimeout(reRenderTimer);
-        reRenderTimer = 0;
-      }
-
       MetaData$1.clientStore = store;
       await _loadModel(appModuleName, store);
       await Promise.all(preLoadModules.map(moduleName => _loadModel(moduleName, store)));
       const appModule = getModuleByName(appModuleName);
-      return {
-        appView: appModule.default.views[appViewName],
-
-        setReRender(hotRender) {
-          reRender = hotRender;
-        }
-
-      };
+      return appModule.default.views[appViewName];
     }
 
   };
@@ -1464,9 +1429,7 @@ function ssrApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleN
       await Promise.all(preLoadModules.map(moduleName => _loadModel(moduleName, store)));
       const appModule = getModuleByName(appModuleName);
       store.dispatch = defFun;
-      return {
-        appView: appModule.default.views[appViewName]
-      };
+      return appModule.default.views[appViewName];
     }
 
   };
@@ -4141,6 +4104,8 @@ const Link = React.forwardRef(({
   }));
 });
 
+const connectRedux = connect;
+
 let SSRTPL;
 function setSsrHtmlTpl(tpl) {
   SSRTPL = tpl;
@@ -4188,19 +4153,10 @@ function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
             store,
 
             run() {
-              return beforeRender().then(({
-                appView,
-                setReRender
-              }) => {
-                const reRender = View => {
-                  unmountComponentAtNode(panel);
-                  renderFun(React.createElement(View, {
-                    store: store
-                  }), panel);
-                };
-
-                reRender(appView);
-                setReRender(reRender);
+              return beforeRender().then(AppView => {
+                renderFun(React.createElement(AppView, {
+                  store: store
+                }), panel);
               });
             }
 
@@ -4234,9 +4190,7 @@ function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
             store,
 
             run() {
-              return beforeRender().then(({
-                appView: AppView
-              }) => {
+              return beforeRender().then(AppView => {
                 const data = store.getState();
 
                 let html = require('react-dom/server').renderToString(React.createElement(AppView, {
@@ -4284,4 +4238,4 @@ function getApp() {
   };
 }
 
-export { ActionTypes, ModuleWithRouteHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, RouteActionTypes, Switch, clientSide, createApp, createRouteModule, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, exportModule, getApp, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig, setLoading, setProcessedError, setSsrHtmlTpl, viewHotReplacement };
+export { ActionTypes, ModuleWithRouteHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, RouteActionTypes, Switch, clientSide, connectRedux, createApp, createRouteModule, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, exportModule, getApp, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig, setLoading, setProcessedError, setSsrHtmlTpl };

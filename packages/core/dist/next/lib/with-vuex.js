@@ -1,4 +1,4 @@
-import { createStore } from 'vuex';
+import { Store } from 'vuex';
 
 const mutation = () => {};
 
@@ -9,7 +9,7 @@ export function storeCreator(storeOptions) {
     plugins,
     devtools = true
   } = storeOptions;
-  const store = createStore({
+  const store = new Store({
     state: initState,
     mutations: {
       [UpdateMutationName]: mutation

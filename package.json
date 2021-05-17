@@ -23,7 +23,7 @@
     "packages/route-browser",
     "packages/route-mp",
     "packages/react-web",
-    "packages/react-taro"
+    "packages/vue-web"
   ],
   "scripts": {
     "commit": "git-cz",
@@ -48,8 +48,8 @@
     }
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,vue}": "cross-env NODE_ENV=production eslint --cache",
-    "*.{css,less,vue}": "cross-env NODE_ENV=production stylelint --cache",
+    "*.{js,jsx,ts,tsx,vue}": "cross-env NODE_ENV=production eslint --quiet --cache",
+    "*.{css,less,vue}": "cross-env NODE_ENV=production stylelint --quiet --cache",
     "*.json": "prettier --write"
   },
   "resolutions": {

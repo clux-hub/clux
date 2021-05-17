@@ -1,32 +1,7 @@
 /* eslint-disable no-await-in-loop */
 import {MetaData, ModuleGetter, CommonModule, BStore, IStore} from './basic';
-import {Module, getModuleByName, loadModel} from './inject';
+import {getModuleByName, loadModel} from './inject';
 import {ControllerMiddleware, enhanceStore} from './store';
-import {env} from './env';
-
-let reRender: (appView: any) => void = () => undefined;
-let reRenderTimer = 0;
-let appView: any = null;
-/**
- * 当view发生变化时，用来热更新UI
- */
-export function viewHotReplacement(moduleName: string, views: {[key: string]: any}) {
-  const module = MetaData.moduleGetter[moduleName]() as Module;
-  if (module) {
-    module.default.views = views;
-    env.console.warn(`[HMR] @clux Updated views: ${moduleName}`);
-    appView = (MetaData.moduleGetter[MetaData.appModuleName]() as Module).default.views[MetaData.appViewName];
-    if (!reRenderTimer) {
-      reRenderTimer = env.setTimeout(() => {
-        reRenderTimer = 0;
-        reRender(appView);
-        env.console.warn(`[HMR] @clux view re rendering`);
-      }, 0) as any;
-    }
-  } else {
-    throw 'views cannot apply update for HMR.';
-  }
-}
 
 const defFun: any = () => undefined;
 
@@ -48,10 +23,6 @@ export function renderApp<ST extends BStore = BStore>(
   return {
     store,
     async beforeRender() {
-      if (reRenderTimer) {
-        env.clearTimeout(reRenderTimer);
-        reRenderTimer = 0;
-      }
       MetaData.clientStore = store;
       await loadModel(appModuleName, store);
       // const appModule = await getModuleByName(appModuleName);
@@ -59,12 +30,7 @@ export function renderApp<ST extends BStore = BStore>(
       // preModules = preModules.filter((item) => moduleGetter[item] && item !== appModuleName);
       await Promise.all(preLoadModules.map((moduleName) => loadModel(moduleName, store)));
       const appModule = getModuleByName(appModuleName) as CommonModule;
-      return {
-        appView: appModule.default.views[appViewName],
-        setReRender(hotRender: (appView: any) => void) {
-          reRender = hotRender;
-        },
-      };
+      return appModule.default.views[appViewName];
     },
   };
 }
@@ -93,7 +59,7 @@ export function ssrApp<ST extends BStore = BStore>(
       await Promise.all(preLoadModules.map((moduleName) => loadModel(moduleName, store)));
       const appModule = getModuleByName(appModuleName) as CommonModule;
       store.dispatch = defFun;
-      return {appView: appModule.default.views[appViewName]};
+      return appModule.default.views[appViewName];
     },
   };
 }

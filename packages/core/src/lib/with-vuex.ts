@@ -1,4 +1,4 @@
-import {createStore, Plugin, MutationPayload, SubscribeOptions, Mutation} from 'vuex';
+import {Plugin, MutationPayload, SubscribeOptions, Mutation, Store} from 'vuex';
 import {WatchOptions} from 'vue';
 import type {BStore} from '../basic';
 import type {StoreBuilder} from '../store';
@@ -20,7 +20,7 @@ const UpdateMutationName = 'update';
 
 export function storeCreator(storeOptions: VuexOptions): VuexStore {
   const {initState = {}, plugins, devtools = true} = storeOptions;
-  const store = createStore({state: initState, mutations: {[UpdateMutationName]: mutation}, plugins, devtools});
+  const store = new Store({state: initState, mutations: {[UpdateMutationName]: mutation}, plugins, devtools});
   const vuexStore: VuexStore = store as any;
   vuexStore.getState = () => {
     return store.state;

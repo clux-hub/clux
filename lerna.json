@@ -1,5 +1,13 @@
 {
-  "packages": ["packages/core", "packages/route", "packages/route-browser", "packages/route-mp", "packages/react-web", "packages/react-taro"],
+  "packages": [
+    "packages/core",
+    "packages/route",
+    "packages/route-browser",
+    "packages/route-mp",
+    "packages/react-web",
+    "packages/vue-web",
+    "packages/react-taro"
+  ],
   "command": {
     "publish": {
       "message": "chore(release): publish %s",
