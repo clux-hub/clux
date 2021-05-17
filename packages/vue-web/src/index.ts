@@ -23,7 +23,31 @@ import type {IRouter} from '@clux/route-browser';
 import type {LoadView} from './loadView';
 
 export {createVuex} from '@clux/core/lib/with-vuex';
+export {
+  ActionTypes,
+  LoadingState,
+  modelHotReplacement,
+  env,
+  effect,
+  errorAction,
+  reducer,
+  setLoading,
+  logger,
+  isServer,
+  serverSide,
+  clientSide,
+  deepMerge,
+  deepMergeState,
+  isProcessedError,
+  setProcessedError,
+  delayPromise,
+} from '@clux/core';
+export {ModuleWithRouteHandlers as BaseModuleHandlers, RouteActionTypes, createRouteModule} from '@clux/route';
+
+export type {RootModuleFacade as Facade, Dispatch, CoreModuleState as BaseModuleState} from '@clux/core';
+export type {RouteState, PayloadLocation, LocationTransform, NativeLocation, PagenameMap, HistoryAction, Location, DeepPartial} from '@clux/route';
 export type {VuexStore, VuexOptions} from '@clux/core/lib/with-vuex';
+export type {LoadView} from './loadView';
 
 let SSRTPL: string;
 

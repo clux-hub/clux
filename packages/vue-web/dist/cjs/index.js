@@ -78,13 +78,13 @@ function _defineProperty(obj, key, value) {
   return obj;
 }
 
-var LoadingState;
+exports.LoadingState = void 0;
 
 (function (LoadingState) {
   LoadingState["Start"] = "Start";
   LoadingState["Stop"] = "Stop";
   LoadingState["Depth"] = "Depth";
-})(LoadingState || (LoadingState = {}));
+})(exports.LoadingState || (exports.LoadingState = {}));
 
 var SingleDispatcher = function () {
   function SingleDispatcher() {
@@ -114,7 +114,7 @@ var SingleDispatcher = function () {
 
   return SingleDispatcher;
 }();
-(function (_SingleDispatcher) {
+var TaskCounter = function (_SingleDispatcher) {
   _inheritsLoose(TaskCounter, _SingleDispatcher);
 
   function TaskCounter(deferSecond) {
@@ -151,12 +151,12 @@ var SingleDispatcher = function () {
       });
 
       if (this.list.length === 1 && !this.ctimer) {
-        this.dispatch(LoadingState.Start);
+        this.dispatch(exports.LoadingState.Start);
         this.ctimer = env.setTimeout(function () {
           _this2.ctimer = 0;
 
           if (_this2.list.length > 0) {
-            _this2.dispatch(LoadingState.Depth);
+            _this2.dispatch(exports.LoadingState.Depth);
           }
         }, this.deferSecond * 1000);
       }
@@ -179,7 +179,7 @@ var SingleDispatcher = function () {
           this.ctimer = 0;
         }
 
-        this.dispatch(LoadingState.Stop);
+        this.dispatch(exports.LoadingState.Stop);
       }
     }
 
@@ -187,8 +187,8 @@ var SingleDispatcher = function () {
   };
 
   return TaskCounter;
-})(SingleDispatcher);
-function isPlainObject(obj) {
+}(SingleDispatcher);
+function isPlainObject$1(obj) {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
@@ -197,8 +197,8 @@ function __deepMerge(optimize, target, inject) {
     var src = target[key];
     var val = inject[key];
 
-    if (isPlainObject(val)) {
-      if (isPlainObject(src)) {
+    if (isPlainObject$1(val)) {
+      if (isPlainObject$1(src)) {
         target[key] = __deepMerge(optimize, src, val);
       } else {
         target[key] = optimize ? val : __deepMerge(optimize, {}, val);
@@ -215,12 +215,12 @@ function deepMerge(target) {
     args[_key - 1] = arguments[_key];
   }
 
-  if (!isPlainObject(target)) {
+  if (!isPlainObject$1(target)) {
     target = {};
   }
 
   args = args.filter(function (item) {
-    return isPlainObject(item) && Object.keys(item).length;
+    return isPlainObject$1(item) && Object.keys(item).length;
   });
 
   if (args.length < 1) {
@@ -228,7 +228,7 @@ function deepMerge(target) {
   }
 
   args.forEach(function (inject, index) {
-    if (isPlainObject(inject)) {
+    if (isPlainObject$1(inject)) {
       var lastArg = false;
       var last2Arg = null;
 
@@ -242,8 +242,8 @@ function deepMerge(target) {
         var src = target[key];
         var val = inject[key];
 
-        if (isPlainObject(val)) {
-          if (isPlainObject(src)) {
+        if (isPlainObject$1(val)) {
+          if (isPlainObject$1(src)) {
             target[key] = __deepMerge(lastArg, src, val);
           } else {
             target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepMerge(lastArg, {}, val);
@@ -263,6 +263,49 @@ function warn(str) {
 }
 function isPromise(data) {
   return typeof data === 'object' && typeof data.then === 'function';
+}
+function isServer() {
+  return env.isServer;
+}
+function serverSide(callback) {
+  if (env.isServer) {
+    return callback();
+  }
+
+  return undefined;
+}
+function clientSide(callback) {
+  if (!env.isServer) {
+    return callback();
+  }
+
+  return undefined;
+}
+function delayPromise(second) {
+  return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    var fun = descriptor.value;
+
+    descriptor.value = function () {
+      var delay = new Promise(function (resolve) {
+        env.setTimeout(function () {
+          resolve(true);
+        }, second * 1000);
+      });
+
+      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
+      }
+
+      return Promise.all([delay, fun.apply(target, args)]).then(function (items) {
+        return items[1];
+      });
+    };
+  };
 }
 
 var config = {
@@ -331,6 +374,42 @@ function injectActions(moduleName, handlers) {
     }
   }
 }
+var loadings = {};
+function setLoading(item, moduleName, groupName) {
+  if (moduleName === void 0) {
+    moduleName = MetaData$1.appModuleName;
+  }
+
+  if (groupName === void 0) {
+    groupName = 'global';
+  }
+
+  if (env.isServer) {
+    return item;
+  }
+
+  var key = moduleName + config.NSP + groupName;
+
+  if (!loadings[key]) {
+    loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
+    loadings[key].addListener(function (loadingState) {
+      var store = MetaData$1.clientStore;
+
+      if (store) {
+        var _actions;
+
+        var actions = MetaData$1.facadeMap[moduleName].actions[ActionTypes.MLoading];
+
+        var _action = actions((_actions = {}, _actions[groupName] = loadingState, _actions));
+
+        store.dispatch(_action);
+      }
+    });
+  }
+
+  loadings[key].addItem(item);
+  return item;
+}
 function reducer(target, key, descriptor) {
   if (!key && !descriptor) {
     key = target.key;
@@ -341,6 +420,61 @@ function reducer(target, key, descriptor) {
   fun.__isReducer__ = true;
   descriptor.enumerable = true;
   return target.descriptor === descriptor ? target : descriptor;
+}
+function effect(loadingForGroupName, loadingForModuleName) {
+  if (loadingForGroupName === undefined) {
+    loadingForGroupName = 'global';
+    loadingForModuleName = MetaData$1.appModuleName || '';
+  }
+
+  return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    var fun = descriptor.value;
+    fun.__isEffect__ = true;
+    descriptor.enumerable = true;
+
+    if (loadingForGroupName) {
+      var before = function before(curAction, moduleName, promiseResult) {
+        if (!env.isServer) {
+          if (loadingForModuleName === '') {
+            loadingForModuleName = MetaData$1.appModuleName;
+          } else if (!loadingForModuleName) {
+            loadingForModuleName = moduleName;
+          }
+
+          setLoading(promiseResult, loadingForModuleName, loadingForGroupName);
+        }
+      };
+
+      if (!fun.__decorators__) {
+        fun.__decorators__ = [];
+      }
+
+      fun.__decorators__.push([before, null]);
+    }
+
+    return target.descriptor === descriptor ? target : descriptor;
+  };
+}
+function logger(before, after) {
+  return function (target, key, descriptor) {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    var fun = descriptor.value;
+
+    if (!fun.__decorators__) {
+      fun.__decorators__ = [];
+    }
+
+    fun.__decorators__.push([before, after]);
+  };
 }
 function deepMergeState(target) {
   if (target === void 0) {
@@ -1047,6 +1181,30 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
     }]
   };
 });
+
+function clearHandlers(moduleName, actionHandlerMap) {
+  for (var _actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(_actionName)) {
+      var maps = actionHandlerMap[_actionName];
+      delete maps[moduleName];
+    }
+  }
+}
+
+function modelHotReplacement(moduleName, ModuleHandles) {
+  var store = MetaData$1.clientStore;
+
+  if (store.injectedModules[moduleName]) {
+    clearHandlers(moduleName, MetaData$1.reducersMap);
+    clearHandlers(moduleName, MetaData$1.effectsMap);
+    var moduleHandles = new ModuleHandles();
+    store.injectedModules[moduleName] = moduleHandles;
+    moduleHandles.moduleName = moduleName;
+    moduleHandles.store = store;
+    injectActions(moduleName, moduleHandles);
+    env.console.log("[HMR] @clux Updated model: " + moduleName);
+  }
+}
 function getRootModuleAPI(data) {
   if (!MetaData$1.facadeMap) {
     if (data) {
@@ -2651,7 +2809,292 @@ function _createClass(Constructor, protoProps, staticProps) {
   return Constructor;
 }
 
-_decorate(null, function (_initialize, _CoreModuleHandlers) {
+function isPlainObject(obj) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
+
+function __extendDefault(target, def) {
+  var clone = {};
+  Object.keys(def).forEach(function (key) {
+    if (target[key] === undefined) {
+      clone[key] = def[key];
+    } else {
+      var tval = target[key];
+      var dval = def[key];
+
+      if (isPlainObject(tval) && isPlainObject(dval) && tval !== dval) {
+        clone[key] = __extendDefault(tval, dval);
+      } else {
+        clone[key] = tval;
+      }
+    }
+  });
+  return clone;
+}
+
+function extendDefault(target, def) {
+  if (!isPlainObject(target)) {
+    target = {};
+  }
+
+  if (!isPlainObject(def)) {
+    def = {};
+  }
+
+  return __extendDefault(target, def);
+}
+
+function __excludeDefault(data, def) {
+  var result = {};
+  var hasSub = false;
+  Object.keys(data).forEach(function (key) {
+    var value = data[key];
+    var defaultValue = def[key];
+
+    if (value !== defaultValue) {
+      if (typeof value === typeof defaultValue && isPlainObject(value)) {
+        value = __excludeDefault(value, defaultValue);
+      }
+
+      if (value !== undefined) {
+        hasSub = true;
+        result[key] = value;
+      }
+    }
+  });
+
+  if (hasSub) {
+    return result;
+  }
+
+  return undefined;
+}
+
+function excludeDefault(data, def, keepTopLevel) {
+  if (!isPlainObject(data)) {
+    return {};
+  }
+
+  if (!isPlainObject(def)) {
+    return data;
+  }
+
+  var filtered = __excludeDefault(data, def);
+
+  if (keepTopLevel) {
+    var result = {};
+    Object.keys(data).forEach(function (key) {
+      result[key] = filtered && filtered[key] !== undefined ? filtered[key] : {};
+    });
+    return result;
+  }
+
+  return filtered || {};
+}
+
+function __splitPrivate(data) {
+  var keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  var publicData;
+  var privateData;
+  keys.forEach(function (key) {
+    var value = data[key];
+
+    if (key.startsWith('_')) {
+      if (!privateData) {
+        privateData = {};
+      }
+
+      privateData[key] = value;
+    } else if (isPlainObject(value)) {
+      var _splitPrivate = __splitPrivate(value),
+          subPublicData = _splitPrivate[0],
+          subPrivateData = _splitPrivate[1];
+
+      if (subPublicData) {
+        if (!publicData) {
+          publicData = {};
+        }
+
+        publicData[key] = subPublicData;
+      }
+
+      if (subPrivateData) {
+        if (!privateData) {
+          privateData = {};
+        }
+
+        privateData[key] = subPrivateData;
+      }
+    } else {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      publicData[key] = value;
+    }
+  });
+  return [publicData, privateData];
+}
+
+function splitPrivate(data, deleteTopLevel) {
+  if (!isPlainObject(data)) {
+    return [undefined, undefined];
+  }
+
+  var keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  var result = __splitPrivate(data);
+
+  var publicData = result[0];
+  var privateData = result[1];
+  keys.forEach(function (key) {
+    if (!deleteTopLevel[key]) {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      if (!publicData[key]) {
+        publicData[key] = {};
+      }
+    }
+  });
+  return [publicData, privateData];
+}
+
+function assignDefaultData(data) {
+  var def = routeConfig.defaultParams;
+  return Object.keys(data).reduce(function (params, moduleName) {
+    if (def.hasOwnProperty(moduleName)) {
+      params[moduleName] = extendDefault(data[moduleName], def[moduleName]);
+    }
+
+    return params;
+  }, {});
+}
+
+function dataIsNativeLocation$1(data) {
+  return data['pathname'];
+}
+
+function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
+  if (notfoundPagename === void 0) {
+    notfoundPagename = '/404';
+  }
+
+  if (paramsKey === void 0) {
+    paramsKey = '_';
+  }
+
+  routeConfig.defaultParams = defaultParams;
+  var pagenames = Object.keys(pagenameMap);
+  pagenameMap = pagenames.sort(function (a, b) {
+    return b.length - a.length;
+  }).reduce(function (map, pagename) {
+    var fullPagename = ("/" + pagename + "/").replace(/^\/+|\/+$/g, '/');
+    map[fullPagename] = pagenameMap[pagename];
+    return map;
+  }, {});
+  routeConfig.pagenames = pagenames.reduce(function (obj, key) {
+    obj[key] = key;
+    return obj;
+  }, {});
+  pagenames = Object.keys(pagenameMap);
+
+  function toStringArgs(arr) {
+    return arr.map(function (item) {
+      if (item === null || item === undefined) {
+        return undefined;
+      }
+
+      return item.toString();
+    });
+  }
+
+  return {
+    in: function _in(data) {
+      var path;
+
+      if (dataIsNativeLocation$1(data)) {
+        data = nativeLocationMap.in(data);
+        path = data.pathname;
+      } else {
+        path = data.pagename;
+      }
+
+      path = ("/" + path + "/").replace(/^\/+|\/+$/g, '/');
+      var pagename = pagenames.find(function (name) {
+        return path.startsWith(name);
+      });
+      var params;
+
+      if (pagename) {
+        if (dataIsNativeLocation$1(data)) {
+          var searchParams = data.searchData && data.searchData[paramsKey] ? JSON.parse(data.searchData[paramsKey]) : undefined;
+          var hashParams = data.hashData && data.hashData[paramsKey] ? JSON.parse(data.hashData[paramsKey]) : undefined;
+
+          var _pathArgs = path.replace(pagename, '').split('/').map(function (item) {
+            return item ? decodeURIComponent(item) : undefined;
+          });
+
+          var pathParams = pagenameMap[pagename].argsToParams(_pathArgs);
+          params = deepMerge(pathParams, searchParams, hashParams);
+        } else {
+          var _pathParams = pagenameMap[pagename].argsToParams([]);
+
+          params = deepMerge(_pathParams, data.params);
+        }
+      } else {
+        pagename = notfoundPagename + "/";
+        params = pagenameMap[pagename] ? pagenameMap[pagename].argsToParams([path.replace(/\/$/, '')]) : {};
+      }
+
+      return {
+        pagename: "/" + pagename.replace(/^\/+|\/+$/g, ''),
+        params: assignDefaultData(params)
+      };
+    },
+    out: function out(cluxLocation) {
+      var _ref, _ref2;
+
+      var params = excludeDefault(cluxLocation.params, defaultParams, true);
+      var pagename = ("/" + cluxLocation.pagename + "/").replace(/^\/+|\/+$/g, '/');
+      var pathParams;
+      var pathname;
+
+      if (pagenameMap[pagename]) {
+        var _pathArgs2 = toStringArgs(pagenameMap[pagename].paramsToArgs(params));
+
+        pathParams = pagenameMap[pagename].argsToParams(_pathArgs2);
+        pathname = pagename + _pathArgs2.map(function (item) {
+          return item && encodeURIComponent(item);
+        }).join('/').replace(/\/*$/, '');
+      } else {
+        pathParams = {};
+        pathname = pagename;
+      }
+
+      params = excludeDefault(params, pathParams, false);
+      var result = splitPrivate(params, pathParams);
+      var nativeLocation = {
+        pathname: "/" + pathname.replace(/^\/+|\/+$/g, ''),
+        searchData: result[0] ? (_ref = {}, _ref[paramsKey] = JSON.stringify(result[0]), _ref) : undefined,
+        hashData: result[1] ? (_ref2 = {}, _ref2[paramsKey] = JSON.stringify(result[1]), _ref2) : undefined
+      };
+      return nativeLocationMap.out(nativeLocation);
+    }
+  };
+}
+
+var ModuleWithRouteHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
   var ModuleWithRouteHandlers = function (_CoreModuleHandlers2) {
     _inheritsLoose(ModuleWithRouteHandlers, _CoreModuleHandlers2);
 
@@ -2744,7 +3187,7 @@ var routeMiddleware = function routeMiddleware(_ref) {
   };
 };
 
-(function () {
+var RouteModuleHandlers = function () {
   function RouteModuleHandlers() {
     _defineProperty(this, "initState", void 0);
 
@@ -2769,7 +3212,25 @@ var routeMiddleware = function routeMiddleware(_ref) {
   }]);
 
   return RouteModuleHandlers;
-})();
+}();
+
+function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
+  if (notfoundPagename === void 0) {
+    notfoundPagename = '/404';
+  }
+
+  if (paramsKey === void 0) {
+    paramsKey = '_';
+  }
+
+  var handlers = RouteModuleHandlers;
+  var locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+  var result = exportModule$1('route', handlers, {});
+  return {
+    default: result,
+    locationTransform: locationTransform
+  };
+}
 
 function dataIsNativeLocation(data) {
   return data['pathname'];
@@ -4969,10 +5430,29 @@ function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
   };
 }
 
+exports.ActionTypes = ActionTypes;
+exports.BaseModuleHandlers = ModuleWithRouteHandlers;
+exports.RouteActionTypes = RouteActionTypes;
+exports.clientSide = clientSide;
 exports.createApp = createApp;
+exports.createRouteModule = createRouteModule;
 exports.createVuex = createVuex;
+exports.deepMerge = deepMerge;
+exports.deepMergeState = deepMergeState;
+exports.delayPromise = delayPromise;
+exports.effect = effect;
+exports.env = env;
+exports.errorAction = errorAction;
 exports.exportModule = exportModule;
 exports.getApp = getApp;
+exports.isProcessedError = isProcessedError;
+exports.isServer = isServer;
+exports.logger = logger;
+exports.modelHotReplacement = modelHotReplacement;
 exports.patchActions = patchActions;
+exports.reducer = reducer;
+exports.serverSide = serverSide;
 exports.setConfig = setConfig;
+exports.setLoading = setLoading;
+exports.setProcessedError = setProcessedError;
 exports.setSsrHtmlTpl = setSsrHtmlTpl;

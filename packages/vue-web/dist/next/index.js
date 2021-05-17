@@ -40,7 +40,87 @@ let LoadingState;
   LoadingState["Stop"] = "Stop";
   LoadingState["Depth"] = "Depth";
 })(LoadingState || (LoadingState = {}));
-function isPlainObject(obj) {
+
+class SingleDispatcher {
+  constructor() {
+    _defineProperty(this, "listenerId", 0);
+
+    _defineProperty(this, "listenerMap", {});
+  }
+
+  addListener(callback) {
+    this.listenerId++;
+    const id = `${this.listenerId}`;
+    const listenerMap = this.listenerMap;
+    listenerMap[id] = callback;
+    return () => {
+      delete listenerMap[id];
+    };
+  }
+
+  dispatch(data) {
+    const listenerMap = this.listenerMap;
+    Object.keys(listenerMap).forEach(id => {
+      listenerMap[id](data);
+    });
+  }
+
+}
+class TaskCounter extends SingleDispatcher {
+  constructor(deferSecond) {
+    super();
+
+    _defineProperty(this, "list", []);
+
+    _defineProperty(this, "ctimer", 0);
+
+    this.deferSecond = deferSecond;
+  }
+
+  addItem(promise, note = '') {
+    if (!this.list.some(item => item.promise === promise)) {
+      this.list.push({
+        promise,
+        note
+      });
+      promise.finally(() => this.completeItem(promise));
+
+      if (this.list.length === 1 && !this.ctimer) {
+        this.dispatch(LoadingState.Start);
+        this.ctimer = env.setTimeout(() => {
+          this.ctimer = 0;
+
+          if (this.list.length > 0) {
+            this.dispatch(LoadingState.Depth);
+          }
+        }, this.deferSecond * 1000);
+      }
+    }
+
+    return promise;
+  }
+
+  completeItem(promise) {
+    const i = this.list.findIndex(item => item.promise === promise);
+
+    if (i > -1) {
+      this.list.splice(i, 1);
+
+      if (this.list.length === 0) {
+        if (this.ctimer) {
+          env.clearTimeout.call(null, this.ctimer);
+          this.ctimer = 0;
+        }
+
+        this.dispatch(LoadingState.Stop);
+      }
+    }
+
+    return this;
+  }
+
+}
+function isPlainObject$1(obj) {
   return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
 }
 
@@ -49,8 +129,8 @@ function __deepMerge(optimize, target, inject) {
     const src = target[key];
     const val = inject[key];
 
-    if (isPlainObject(val)) {
-      if (isPlainObject(src)) {
+    if (isPlainObject$1(val)) {
+      if (isPlainObject$1(src)) {
         target[key] = __deepMerge(optimize, src, val);
       } else {
         target[key] = optimize ? val : __deepMerge(optimize, {}, val);
@@ -63,18 +143,18 @@ function __deepMerge(optimize, target, inject) {
 }
 
 function deepMerge(target, ...args) {
-  if (!isPlainObject(target)) {
+  if (!isPlainObject$1(target)) {
     target = {};
   }
 
-  args = args.filter(item => isPlainObject(item) && Object.keys(item).length);
+  args = args.filter(item => isPlainObject$1(item) && Object.keys(item).length);
 
   if (args.length < 1) {
     return target;
   }
 
   args.forEach(function (inject, index) {
-    if (isPlainObject(inject)) {
+    if (isPlainObject$1(inject)) {
       let lastArg = false;
       let last2Arg = null;
 
@@ -88,8 +168,8 @@ function deepMerge(target, ...args) {
         const src = target[key];
         const val = inject[key];
 
-        if (isPlainObject(val)) {
-          if (isPlainObject(src)) {
+        if (isPlainObject$1(val)) {
+          if (isPlainObject$1(src)) {
             target[key] = __deepMerge(lastArg, src, val);
           } else {
             target[key] = lastArg || last2Arg && !last2Arg[key] ? val : __deepMerge(lastArg, {}, val);
@@ -109,6 +189,44 @@ function warn(str) {
 }
 function isPromise(data) {
   return typeof data === 'object' && typeof data.then === 'function';
+}
+function isServer() {
+  return env.isServer;
+}
+function serverSide(callback) {
+  if (env.isServer) {
+    return callback();
+  }
+
+  return undefined;
+}
+function clientSide(callback) {
+  if (!env.isServer) {
+    return callback();
+  }
+
+  return undefined;
+}
+function delayPromise(second) {
+  return (target, key, descriptor) => {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    const fun = descriptor.value;
+
+    descriptor.value = (...args) => {
+      const delay = new Promise(resolve => {
+        env.setTimeout(() => {
+          resolve(true);
+        }, second * 1000);
+      });
+      return Promise.all([delay, fun.apply(target, args)]).then(items => {
+        return items[1];
+      });
+    };
+  };
 }
 
 const config = {
@@ -175,6 +293,32 @@ function injectActions(moduleName, handlers) {
     }
   }
 }
+const loadings = {};
+function setLoading(item, moduleName = MetaData$1.appModuleName, groupName = 'global') {
+  if (env.isServer) {
+    return item;
+  }
+
+  const key = moduleName + config.NSP + groupName;
+
+  if (!loadings[key]) {
+    loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
+    loadings[key].addListener(loadingState => {
+      const store = MetaData$1.clientStore;
+
+      if (store) {
+        const actions = MetaData$1.facadeMap[moduleName].actions[ActionTypes.MLoading];
+        const action = actions({
+          [groupName]: loadingState
+        });
+        store.dispatch(action);
+      }
+    });
+  }
+
+  loadings[key].addItem(item);
+  return item;
+}
 function reducer(target, key, descriptor) {
   if (!key && !descriptor) {
     key = target.key;
@@ -185,6 +329,61 @@ function reducer(target, key, descriptor) {
   fun.__isReducer__ = true;
   descriptor.enumerable = true;
   return target.descriptor === descriptor ? target : descriptor;
+}
+function effect(loadingForGroupName, loadingForModuleName) {
+  if (loadingForGroupName === undefined) {
+    loadingForGroupName = 'global';
+    loadingForModuleName = MetaData$1.appModuleName || '';
+  }
+
+  return (target, key, descriptor) => {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    const fun = descriptor.value;
+    fun.__isEffect__ = true;
+    descriptor.enumerable = true;
+
+    if (loadingForGroupName) {
+      const before = (curAction, moduleName, promiseResult) => {
+        if (!env.isServer) {
+          if (loadingForModuleName === '') {
+            loadingForModuleName = MetaData$1.appModuleName;
+          } else if (!loadingForModuleName) {
+            loadingForModuleName = moduleName;
+          }
+
+          setLoading(promiseResult, loadingForModuleName, loadingForGroupName);
+        }
+      };
+
+      if (!fun.__decorators__) {
+        fun.__decorators__ = [];
+      }
+
+      fun.__decorators__.push([before, null]);
+    }
+
+    return target.descriptor === descriptor ? target : descriptor;
+  };
+}
+function logger(before, after) {
+  return (target, key, descriptor) => {
+    if (!key && !descriptor) {
+      key = target.key;
+      descriptor = target.descriptor;
+    }
+
+    const fun = descriptor.value;
+
+    if (!fun.__decorators__) {
+      fun.__decorators__ = [];
+    }
+
+    fun.__decorators__.push([before, after]);
+  };
 }
 function deepMergeState(target = {}, ...args) {
   if (config.MutableData) {
@@ -876,6 +1075,30 @@ let CoreModuleHandlers = _decorate(null, function (_initialize) {
     }]
   };
 });
+
+function clearHandlers(moduleName, actionHandlerMap) {
+  for (const actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(actionName)) {
+      const maps = actionHandlerMap[actionName];
+      delete maps[moduleName];
+    }
+  }
+}
+
+function modelHotReplacement(moduleName, ModuleHandles) {
+  const store = MetaData$1.clientStore;
+
+  if (store.injectedModules[moduleName]) {
+    clearHandlers(moduleName, MetaData$1.reducersMap);
+    clearHandlers(moduleName, MetaData$1.effectsMap);
+    const moduleHandles = new ModuleHandles();
+    store.injectedModules[moduleName] = moduleHandles;
+    moduleHandles.moduleName = moduleName;
+    moduleHandles.store = store;
+    injectActions(moduleName, moduleHandles);
+    env.console.log(`[HMR] @clux Updated model: ${moduleName}`);
+  }
+}
 function getRootModuleAPI(data) {
   if (!MetaData$1.facadeMap) {
     if (data) {
@@ -1572,7 +1795,274 @@ class History {
 
 }
 
-_decorate(null, function (_initialize, _CoreModuleHandlers) {
+function isPlainObject(obj) {
+  return typeof obj === 'object' && obj !== null && !Array.isArray(obj);
+}
+
+function __extendDefault(target, def) {
+  const clone = {};
+  Object.keys(def).forEach(function (key) {
+    if (target[key] === undefined) {
+      clone[key] = def[key];
+    } else {
+      const tval = target[key];
+      const dval = def[key];
+
+      if (isPlainObject(tval) && isPlainObject(dval) && tval !== dval) {
+        clone[key] = __extendDefault(tval, dval);
+      } else {
+        clone[key] = tval;
+      }
+    }
+  });
+  return clone;
+}
+
+function extendDefault(target, def) {
+  if (!isPlainObject(target)) {
+    target = {};
+  }
+
+  if (!isPlainObject(def)) {
+    def = {};
+  }
+
+  return __extendDefault(target, def);
+}
+
+function __excludeDefault(data, def) {
+  const result = {};
+  let hasSub = false;
+  Object.keys(data).forEach(key => {
+    let value = data[key];
+    const defaultValue = def[key];
+
+    if (value !== defaultValue) {
+      if (typeof value === typeof defaultValue && isPlainObject(value)) {
+        value = __excludeDefault(value, defaultValue);
+      }
+
+      if (value !== undefined) {
+        hasSub = true;
+        result[key] = value;
+      }
+    }
+  });
+
+  if (hasSub) {
+    return result;
+  }
+
+  return undefined;
+}
+
+function excludeDefault(data, def, keepTopLevel) {
+  if (!isPlainObject(data)) {
+    return {};
+  }
+
+  if (!isPlainObject(def)) {
+    return data;
+  }
+
+  const filtered = __excludeDefault(data, def);
+
+  if (keepTopLevel) {
+    const result = {};
+    Object.keys(data).forEach(function (key) {
+      result[key] = filtered && filtered[key] !== undefined ? filtered[key] : {};
+    });
+    return result;
+  }
+
+  return filtered || {};
+}
+
+function __splitPrivate(data) {
+  const keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  let publicData;
+  let privateData;
+  keys.forEach(key => {
+    const value = data[key];
+
+    if (key.startsWith('_')) {
+      if (!privateData) {
+        privateData = {};
+      }
+
+      privateData[key] = value;
+    } else if (isPlainObject(value)) {
+      const [subPublicData, subPrivateData] = __splitPrivate(value);
+
+      if (subPublicData) {
+        if (!publicData) {
+          publicData = {};
+        }
+
+        publicData[key] = subPublicData;
+      }
+
+      if (subPrivateData) {
+        if (!privateData) {
+          privateData = {};
+        }
+
+        privateData[key] = subPrivateData;
+      }
+    } else {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      publicData[key] = value;
+    }
+  });
+  return [publicData, privateData];
+}
+
+function splitPrivate(data, deleteTopLevel) {
+  if (!isPlainObject(data)) {
+    return [undefined, undefined];
+  }
+
+  const keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    return [undefined, undefined];
+  }
+
+  const result = __splitPrivate(data);
+
+  let publicData = result[0];
+  const privateData = result[1];
+  keys.forEach(function (key) {
+    if (!deleteTopLevel[key]) {
+      if (!publicData) {
+        publicData = {};
+      }
+
+      if (!publicData[key]) {
+        publicData[key] = {};
+      }
+    }
+  });
+  return [publicData, privateData];
+}
+
+function assignDefaultData(data) {
+  const def = routeConfig.defaultParams;
+  return Object.keys(data).reduce((params, moduleName) => {
+    if (def.hasOwnProperty(moduleName)) {
+      params[moduleName] = extendDefault(data[moduleName], def[moduleName]);
+    }
+
+    return params;
+  }, {});
+}
+
+function dataIsNativeLocation$1(data) {
+  return data['pathname'];
+}
+
+function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
+  routeConfig.defaultParams = defaultParams;
+  let pagenames = Object.keys(pagenameMap);
+  pagenameMap = pagenames.sort((a, b) => b.length - a.length).reduce((map, pagename) => {
+    const fullPagename = `/${pagename}/`.replace(/^\/+|\/+$/g, '/');
+    map[fullPagename] = pagenameMap[pagename];
+    return map;
+  }, {});
+  routeConfig.pagenames = pagenames.reduce((obj, key) => {
+    obj[key] = key;
+    return obj;
+  }, {});
+  pagenames = Object.keys(pagenameMap);
+
+  function toStringArgs(arr) {
+    return arr.map(item => {
+      if (item === null || item === undefined) {
+        return undefined;
+      }
+
+      return item.toString();
+    });
+  }
+
+  return {
+    in(data) {
+      let path;
+
+      if (dataIsNativeLocation$1(data)) {
+        data = nativeLocationMap.in(data);
+        path = data.pathname;
+      } else {
+        path = data.pagename;
+      }
+
+      path = `/${path}/`.replace(/^\/+|\/+$/g, '/');
+      let pagename = pagenames.find(name => path.startsWith(name));
+      let params;
+
+      if (pagename) {
+        if (dataIsNativeLocation$1(data)) {
+          const searchParams = data.searchData && data.searchData[paramsKey] ? JSON.parse(data.searchData[paramsKey]) : undefined;
+          const hashParams = data.hashData && data.hashData[paramsKey] ? JSON.parse(data.hashData[paramsKey]) : undefined;
+          const pathArgs = path.replace(pagename, '').split('/').map(item => item ? decodeURIComponent(item) : undefined);
+          const pathParams = pagenameMap[pagename].argsToParams(pathArgs);
+          params = deepMerge(pathParams, searchParams, hashParams);
+        } else {
+          const pathParams = pagenameMap[pagename].argsToParams([]);
+          params = deepMerge(pathParams, data.params);
+        }
+      } else {
+        pagename = `${notfoundPagename}/`;
+        params = pagenameMap[pagename] ? pagenameMap[pagename].argsToParams([path.replace(/\/$/, '')]) : {};
+      }
+
+      return {
+        pagename: `/${pagename.replace(/^\/+|\/+$/g, '')}`,
+        params: assignDefaultData(params)
+      };
+    },
+
+    out(cluxLocation) {
+      let params = excludeDefault(cluxLocation.params, defaultParams, true);
+      const pagename = `/${cluxLocation.pagename}/`.replace(/^\/+|\/+$/g, '/');
+      let pathParams;
+      let pathname;
+
+      if (pagenameMap[pagename]) {
+        const pathArgs = toStringArgs(pagenameMap[pagename].paramsToArgs(params));
+        pathParams = pagenameMap[pagename].argsToParams(pathArgs);
+        pathname = pagename + pathArgs.map(item => item && encodeURIComponent(item)).join('/').replace(/\/*$/, '');
+      } else {
+        pathParams = {};
+        pathname = pagename;
+      }
+
+      params = excludeDefault(params, pathParams, false);
+      const result = splitPrivate(params, pathParams);
+      const nativeLocation = {
+        pathname: `/${pathname.replace(/^\/+|\/+$/g, '')}`,
+        searchData: result[0] ? {
+          [paramsKey]: JSON.stringify(result[0])
+        } : undefined,
+        hashData: result[1] ? {
+          [paramsKey]: JSON.stringify(result[1])
+        } : undefined
+      };
+      return nativeLocationMap.out(nativeLocation);
+    }
+
+  };
+}
+
+let ModuleWithRouteHandlers = _decorate(null, function (_initialize, _CoreModuleHandlers) {
   class ModuleWithRouteHandlers extends _CoreModuleHandlers {
     constructor(...args) {
       super(...args);
@@ -1650,6 +2140,37 @@ const routeMiddleware = ({
 
   return next(action);
 };
+
+class RouteModuleHandlers {
+  constructor() {
+    _defineProperty(this, "initState", void 0);
+
+    _defineProperty(this, "moduleName", void 0);
+
+    _defineProperty(this, "store", void 0);
+
+    _defineProperty(this, "actions", void 0);
+  }
+
+  get state() {
+    return this.store.getState(this.moduleName);
+  }
+
+  RouteChange(routeState) {
+    return mergeState(this.state, routeState);
+  }
+
+}
+
+function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
+  const handlers = RouteModuleHandlers;
+  const locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+  const result = exportModule$1('route', handlers, {});
+  return {
+    default: result,
+    locationTransform
+  };
+}
 
 function dataIsNativeLocation(data) {
   return data['pathname'];
@@ -3576,4 +4097,4 @@ function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
   };
 }
 
-export { createApp, createVuex, exportModule, getApp, patchActions, setConfig, setSsrHtmlTpl };
+export { ActionTypes, ModuleWithRouteHandlers as BaseModuleHandlers, LoadingState, RouteActionTypes, clientSide, createApp, createRouteModule, createVuex, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, exportModule, getApp, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig, setLoading, setProcessedError, setSsrHtmlTpl };
