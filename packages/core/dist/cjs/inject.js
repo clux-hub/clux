@@ -221,9 +221,9 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
 exports.CoreModuleHandlers = CoreModuleHandlers;
 
 function clearHandlers(moduleName, actionHandlerMap) {
-  for (var _actionName in actionHandlerMap) {
-    if (actionHandlerMap.hasOwnProperty(_actionName)) {
-      var maps = actionHandlerMap[_actionName];
+  for (var actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(actionName)) {
+      var maps = actionHandlerMap[actionName];
       delete maps[moduleName];
     }
   }

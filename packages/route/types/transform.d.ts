@@ -3,12 +3,10 @@ export declare type LocationTransform<P extends RootParams> = {
     in: (nativeLocation: NativeLocation | PartialLocation<P>) => Location<P>;
     out: (cluxLocation: PartialLocation<P>) => NativeLocation;
 };
-export declare type PagenameMap<P extends RootParams> = {
-    [pagename: string]: {
-        argsToParams(pathArgs: Array<string | undefined>): DeepPartial<P>;
-        paramsToArgs(params: DeepPartial<P>): Array<any>;
-    };
-};
+export declare type PagenameMap<P extends RootParams> = Record<string, {
+    argsToParams(pathArgs: Array<string | undefined>): DeepPartial<P>;
+    paramsToArgs(params: DeepPartial<P>): Array<any>;
+}>;
 export declare type NativeLocationMap = {
     in(nativeLocation: NativeLocation): NativeLocation;
     out(nativeLocation: NativeLocation): NativeLocation;

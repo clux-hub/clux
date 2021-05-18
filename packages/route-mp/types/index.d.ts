@@ -6,14 +6,10 @@ interface NavigateBackOption {
     delta?: number;
 }
 export interface RouteENV {
-    onRouteChange(callback: (pathname: string, searchData: {
-        [key: string]: string;
-    } | undefined, action: 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH') => void): () => void;
+    onRouteChange(callback: (pathname: string, searchData: Record<string, string> | undefined, action: 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH') => void): () => void;
     getLocation(): {
         pathname: string;
-        searchData: {
-            [key: string]: string;
-        } | undefined;
+        searchData: Record<string, string> | undefined;
     };
     reLaunch(option: RouteOption): Promise<any>;
     redirectTo(option: RouteOption): Promise<any>;
@@ -23,14 +19,10 @@ export interface RouteENV {
 }
 export declare class MPNativeRouter extends BaseNativeRouter {
     routeENV: RouteENV;
-    protected tabPages: {
-        [path: string]: boolean;
-    };
+    protected tabPages: Record<string, boolean>;
     private _unlistenHistory;
     protected router: Router<any, string>;
-    constructor(routeENV: RouteENV, tabPages: {
-        [path: string]: boolean;
-    });
+    constructor(routeENV: RouteENV, tabPages: Record<string, boolean>);
     getLocation(): NativeLocation;
     protected toUrl(url: string, key: string): string;
     protected push(getNativeData: () => NativeData, key: string): Promise<NativeData>;
@@ -44,9 +36,7 @@ export declare class Router<P extends RootParams, N extends string> extends Base
     nativeRouter: MPNativeRouter;
     constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform<P>);
 }
-export declare function createRouter<P extends RootParams, N extends string>(locationTransform: LocationTransform<P>, routeENV: RouteENV, tabPages: {
-    [path: string]: boolean;
-}): Router<P, N>;
+export declare function createRouter<P extends RootParams, N extends string>(locationTransform: LocationTransform<P>, routeENV: RouteENV, tabPages: Record<string, boolean>): Router<P, N>;
 export interface IRouter<P extends RootParams, N extends string> extends IBaseRouter<P, N> {
     nativeRouter: MPNativeRouter;
 }

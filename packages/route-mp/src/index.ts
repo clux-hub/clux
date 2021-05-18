@@ -10,9 +10,9 @@ interface NavigateBackOption {
 
 export interface RouteENV {
   onRouteChange(
-    callback: (pathname: string, searchData: {[key: string]: string} | undefined, action: 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH') => void
+    callback: (pathname: string, searchData: Record<string, string> | undefined, action: 'PUSH' | 'POP' | 'REPLACE' | 'RELAUNCH') => void
   ): () => void;
-  getLocation(): {pathname: string; searchData: {[key: string]: string} | undefined};
+  getLocation(): {pathname: string; searchData: Record<string, string> | undefined};
   reLaunch(option: RouteOption): Promise<any>;
   redirectTo(option: RouteOption): Promise<any>;
   navigateTo(option: RouteOption): Promise<any>;
@@ -25,7 +25,7 @@ export class MPNativeRouter extends BaseNativeRouter {
 
   protected declare router: Router<any, string>;
 
-  constructor(public routeENV: RouteENV, protected tabPages: {[path: string]: boolean}) {
+  constructor(public routeENV: RouteENV, protected tabPages: Record<string, boolean>) {
     super();
     this._unlistenHistory = routeENV.onRouteChange((pathname, searchData, action) => {
       let key = searchData ? searchData['__key__'] : '';
@@ -111,7 +111,7 @@ export class Router<P extends RootParams, N extends string> extends BaseRouter<P
 export function createRouter<P extends RootParams, N extends string>(
   locationTransform: LocationTransform<P>,
   routeENV: RouteENV,
-  tabPages: {[path: string]: boolean}
+  tabPages: Record<string, boolean>
 ) {
   const mpNativeRouter = new MPNativeRouter(routeENV, tabPages);
   const router = new Router<P, N>(mpNativeRouter, locationTransform);

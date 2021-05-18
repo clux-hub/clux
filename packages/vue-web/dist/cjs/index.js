@@ -1183,9 +1183,9 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
 });
 
 function clearHandlers(moduleName, actionHandlerMap) {
-  for (var _actionName in actionHandlerMap) {
-    if (actionHandlerMap.hasOwnProperty(_actionName)) {
-      var maps = actionHandlerMap[_actionName];
+  for (var actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(actionName)) {
+      var maps = actionHandlerMap[actionName];
       delete maps[moduleName];
     }
   }
@@ -2444,14 +2444,14 @@ function splitQuery(query) {
     var sections = str.split('=');
 
     if (sections.length > 1) {
-      var _key = sections[0],
+      var key = sections[0],
           arr = sections.slice(1);
 
       if (!params) {
         params = {};
       }
 
-      params[_key] = decodeURIComponent(arr.join('='));
+      params[key] = decodeURIComponent(arr.join('='));
     }
 
     return params;
@@ -2509,8 +2509,8 @@ function locationToUri(location, key) {
 }
 
 function splitUri() {
-  for (var _len = arguments.length, args = new Array(_len), _key2 = 0; _key2 < _len; _key2++) {
-    args[_key2] = arguments[_key2];
+  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
   }
 
   var _args$ = args[0],
@@ -5373,7 +5373,11 @@ function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
             store: store,
             run: function run() {
               return beforeRender().then(function (AppView) {
-                vue.createApp(AppView).use(store).mount(id);
+                var app = vue.createApp(AppView).use(store).mount("#" + id);
+
+                if (process.env.NODE_ENV === 'development' && env.__VUE_DEVTOOLS_GLOBAL_HOOK__) {
+                  env.__VUE_DEVTOOLS_GLOBAL_HOOK__.Vue = app;
+                }
               });
             }
           };

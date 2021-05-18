@@ -596,16 +596,14 @@ function storeCreator(storeOptions) {
       initState = _storeOptions$initSta === void 0 ? {} : _storeOptions$initSta,
       _storeOptions$enhance = storeOptions.enhancers,
       enhancers = _storeOptions$enhance === void 0 ? [] : _storeOptions$enhance,
-      middlewares = storeOptions.middlewares,
-      _storeOptions$devtool = storeOptions.devtools,
-      devtools = _storeOptions$devtool === void 0 ? true : _storeOptions$devtool;
+      middlewares = storeOptions.middlewares;
 
   if (middlewares) {
     var middlewareEnhancer = applyMiddleware.apply(void 0, middlewares);
     enhancers.push(middlewareEnhancer);
   }
 
-  if (devtools && process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 

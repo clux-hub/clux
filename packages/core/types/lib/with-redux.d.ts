@@ -5,7 +5,6 @@ export interface ReduxOptions {
     initState?: any;
     enhancers?: StoreEnhancer[];
     middlewares?: Middleware[];
-    devtools?: boolean;
 }
 export interface ReduxStore extends BStore {
     subscribe(listener: () => void): Unsubscribe;

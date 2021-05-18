@@ -58,7 +58,7 @@ export function setSsrHtmlTpl(tpl: string) {
 export function setConfig(conf: {
   actionMaxHistory?: number;
   pagesMaxHistory?: number;
-  pagenames?: {[key: string]: string};
+  pagenames?: Record<string, string>;
   NSP?: string;
   MSP?: string;
   MutableData?: boolean;
@@ -119,6 +119,8 @@ export function getApp<T extends {GetActions: any; GetRouter: any; LoadView: any
   };
 }
 
+declare const process: any;
+
 export function createApp(moduleGetter: ModuleGetter, middlewares: ControllerMiddleware[] = [], appModuleName?: string, appViewName?: string) {
   const controllerMiddleware = [routeMiddleware, ...middlewares];
   const {locationTransform} = moduleGetter['route']() as RouteModule;
@@ -140,9 +142,12 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: ControllerMid
             store,
             run() {
               return beforeRender().then((AppView: Component) => {
-                createVue(AppView)
+                const app = createVue(AppView)
                   .use(store as any)
-                  .mount(id);
+                  .mount(`#${id}`);
+                if (process.env.NODE_ENV === 'development' && env.__VUE_DEVTOOLS_GLOBAL_HOOK__) {
+                  env.__VUE_DEVTOOLS_GLOBAL_HOOK__.Vue = app;
+                }
               });
             },
           };

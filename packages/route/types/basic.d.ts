@@ -1,9 +1,7 @@
 export declare const routeConfig: {
     actionMaxHistory: number;
     pagesMaxHistory: number;
-    pagenames: {
-        [key: string]: string;
-    };
+    pagenames: Record<string, string>;
     defaultParams: any;
     disableNativeRoute: boolean;
     indexUrl: string;
@@ -12,26 +10,16 @@ export declare function setRouteConfig(conf: {
     actionMaxHistory?: number;
     pagesMaxHistory?: number;
     indexUrl?: string;
-    pagenames?: {
-        [key: string]: string;
-    };
+    pagenames?: Record<string, string>;
     disableNativeRoute?: boolean;
 }): void;
 export declare type HistoryAction = 'PUSH' | 'BACK' | 'REPLACE' | 'RELAUNCH';
-export declare type ModuleParams = {
-    [key: string]: any;
-};
-export declare type RootParams = {
-    [moduleName: string]: ModuleParams;
-};
+export declare type ModuleParams = Record<string, any>;
+export declare type RootParams = Record<string, ModuleParams>;
 export interface NativeLocation {
     pathname: string;
-    searchData?: {
-        [key: string]: string;
-    };
-    hashData?: {
-        [key: string]: string;
-    };
+    searchData?: Record<string, string>;
+    hashData?: Record<string, string>;
 }
 export interface Location<P extends RootParams = {}> {
     pagename: string;
@@ -61,9 +49,7 @@ export declare function locationToUri(location: Location, key: string): {
     query: string;
     key: string;
 };
-export declare function uriToLocation<P extends {
-    [key: string]: any;
-}>(uri: string): {
+export declare function uriToLocation<P extends Record<string, any>>(uri: string): {
     key: string;
     location: Location<P>;
 };

@@ -198,9 +198,9 @@ export var CoreModuleHandlers = _decorate(null, function (_initialize) {
 });
 
 function clearHandlers(moduleName, actionHandlerMap) {
-  for (var _actionName in actionHandlerMap) {
-    if (actionHandlerMap.hasOwnProperty(_actionName)) {
-      var maps = actionHandlerMap[_actionName];
+  for (var actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(actionName)) {
+      var maps = actionHandlerMap[actionName];
       delete maps[moduleName];
     }
   }

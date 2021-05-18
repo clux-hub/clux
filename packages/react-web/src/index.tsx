@@ -68,7 +68,7 @@ export function setSsrHtmlTpl(tpl: string) {
 export function setConfig(conf: {
   actionMaxHistory?: number;
   pagesMaxHistory?: number;
-  pagenames?: {[key: string]: string};
+  pagenames?: Record<string, string>;
   NSP?: string;
   MSP?: string;
   MutableData?: boolean;

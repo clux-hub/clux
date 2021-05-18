@@ -36,7 +36,7 @@ type Actions<T> = Pick<
 export interface Module<
   N extends string = string,
   H extends IModuleHandlers = IModuleHandlers,
-  VS extends {[key: string]: any} = {[key: string]: any}
+  VS extends Record<string, any> = Record<string, any>
 > {
   default: {
     /**
@@ -61,13 +61,7 @@ export interface Module<
  * @param ModuleHandles 模块的ModuleHandlers类，必须继承BaseModuleHandlers
  * @param views 模块需要导出给外部使用的View，若无需给外部使用可不导出
  */
-export type ExportModule<Component> = <
-  N extends string,
-  V extends {
-    [key: string]: Component;
-  },
-  H extends IModuleHandlers
->(
+export type ExportModule<Component> = <N extends string, V extends Record<string, Component>, H extends IModuleHandlers>(
   moduleName: N,
   ModuleHandles: {
     new (): H;
@@ -156,8 +150,8 @@ export function getView<T>(moduleName: string, viewName: string): T | Promise<T>
 /**
  * 动态加载并初始化其他模块的model
  */
-export function loadModel<MG extends ModuleGetter>(moduleName: Extract<keyof MG, string>, controller: IStore): void | Promise<void> {
-  const moduleOrPromise = getModuleByName(moduleName);
+export function loadModel<MG extends ModuleGetter>(moduleName: keyof MG, controller: IStore): void | Promise<void> {
+  const moduleOrPromise = getModuleByName(moduleName as string);
   if (isPromise(moduleOrPromise)) {
     return moduleOrPromise.then((module) => module.default.model(controller));
   }
@@ -183,7 +177,7 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
     return MetaData.facadeMap[this.moduleName].actions as any;
   }
 
-  protected getPrivateActions<T extends {[key: string]: Function}>(actionsMap: T): {[K in keyof T]: Handler<T[K]>} {
+  protected getPrivateActions<T extends Record<string, Function>>(actionsMap: T): {[K in keyof T]: Handler<T[K]>} {
     return MetaData.facadeMap[this.moduleName].actions as any;
   }
 
@@ -246,7 +240,7 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
    * - 此方法为该action的默认reducerHandler，通常用来在moduleState中注入loading状态
    */
   @reducer
-  public Loading(payload: {[group: string]: string}): S {
+  public Loading(payload: Record<string, string>): S {
     const loading = mergeState(this.state.loading, payload);
     return mergeState(this.state, {loading});
     // const state = this.state;
@@ -315,13 +309,13 @@ export type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {[K i
 
 export type RootModuleState<A extends RootModuleFacade = RootModuleFacade> = {[K in keyof A]: A[K]['state']};
 
-export function getRootModuleAPI<T extends RootModuleFacade = any>(data?: {[moduleName: string]: string[]}): RootModuleAPI<T> {
+export function getRootModuleAPI<T extends RootModuleFacade = any>(data?: Record<string, string[]>): RootModuleAPI<T> {
   if (!MetaData.facadeMap) {
     if (data) {
       MetaData.facadeMap = Object.keys(data).reduce((prev, moduleName) => {
         const arr = data[moduleName];
-        const actions: {[actionName: string]: any} = {};
-        const actionNames: {[actionName: string]: string} = {};
+        const actions: Record<string, any> = {};
+        const actionNames: Record<string, string> = {};
         arr.forEach((actionName) => {
           actions[actionName] = (...payload: any[]) => ({type: moduleName + config.NSP + actionName, payload});
           actionNames[actionName] = moduleName + config.NSP + actionName;
@@ -381,3 +375,9 @@ export type BaseLoadView<A extends RootModuleFacade = {}, Options extends {OnLoa
   viewName: V,
   options?: Options
 ) => A[M]['views'][V];
+
+// function aaa<T extends Record<string, any>>(data: T): {[K in keyof T]: boolean} {
+//   return {} as any;
+// }
+
+// const ccc = aaa({name: 1, age: 2, 1: 3});

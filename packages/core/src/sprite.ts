@@ -22,7 +22,7 @@ export enum LoadingState {
 export class SingleDispatcher<T> {
   protected listenerId: number = 0;
 
-  protected readonly listenerMap: {[id: string]: (data: T) => void} = {};
+  protected readonly listenerMap: Record<string, (data: T) => void> = {};
 
   addListener(callback: (data: T) => void) {
     this.listenerId++;
@@ -42,7 +42,7 @@ export class SingleDispatcher<T> {
   }
 }
 
-export class MultipleDispatcher<T extends {[key: string]: any} = {}> {
+export class MultipleDispatcher<T extends Record<string, any> = {}> {
   protected listenerId: number = 0;
 
   protected listenerMap: {

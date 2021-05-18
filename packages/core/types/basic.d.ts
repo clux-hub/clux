@@ -27,40 +27,24 @@ export interface ActionHandler {
     __decoratorResults__?: any[];
     (...args: any[]): any;
 }
-export interface ActionHandlerList {
-    [moduleName: string]: ActionHandler;
-}
-export interface ActionHandlerMap {
-    [actionName: string]: ActionHandlerList;
-}
+export declare type ActionHandlerList = Record<string, ActionHandler>;
+export declare type ActionHandlerMap = Record<string, ActionHandlerList>;
 export declare type ActionCreator = (...args: any[]) => Action;
-export interface ActionCreatorList {
-    [actionName: string]: ActionCreator;
-}
-export interface ActionCreatorMap {
-    [moduleName: string]: ActionCreatorList;
-}
+export declare type ActionCreatorList = Record<string, ActionCreator>;
+export declare type ActionCreatorMap = Record<string, ActionCreatorList>;
 export interface IModuleHandlers {
     initState: any;
     moduleName: string;
     store: IStore;
 }
 export declare type Dispatch = (action: Action) => void | Promise<void>;
-export declare type State = {
-    [moduleName: string]: {
-        [key: string]: any;
-    };
-};
+export declare type State = Record<string, Record<string, any>>;
 export interface GetState<S extends State = {}> {
     (): S;
-    (moduleName: string): {
-        [key: string]: any;
-    } | undefined;
+    (moduleName: string): Record<string, any> | undefined;
 }
 export interface BStoreOptions {
-    initState?: {
-        [key: string]: any;
-    };
+    initState?: Record<string, any>;
 }
 export interface BStore {
     getState(): any;
@@ -71,45 +55,29 @@ export interface IStore<S extends State = {}> {
     dispatch: Dispatch;
     getState: GetState<S>;
     update: (actionName: string, state: Partial<S>, actionData: any[]) => void;
-    injectedModules: {
-        [moduleName: string]: IModuleHandlers;
-    };
+    injectedModules: Record<string, IModuleHandlers>;
     getCurrentActionName: () => string;
     getCurrentState: GetState<S>;
 }
 export interface CoreModuleState {
-    loading?: {
-        [key: string]: LoadingState;
-    };
+    loading?: Record<string, LoadingState>;
 }
 export declare type Model = (controller: IStore) => void | Promise<void>;
 export interface CommonModule<ModuleName extends string = string> {
     default: {
         moduleName: ModuleName;
-        initState: {
-            [key: string]: any;
-        };
+        initState: Record<string, any>;
         model: Model;
-        views: {
-            [key: string]: any;
-        };
-        actions: {
-            [actionName: string]: (...args: any[]) => Action;
-        };
+        views: Record<string, any>;
+        actions: Record<string, (...args: any[]) => Action>;
     };
 }
-export declare type ModuleGetter = {
-    [moduleName: string]: () => CommonModule | Promise<CommonModule>;
-};
-export interface FacadeMap {
-    [moduleName: string]: {
-        name: string;
-        actions: ActionCreatorList;
-        actionNames: {
-            [key: string]: string;
-        };
-    };
-}
+export declare type ModuleGetter = Record<string, () => CommonModule | Promise<CommonModule>>;
+export declare type FacadeMap = Record<string, {
+    name: string;
+    actions: ActionCreatorList;
+    actionNames: Record<string, string>;
+}>;
 export declare const ActionTypes: {
     MLoading: string;
     MInit: string;
@@ -122,9 +90,7 @@ export declare const MetaData: {
     appModuleName: string;
     appViewName: string;
     moduleGetter: ModuleGetter;
-    injectedModules: {
-        [moduleName: string]: boolean;
-    };
+    injectedModules: Record<string, boolean>;
     reducersMap: ActionHandlerMap;
     effectsMap: ActionHandlerMap;
 };

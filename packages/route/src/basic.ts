@@ -1,7 +1,7 @@
 export const routeConfig = {
   actionMaxHistory: 10,
   pagesMaxHistory: 10,
-  pagenames: {} as {[key: string]: string},
+  pagenames: {} as Record<string, string>,
   defaultParams: {} as any,
   disableNativeRoute: false,
   indexUrl: '',
@@ -11,7 +11,7 @@ export function setRouteConfig(conf: {
   actionMaxHistory?: number;
   pagesMaxHistory?: number;
   indexUrl?: string;
-  pagenames?: {[key: string]: string};
+  pagenames?: Record<string, string>;
   disableNativeRoute?: boolean;
 }) {
   conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
@@ -23,13 +23,13 @@ export function setRouteConfig(conf: {
 
 export type HistoryAction = 'PUSH' | 'BACK' | 'REPLACE' | 'RELAUNCH';
 
-export type ModuleParams = {[key: string]: any};
-export type RootParams = {[moduleName: string]: ModuleParams};
+export type ModuleParams = Record<string, any>;
+export type RootParams = Record<string, ModuleParams>;
 
 export interface NativeLocation {
   pathname: string;
-  searchData?: {[key: string]: string};
-  hashData?: {[key: string]: string};
+  searchData?: Record<string, string>;
+  hashData?: Record<string, string>;
 }
 
 export interface Location<P extends RootParams = {}> {
@@ -53,7 +53,7 @@ export type RouteState<P extends RootParams = {}> = Location<P> & {
 
 export type DeepPartial<T> = {[P in keyof T]?: DeepPartial<T[P]>};
 
-function splitQuery(query: string): {[key: string]: string} | undefined {
+function splitQuery(query: string): Record<string, string> | undefined {
   return (query || '').split('&').reduce((params, str) => {
     const sections = str.split('=');
     if (sections.length > 1) {
@@ -64,9 +64,9 @@ function splitQuery(query: string): {[key: string]: string} | undefined {
       params[key] = decodeURIComponent(arr.join('='));
     }
     return params;
-  }, undefined as {[key: string]: string} | undefined);
+  }, undefined as Record<string, string> | undefined);
 }
-function joinQuery(params: {[key: string]: string} | undefined): string {
+function joinQuery(params: Record<string, string> | undefined): string {
   return Object.keys(params || {})
     .map((key) => `${key}=${encodeURIComponent((params as any)[key])}`)
     .join('&');
@@ -114,7 +114,7 @@ function splitUri(...args: any): [string, string, string] | string {
   }
   return arr as any;
 }
-export function uriToLocation<P extends {[key: string]: any}>(uri: string): {key: string; location: Location<P>} {
+export function uriToLocation<P extends Record<string, any>>(uri: string): {key: string; location: Location<P>} {
   const [key, pagename, query] = splitUri(uri);
   const location: Location<P> = {pagename, params: JSON.parse(query)};
   return {key, location};

@@ -4039,7 +4039,11 @@ function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
 
             run() {
               return beforeRender().then(AppView => {
-                createApp$1(AppView).use(store).mount(id);
+                const app = createApp$1(AppView).use(store).mount(`#${id}`);
+
+                if (process.env.NODE_ENV === 'development' && env.__VUE_DEVTOOLS_GLOBAL_HOOK__) {
+                  env.__VUE_DEVTOOLS_GLOBAL_HOOK__.Vue = app;
+                }
               });
             }
 

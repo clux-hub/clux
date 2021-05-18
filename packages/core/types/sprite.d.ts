@@ -5,15 +5,11 @@ export declare enum LoadingState {
 }
 export declare class SingleDispatcher<T> {
     protected listenerId: number;
-    protected readonly listenerMap: {
-        [id: string]: (data: T) => void;
-    };
+    protected readonly listenerMap: Record<string, (data: T) => void>;
     addListener(callback: (data: T) => void): () => void;
     dispatch(data: T): void;
 }
-export declare class MultipleDispatcher<T extends {
-    [key: string]: any;
-} = {}> {
+export declare class MultipleDispatcher<T extends Record<string, any> = {}> {
     protected listenerId: number;
     protected listenerMap: {
         [N in keyof T]?: {

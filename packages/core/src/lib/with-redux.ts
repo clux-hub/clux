@@ -7,7 +7,6 @@ export interface ReduxOptions {
   initState?: any;
   enhancers?: StoreEnhancer[];
   middlewares?: Middleware[];
-  devtools?: boolean;
 }
 
 export interface ReduxStore extends BStore {
@@ -21,12 +20,12 @@ const reduxReducer: Reducer = (state, action) => {
 declare const process: any;
 
 export function storeCreator(storeOptions: ReduxOptions): ReduxStore {
-  const {initState = {}, enhancers = [], middlewares, devtools = true} = storeOptions;
+  const {initState = {}, enhancers = [], middlewares} = storeOptions;
   if (middlewares) {
     const middlewareEnhancer = applyMiddleware(...middlewares);
     enhancers.push(middlewareEnhancer);
   }
-  if (devtools && process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
   const store = createStore(reduxReducer, initState, enhancers.length > 1 ? compose(...enhancers) : enhancers[0]);

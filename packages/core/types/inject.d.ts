@@ -7,11 +7,7 @@ declare type Actions<T> = Pick<{
 }, {
     [K in keyof T]: T[K] extends Function ? K : never;
 }[keyof T]>;
-export interface Module<N extends string = string, H extends IModuleHandlers = IModuleHandlers, VS extends {
-    [key: string]: any;
-} = {
-    [key: string]: any;
-}> {
+export interface Module<N extends string = string, H extends IModuleHandlers = IModuleHandlers, VS extends Record<string, any> = Record<string, any>> {
     default: {
         moduleName: N;
         model: Model;
@@ -20,9 +16,7 @@ export interface Module<N extends string = string, H extends IModuleHandlers = I
         actions: Actions<H>;
     };
 }
-export declare type ExportModule<Component> = <N extends string, V extends {
-    [key: string]: Component;
-}, H extends IModuleHandlers>(moduleName: N, ModuleHandles: {
+export declare type ExportModule<Component> = <N extends string, V extends Record<string, Component>, H extends IModuleHandlers>(moduleName: N, ModuleHandles: {
     new (): H;
 }, views: V) => Module<N, H, V>['default'];
 export declare const exportModule: ExportModule<any>;
@@ -39,9 +33,7 @@ export declare abstract class CoreModuleHandlers<S extends CoreModuleState = Cor
     moduleName: string;
     constructor(initState: S);
     protected get actions(): ActionsThis<this>;
-    protected getPrivateActions<T extends {
-        [key: string]: Function;
-    }>(actionsMap: T): {
+    protected getPrivateActions<T extends Record<string, Function>>(actionsMap: T): {
         [K in keyof T]: Handler<T[K]>;
     };
     protected get state(): S;
@@ -53,9 +45,7 @@ export declare abstract class CoreModuleHandlers<S extends CoreModuleState = Cor
     protected loadModel(moduleName: string): void | Promise<void>;
     Init(initState: S): S;
     Update(payload: Partial<S>, key: string): S;
-    Loading(payload: {
-        [group: string]: string;
-    }): S;
+    Loading(payload: Record<string, string>): S;
 }
 export declare function modelHotReplacement(moduleName: string, ModuleHandles: {
     new (): IModuleHandlers;
@@ -85,9 +75,7 @@ export declare type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade>
 export declare type RootModuleState<A extends RootModuleFacade = RootModuleFacade> = {
     [K in keyof A]: A[K]['state'];
 };
-export declare function getRootModuleAPI<T extends RootModuleFacade = any>(data?: {
-    [moduleName: string]: string[];
-}): RootModuleAPI<T>;
+export declare function getRootModuleAPI<T extends RootModuleFacade = any>(data?: Record<string, string[]>): RootModuleAPI<T>;
 export declare type BaseLoadView<A extends RootModuleFacade = {}, Options extends {
     OnLoading?: any;
     OnError?: any;

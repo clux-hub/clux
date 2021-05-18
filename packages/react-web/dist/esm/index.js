@@ -1181,9 +1181,9 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
 });
 
 function clearHandlers(moduleName, actionHandlerMap) {
-  for (var _actionName in actionHandlerMap) {
-    if (actionHandlerMap.hasOwnProperty(_actionName)) {
-      var maps = actionHandlerMap[_actionName];
+  for (var actionName in actionHandlerMap) {
+    if (actionHandlerMap.hasOwnProperty(actionName)) {
+      var maps = actionHandlerMap[actionName];
       delete maps[moduleName];
     }
   }
@@ -2442,14 +2442,14 @@ function splitQuery(query) {
     var sections = str.split('=');
 
     if (sections.length > 1) {
-      var _key = sections[0],
+      var key = sections[0],
           arr = sections.slice(1);
 
       if (!params) {
         params = {};
       }
 
-      params[_key] = decodeURIComponent(arr.join('='));
+      params[key] = decodeURIComponent(arr.join('='));
     }
 
     return params;
@@ -2507,8 +2507,8 @@ function locationToUri(location, key) {
 }
 
 function splitUri() {
-  for (var _len = arguments.length, args = new Array(_len), _key2 = 0; _key2 < _len; _key2++) {
-    args[_key2] = arguments[_key2];
+  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
   }
 
   var _args$ = args[0],
@@ -5982,16 +5982,14 @@ function storeCreator(storeOptions) {
       initState = _storeOptions$initSta === void 0 ? {} : _storeOptions$initSta,
       _storeOptions$enhance = storeOptions.enhancers,
       enhancers = _storeOptions$enhance === void 0 ? [] : _storeOptions$enhance,
-      middlewares = storeOptions.middlewares,
-      _storeOptions$devtool = storeOptions.devtools,
-      devtools = _storeOptions$devtool === void 0 ? true : _storeOptions$devtool;
+      middlewares = storeOptions.middlewares;
 
   if (middlewares) {
     var middlewareEnhancer = applyMiddleware.apply(void 0, middlewares);
     enhancers.push(middlewareEnhancer);
   }
 
-  if (devtools && process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
+  if (process.env.NODE_ENV === 'development' && env.__REDUX_DEVTOOLS_EXTENSION__) {
     enhancers.push(env.__REDUX_DEVTOOLS_EXTENSION__(env.__REDUX_DEVTOOLS_EXTENSION__OPTIONS));
   }
 
