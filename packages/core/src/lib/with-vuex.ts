@@ -9,9 +9,10 @@ export interface VuexOptions {
   devtools?: boolean;
 }
 
-export interface VuexStore extends BStore {
-  subscribe<P extends MutationPayload>(fn: (mutation: P, state: any) => any, options?: SubscribeOptions): () => void;
-  watch<T>(getter: (state: any, getters: any) => T, cb: (value: T, oldValue: T) => void, options?: WatchOptions): () => void;
+export interface VuexStore<S extends Record<string, any> = {}> extends BStore<S> {
+  state: S;
+  subscribe<P extends MutationPayload>(fn: (mutation: P, state: S) => any, options?: SubscribeOptions): () => void;
+  watch<T>(getter: (state: S, getters: any) => T, cb: (value: T, oldValue: T) => void, options?: WatchOptions): () => void;
 }
 
 const mutation: Mutation<any> = () => {};

@@ -79,9 +79,9 @@ export interface BStoreOptions {
   initState?: Record<string, any>;
 }
 
-export interface BStore {
-  getState(): any;
-  update: (actionName: string, state: any, actionData: any[]) => void;
+export interface BStore<S extends Record<string, any> = {}> {
+  getState(): S;
+  update: (actionName: string, state: S, actionData: any[]) => void;
   dispatch: (action: Action) => any;
 }
 

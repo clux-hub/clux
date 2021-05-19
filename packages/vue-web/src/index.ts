@@ -92,12 +92,12 @@ export function patchActions(typeName: string, json?: string): void {
 
 export type GetAPP<A extends RootModuleFacade> = {
   State: {[M in keyof A]: A[M]['state']};
-  GetRouter: () => IRouter<A['route']['state']['params'], A['route']['viewName']>;
+  GetRouter: () => IRouter<A['route']['state']['params'], Extract<keyof A['route']['views'], string>>;
   GetActions<N extends keyof A>(...args: N[]): {[K in N]: A[K]['actions']};
   LoadView: LoadView<A>;
   Modules: RootModuleAPI<A>;
   Actions: RootModuleActions<A>;
-  Pagenames: {[K in A['route']['viewName']]: K};
+  Pagenames: {[K in keyof A['route']['views']]: K};
 };
 
 export function getApp<T extends {GetActions: any; GetRouter: any; LoadView: any; Modules: any; Pagenames: any}>(): Pick<

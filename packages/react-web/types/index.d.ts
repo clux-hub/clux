@@ -41,7 +41,7 @@ export interface SSROptions {
     url: string;
 }
 export declare function createApp(moduleGetter: ModuleGetter, middlewares?: ControllerMiddleware[], appModuleName?: string, appViewName?: string): {
-    useStore<O extends BStoreOptions = BStoreOptions, B extends BStore = BStore>({ storeOptions, storeCreator }: StoreBuilder<O, B>): {
+    useStore<O extends BStoreOptions = BStoreOptions, B extends BStore<{}> = BStore<{}>>({ storeOptions, storeCreator }: StoreBuilder<O, B>): {
         render({ id, ssrKey }?: RenderOptions): {
             store: import("@clux/core").IStore<any> & B;
             run(): Promise<void>;
@@ -57,7 +57,7 @@ export declare type GetAPP<A extends RootModuleFacade> = {
     State: {
         [M in keyof A]: A[M]['state'];
     };
-    GetRouter: () => IRouter<A['route']['state']['params'], A['route']['viewName']>;
+    GetRouter: () => IRouter<A['route']['state']['params'], Extract<keyof A['route']['views'], string>>;
     GetActions<N extends keyof A>(...args: N[]): {
         [K in N]: A[K]['actions'];
     };
@@ -65,7 +65,7 @@ export declare type GetAPP<A extends RootModuleFacade> = {
     Modules: RootModuleAPI<A>;
     Actions: RootModuleActions<A>;
     Pagenames: {
-        [K in A['route']['viewName']]: K;
+        [K in keyof A['route']['views']]: K;
     };
 };
 export declare function getApp<T extends {

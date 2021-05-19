@@ -9,7 +9,7 @@ export interface ReduxOptions {
   middlewares?: Middleware[];
 }
 
-export interface ReduxStore extends BStore {
+export interface ReduxStore<S extends Record<string, any> = {}> extends BStore<S> {
   subscribe(listener: () => void): Unsubscribe;
 }
 
