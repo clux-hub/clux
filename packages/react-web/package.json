@@ -1,6 +1,6 @@
 {
   "name": "@clux/react-web",
-  "version": "0.0.2",
+  "version": "0.0.13",
   "description": "The practice of clux on react + web",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/react-web",
   "author": "clux-hub <clux_hub@163.com>",
@@ -38,8 +38,8 @@
     "react-dom": "^16.8.0"
   },
   "dependencies": {
-    "@clux/core": "^0.0.2",
-    "@clux/route-browser": "^0.0.2"
+    "@clux/core": "^0.0.13",
+    "@clux/route-browser": "^0.0.13"
   },
   "devDependencies": {
     "react": "^16.14.0",
