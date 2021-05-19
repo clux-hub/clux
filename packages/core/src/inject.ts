@@ -369,15 +369,9 @@ export function getRootModuleAPI<T extends RootModuleFacade = any>(data?: Record
 
 export type BaseLoadView<A extends RootModuleFacade = {}, Options extends {OnLoading?: any; OnError?: any} = {OnLoading?: any; OnError?: any}> = <
   M extends keyof A,
-  V extends A[M]['viewName']
+  V extends keyof A[M]['views']
 >(
   moduleName: M,
   viewName: V,
   options?: Options
 ) => A[M]['views'][V];
-
-// function aaa<T extends Record<string, any>>(data: T): {[K in keyof T]: boolean} {
-//   return {} as any;
-// }
-
-// const ccc = aaa({name: 1, age: 2, 1: 3});

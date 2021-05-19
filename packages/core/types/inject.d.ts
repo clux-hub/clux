@@ -82,5 +82,5 @@ export declare type BaseLoadView<A extends RootModuleFacade = {}, Options extend
 } = {
     OnLoading?: any;
     OnError?: any;
-}> = <M extends keyof A, V extends A[M]['viewName']>(moduleName: M, viewName: V, options?: Options) => A[M]['views'][V];
+}> = <M extends keyof A, V extends keyof A[M]['views']>(moduleName: M, viewName: V, options?: Options) => A[M]['views'][V];
 export {};

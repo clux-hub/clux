@@ -26,7 +26,7 @@ export const loadView: LoadView = (moduleName, viewName, options) => {
     let result: Component | Promise<Component> | undefined;
     let errorMessage = '';
     try {
-      result = getView<Component>(moduleName, viewName);
+      result = getView<Component>(moduleName, viewName as string);
     } catch (e: any) {
       env.console.error(e);
       errorMessage = e.message || `${e}`;

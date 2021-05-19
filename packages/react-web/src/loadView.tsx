@@ -57,7 +57,7 @@ export const loadView: LoadView = (moduleName, viewName, options) => {
         this.loading = true;
         let result: ComponentType<any> | Promise<ComponentType<any>> | undefined;
         try {
-          result = getView<ComponentType<any>>(moduleName, viewName);
+          result = getView<ComponentType<any>>(moduleName, viewName as string);
         } catch (e: any) {
           this.loading = false;
           this.error = e.message || `${e}`;
