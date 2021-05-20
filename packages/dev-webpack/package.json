@@ -1,6 +1,6 @@
 {
   "name": "@clux/dev-webpack",
-  "version": "0.0.4",
+  "version": "0.0.11",
   "description": "Common development tools",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/dev-webpack",
   "author": "clux-hub <clux_hub@163.com>",
@@ -44,6 +44,10 @@
     "html-replace-webpack-plugin": "^2.6.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
     "vue-loader": "^16.2.0",
+    "vue-style-loader": "^4.1.3",
+    "@vue/compiler-sfc": "^3.0.11",
+    "ts-loader": "^9.2.1",
+    "fork-ts-checker-webpack-plugin": "^6.2.10",
     "webpack": "^5.28.0",
     "webpack-bundle-analyzer": "^4.4.0",
     "webpack-dev-server": "next"
