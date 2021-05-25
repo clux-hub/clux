@@ -1,7 +1,7 @@
 {
   "name": "@clux/dev-pkg",
-  "version": "0.0.3",
-  "description": "Common development tools",
+  "version": "0.0.5",
+  "description": "dependencies package for development",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/dev-pkg",
   "author": "clux-hub <clux_hub@163.com>",
   "license": "MIT",
@@ -23,19 +23,9 @@
     "prettier": "~2.2.0",
     "react-refresh": "~0.10.0",
     "stylelint": "~13.13.0",
-    "@types/fs-extra": "^9.0.0",
-    "chalk": "^4.0.0",
-    "copyfiles": "^2.0.0",
     "cross-env": "^7.0.0",
-    "fs-extra": "^9.0.0",
     "deep-extend": "^0.6.0",
-    "fast-deep-equal": "^3.1.0",
-    "indexof": "^0.0.1",
-    "rimraf": "^3.0.0",
-    "json-format": "^1.0.0",
-    "nanoid": "^3.0.0",
-    "ts-node": "^9.1.0",
-    "tsconfig-paths": "^3.9.0"
+    "fast-deep-equal": "^3.1.0"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }

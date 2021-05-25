@@ -1,7 +1,7 @@
 {
   "name": "@clux/dev-pkg-taro",
   "version": "0.0.1",
-  "description": "Common development tools for tarojs",
+  "description": "dependencies package for tarojs",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/dev-pkg-taro",
   "author": "clux-hub <clux_hub@163.com>",
   "license": "MIT",

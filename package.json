@@ -34,7 +34,8 @@
     "lint": "yarn eslint && yarn stylelint && yarn jsonlint",
     "pre-lerna": "lerna publish --no-git-tag-version --no-push",
     "lerna": "lerna publish",
-    "build:core": "lerna run build --scope @clux/core"
+    "build:core": "lerna run build --scope @clux/core",
+    "debug": "node --inspect=19248 --debug-brk"
   },
   "husky": {
     "hooks": {
@@ -48,8 +49,8 @@
     }
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,vue}": "cross-env NODE_ENV=production eslint --quiet --cache",
-    "*.{css,less,vue}": "cross-env NODE_ENV=production stylelint --quiet --cache",
+    "*.{js,jsx,ts,tsx,vue}": "cross-env NODE_ENV=production eslint --fix --quiet --cache",
+    "*.{css,less,vue}": "cross-env NODE_ENV=production stylelint --fix --quiet --cache",
     "*.json": "prettier --write"
   },
   "resolutions": {
