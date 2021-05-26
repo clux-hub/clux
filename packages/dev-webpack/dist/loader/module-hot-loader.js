@@ -1,9 +1,12 @@
 "use strict";
-const path = require("path");
-const moduleIndexFile = path.normalize('/src/modules');
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const path_1 = __importDefault(require("path"));
+const moduleIndexFile = path_1.default.normalize('/src/modules');
 module.exports = function loader(source) {
     const filePath = this.resourcePath;
-    const fileName = path.basename(filePath).split('.')[0];
+    const fileName = path_1.default.basename(filePath).split('.')[0];
     if (filePath.indexOf(moduleIndexFile) > -1 && fileName === 'index') {
         const arr = source.match(/exportModule\s*\(([^)]+)\)/m);
         const clux = source.match(/['"](@clux\/.+?)['"]/);

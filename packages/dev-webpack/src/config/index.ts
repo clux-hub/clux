@@ -1,8 +1,8 @@
-import * as path from 'path';
-import * as fs from 'fs-extra';
-import * as deepExtend from 'deep-extend';
+import path from 'path';
+import fs from 'fs-extra';
+import deepExtend from 'deep-extend';
 import {validate} from 'schema-utils';
-import * as genConfig from './utils';
+import genConfig from './utils';
 import type {WebpackLoader, WebpackConfig, DevServerConfig} from './utils';
 
 interface EnvConfig {

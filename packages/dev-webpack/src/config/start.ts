@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
-import * as fs from 'fs-extra';
-import * as jsonFormat from 'json-format';
-import * as path from 'path';
-import * as WebpackDevServer from 'webpack-dev-server';
-import * as TerserPlugin from 'terser-webpack-plugin';
-import * as chalk from 'chalk';
-import * as webpack from 'webpack';
-import * as genConfig from './index';
+import fs from 'fs-extra';
+import jsonFormat from 'json-format';
+import path from 'path';
+import WebpackDevServer from 'webpack-dev-server';
+import TerserPlugin from 'terser-webpack-plugin';
+import chalk from 'chalk';
+import webpack from 'webpack';
+import genConfig from './index';
 
 export function dev(projEnvName: string, debug: boolean) {
   const config = genConfig(projEnvName, 'development', debug);

@@ -5,8 +5,7 @@
     "types": ["node"],
     "outDir": "../dist",
     "noEmit": false,
-    "emitDeclarationOnly": false,
-    "esModuleInterop": false
+    "emitDeclarationOnly": false
   },
   "include": ["./"],
   "exclude": []

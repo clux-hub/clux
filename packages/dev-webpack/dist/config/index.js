@@ -1,9 +1,12 @@
 "use strict";
-const path = require("path");
-const fs = require("fs-extra");
-const deepExtend = require("deep-extend");
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const path_1 = __importDefault(require("path"));
+const fs_extra_1 = __importDefault(require("fs-extra"));
+const deep_extend_1 = __importDefault(require("deep-extend"));
 const schema_utils_1 = require("schema-utils");
-const genConfig = require("./utils");
+const utils_1 = __importDefault(require("./utils"));
 const CluxConfigSchema = {
     type: 'object',
     additionalProperties: false,
@@ -129,16 +132,16 @@ const CluxConfigSchema = {
     },
 };
 const rootPath = process.cwd();
-const cluxConfig = fs.existsSync(path.join(rootPath, 'clux.config.js')) ? require(path.join(rootPath, 'clux.config.js')) : {};
+const cluxConfig = fs_extra_1.default.existsSync(path_1.default.join(rootPath, 'clux.config.js')) ? require(path_1.default.join(rootPath, 'clux.config.js')) : {};
 schema_utils_1.validate(CluxConfigSchema, cluxConfig, { name: '@clux/CluxConfig' });
 function moduleExports(projEnvName, nodeEnv, debugMode) {
     const defaultBaseConfig = {
         type: 'react',
         dir: {
-            srcPath: path.join(rootPath, './src'),
-            distPath: path.join(rootPath, './dist'),
-            publicPath: path.join(rootPath, './public'),
-            envPath: path.join(rootPath, './env'),
+            srcPath: path_1.default.join(rootPath, './src'),
+            distPath: path_1.default.join(rootPath, './dist'),
+            publicPath: path_1.default.join(rootPath, './public'),
+            envPath: path_1.default.join(rootPath, './env'),
         },
         ui: {
             vueWithJSX: false,
@@ -153,12 +156,12 @@ function moduleExports(projEnvName, nodeEnv, debugMode) {
         },
         devServerConfig: (config) => config,
     };
-    const baseConfig = deepExtend(defaultBaseConfig, cluxConfig);
-    const distPath = path.join(baseConfig.dir.distPath, projEnvName);
-    const projEnvPath = path.join(baseConfig.dir.envPath, projEnvName);
-    fs.ensureDirSync(projEnvPath);
-    const projConfig = fs.existsSync(path.join(projEnvPath, 'config.js')) ? require(path.join(projEnvPath, 'config.js')) : {};
-    const envConfig = deepExtend({ clientPublicPath: '/client/', apiProxy: {} }, cluxConfig[nodeEnv], projConfig[nodeEnv]);
+    const baseConfig = deep_extend_1.default(defaultBaseConfig, cluxConfig);
+    const distPath = path_1.default.join(baseConfig.dir.distPath, projEnvName);
+    const projEnvPath = path_1.default.join(baseConfig.dir.envPath, projEnvName);
+    fs_extra_1.default.ensureDirSync(projEnvPath);
+    const projConfig = fs_extra_1.default.existsSync(path_1.default.join(projEnvPath, 'config.js')) ? require(path_1.default.join(projEnvPath, 'config.js')) : {};
+    const envConfig = deep_extend_1.default({ clientPublicPath: '/client/', apiProxy: {} }, cluxConfig[nodeEnv], projConfig[nodeEnv]);
     const { clientPublicPath, apiProxy, clientGlobalVar, serverGlobalVar } = envConfig;
     const { dir: { srcPath, publicPath }, type, ui: { vueWithJSX }, webpackPreset, webpackConfig: webpackConfigTransform, devServerConfig: devServerConfigTransform, devServerPreset: { port }, } = baseConfig;
     const useSSR = type === 'react ssr' || type === 'vue ssr';
@@ -166,7 +169,7 @@ function moduleExports(projEnvName, nodeEnv, debugMode) {
     if (type === 'vue' || type === 'vue ssr') {
         vueType = vueWithJSX ? 'jsx' : 'templete';
     }
-    let { devServerConfig, clientWebpackConfig, serverWebpackConfig } = genConfig({
+    let { devServerConfig, clientWebpackConfig, serverWebpackConfig } = utils_1.default({
         debugMode,
         nodeEnv,
         rootPath,

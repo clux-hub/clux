@@ -1,9 +1,9 @@
 /* eslint-disable no-console */
-import * as path from 'path';
-import * as fs from 'fs';
-import * as jsonFormat from 'json-format';
-import * as TJS from 'typescript-json-schema';
-import * as chalk from 'chalk';
+import path from 'path';
+import fs from 'fs';
+import jsonFormat from 'json-format';
+import TJS from 'typescript-json-schema';
+import chalk from 'chalk';
 
 function moduleExports(_tsconfig?: string | Object, _entryFilePath?: string, _echo?: boolean) {
   const rootPath = process.cwd();
