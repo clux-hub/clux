@@ -1,6 +1,5 @@
-import { WebpackLoader, WebpackConfig, DevServerConfig } from './utils';
-export type { WebpackLoader, WebpackConfig, DevServerConfig } from './utils';
-export interface EnvConfig {
+import type { WebpackLoader, WebpackConfig, DevServerConfig } from './utils';
+interface EnvConfig {
     clientPublicPath: string;
     clientGlobalVar: Record<string, any>;
     serverGlobalVar: Record<string, any>;
@@ -8,11 +7,11 @@ export interface EnvConfig {
         target: string;
     }>;
 }
-export interface ProjConfig {
+interface ProjConfig {
     development: EnvConfig;
     production: EnvConfig;
 }
-export interface WebpackPreset {
+interface WebpackPreset {
     urlLoaderLimitSize: number;
     cssProcessors: {
         less: WebpackLoader | boolean;
@@ -20,30 +19,28 @@ export interface WebpackPreset {
         sass: WebpackLoader | boolean;
     };
 }
-export interface DevServerPreset {
+interface DevServerPreset {
     port: number;
 }
-export interface BaseConfig {
+interface BaseConfig {
     type: 'vue' | 'react' | 'vue ssr' | 'react ssr';
     dir: {
         srcPath: string;
         distPath: string;
         publicPath: string;
         envPath: string;
-        mockPath: string;
     };
     ui: {
         vueWithJSX: boolean;
     };
-    useMock: boolean;
     webpackPreset: WebpackPreset;
     webpackConfig: (config: WebpackConfig) => WebpackConfig;
     devServerPreset: DevServerPreset;
     devServerConfig: (config: DevServerConfig) => DevServerConfig;
 }
-export interface CluxConfig extends BaseConfig, ProjConfig {
+interface CluxConfig extends BaseConfig, ProjConfig {
 }
-export interface Config {
+interface Config {
     devServerConfig: DevServerConfig;
     clientWebpackConfig: WebpackConfig;
     serverWebpackConfig: WebpackConfig;
@@ -61,6 +58,8 @@ export interface Config {
         vueRender: '' | 'templete' | 'jsx';
     };
 }
-export interface GenConfig {
-    (projEnvName: string, nodeEnv: 'production' | 'development', debugMode: boolean): Config;
+declare function moduleExports(projEnvName: string, nodeEnv: 'production' | 'development', debugMode: boolean): Config;
+declare namespace moduleExports {
+    export { EnvConfig, ProjConfig, WebpackPreset, DevServerPreset, BaseConfig, CluxConfig, Config, WebpackLoader, WebpackConfig, DevServerConfig };
 }
+export = moduleExports;

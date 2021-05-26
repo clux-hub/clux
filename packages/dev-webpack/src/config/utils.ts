@@ -12,18 +12,21 @@ const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin'
 const {getSsrInjectPlugin} = require('@clux/dev-webpack/dist/plugin/ssr-inject');
 const {VueLoaderPlugin} = require('vue-loader');
 
-export interface WebpackLoader {
+interface WebpackLoader {
   loader?: string;
   options?: Record<string, any>;
   [key: string]: any;
 }
 
-export interface WebpackConfig {
+interface WebpackConfig {
   name: 'client' | 'server';
   [key: string]: any;
 }
 
-export interface DevServerConfig {}
+interface DevServerConfig {
+  port: number;
+  [key: string]: any;
+}
 
 function getCssScopedName(srcPath: string, localName: string, mfileName: string) {
   if (mfileName.match(/[/\\]assets[/\\]css[/\\]global.module.\w+?$/)) {
@@ -185,23 +188,7 @@ function oneOfTsLoader(isProdModel: boolean, isVue: boolean, isServer: boolean):
   ];
 }
 
-export function genBaseConfig({
-  debugMode,
-  nodeEnv,
-  rootPath,
-  srcPath,
-  distPath,
-  publicPath,
-  clientPublicPath,
-  envPath,
-  cssProcessors,
-  vueType,
-  limitSize,
-  globalVar,
-  apiProxy,
-  useSSR,
-  devServerPort,
-}: {
+interface ConfigOptions {
   debugMode: boolean;
   nodeEnv: 'production' | 'development';
   rootPath: string;
@@ -217,7 +204,25 @@ export function genBaseConfig({
   useSSR: boolean;
   vueType: 'templete' | 'jsx' | '';
   devServerPort: number;
-}) {
+}
+
+function moduleExports({
+  debugMode,
+  nodeEnv,
+  rootPath,
+  srcPath,
+  distPath,
+  publicPath,
+  clientPublicPath,
+  envPath,
+  cssProcessors,
+  vueType,
+  limitSize,
+  globalVar,
+  apiProxy,
+  useSSR,
+  devServerPort,
+}: ConfigOptions): {clientWebpackConfig: WebpackConfig; serverWebpackConfig: WebpackConfig; devServerConfig: DevServerConfig} {
   /**
    * webpackConfig.output.path 决定生成文件的物理path ,output.publicPath 仅决定html中引入的url
    * devServer只将第一个 webpackConfig 中的output.path设置为生成目录
@@ -482,3 +487,8 @@ export function genBaseConfig({
   };
   return {clientWebpackConfig, serverWebpackConfig, devServerConfig};
 }
+
+declare namespace moduleExports {
+  export {ConfigOptions, WebpackLoader, WebpackConfig, DevServerConfig};
+}
+export = moduleExports;

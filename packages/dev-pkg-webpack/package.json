@@ -1,6 +1,6 @@
 {
   "name": "@clux/dev-pkg-webpack",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "dependencies package for webpack",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/dev-pkg-webpack",
   "author": "clux-hub <clux_hub@163.com>",
@@ -33,6 +33,7 @@
     "css-minimizer-webpack-plugin": "^1.3.0",
     "html-webpack-plugin": "^5.3.1",
     "html-replace-webpack-plugin": "^2.6.0",
+    "react-refresh": "^0.10.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.4.3",
     "vue-loader": "^16.2.0",
     "vue-style-loader": "^4.1.3",

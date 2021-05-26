@@ -1,15 +1,17 @@
-export interface WebpackLoader {
+interface WebpackLoader {
     loader?: string;
     options?: Record<string, any>;
     [key: string]: any;
 }
-export interface WebpackConfig {
+interface WebpackConfig {
     name: 'client' | 'server';
     [key: string]: any;
 }
-export interface DevServerConfig {
+interface DevServerConfig {
+    port: number;
+    [key: string]: any;
 }
-export declare function genBaseConfig({ debugMode, nodeEnv, rootPath, srcPath, distPath, publicPath, clientPublicPath, envPath, cssProcessors, vueType, limitSize, globalVar, apiProxy, useSSR, devServerPort, }: {
+interface ConfigOptions {
     debugMode: boolean;
     nodeEnv: 'production' | 'development';
     rootPath: string;
@@ -34,8 +36,13 @@ export declare function genBaseConfig({ debugMode, nodeEnv, rootPath, srcPath, d
     useSSR: boolean;
     vueType: 'templete' | 'jsx' | '';
     devServerPort: number;
-}): {
+}
+declare function moduleExports({ debugMode, nodeEnv, rootPath, srcPath, distPath, publicPath, clientPublicPath, envPath, cssProcessors, vueType, limitSize, globalVar, apiProxy, useSSR, devServerPort, }: ConfigOptions): {
     clientWebpackConfig: WebpackConfig;
     serverWebpackConfig: WebpackConfig;
     devServerConfig: DevServerConfig;
 };
+declare namespace moduleExports {
+    export { ConfigOptions, WebpackLoader, WebpackConfig, DevServerConfig };
+}
+export = moduleExports;

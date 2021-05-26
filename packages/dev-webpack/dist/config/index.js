@@ -1,10 +1,9 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const path = require("path");
 const fs = require("fs-extra");
 const deepExtend = require("deep-extend");
 const schema_utils_1 = require("schema-utils");
-const utils_1 = require("./utils");
+const genConfig = require("./utils");
 const CluxConfigSchema = {
     type: 'object',
     additionalProperties: false,
@@ -24,9 +23,6 @@ const CluxConfigSchema = {
     properties: {
         type: {
             enum: ['vue', 'vue ssr', 'react', 'react ssr'],
-        },
-        useMock: {
-            type: 'boolean',
         },
         webpackConfig: {
             instanceof: 'Function',
@@ -112,10 +108,6 @@ const CluxConfigSchema = {
                     type: 'string',
                     description: 'Relative to the project root directory. Defalut is ./env',
                 },
-                mockPath: {
-                    type: 'string',
-                    description: 'Relative to the project root directory. Defalut is ./mock',
-                },
             },
         },
         ui: {
@@ -139,7 +131,7 @@ const CluxConfigSchema = {
 const rootPath = process.cwd();
 const cluxConfig = fs.existsSync(path.join(rootPath, 'clux.config.js')) ? require(path.join(rootPath, 'clux.config.js')) : {};
 schema_utils_1.validate(CluxConfigSchema, cluxConfig, { name: '@clux/CluxConfig' });
-module.exports = function (projEnvName, nodeEnv, debugMode) {
+function moduleExports(projEnvName, nodeEnv, debugMode) {
     const defaultBaseConfig = {
         type: 'react',
         dir: {
@@ -147,12 +139,10 @@ module.exports = function (projEnvName, nodeEnv, debugMode) {
             distPath: path.join(rootPath, './dist'),
             publicPath: path.join(rootPath, './public'),
             envPath: path.join(rootPath, './env'),
-            mockPath: path.join(rootPath, './mock'),
         },
         ui: {
             vueWithJSX: false,
         },
-        useMock: true,
         webpackPreset: {
             urlLoaderLimitSize: 8192,
             cssProcessors: { less: false, scss: false, sass: false },
@@ -176,7 +166,7 @@ module.exports = function (projEnvName, nodeEnv, debugMode) {
     if (type === 'vue' || type === 'vue ssr') {
         vueType = vueWithJSX ? 'jsx' : 'templete';
     }
-    let { devServerConfig, clientWebpackConfig, serverWebpackConfig } = utils_1.genBaseConfig({
+    let { devServerConfig, clientWebpackConfig, serverWebpackConfig } = genConfig({
         debugMode,
         nodeEnv,
         rootPath,
@@ -216,4 +206,5 @@ module.exports = function (projEnvName, nodeEnv, debugMode) {
             vueRender: vueType,
         },
     };
-};
+}
+module.exports = moduleExports;

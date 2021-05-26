@@ -2,46 +2,43 @@ import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as deepExtend from 'deep-extend';
 import {validate} from 'schema-utils';
-import {genBaseConfig, WebpackLoader, WebpackConfig, DevServerConfig} from './utils';
+import * as genConfig from './utils';
+import type {WebpackLoader, WebpackConfig, DevServerConfig} from './utils';
 
-export type {WebpackLoader, WebpackConfig, DevServerConfig} from './utils';
-
-export interface EnvConfig {
+interface EnvConfig {
   clientPublicPath: string;
   clientGlobalVar: Record<string, any>;
   serverGlobalVar: Record<string, any>;
   apiProxy: Record<string, {target: string}>;
 }
-export interface ProjConfig {
+interface ProjConfig {
   development: EnvConfig;
   production: EnvConfig;
 }
-export interface WebpackPreset {
+interface WebpackPreset {
   urlLoaderLimitSize: number;
   cssProcessors: {less: WebpackLoader | boolean; scss: WebpackLoader | boolean; sass: WebpackLoader | boolean};
 }
-export interface DevServerPreset {
+interface DevServerPreset {
   port: number;
 }
-export interface BaseConfig {
+interface BaseConfig {
   type: 'vue' | 'react' | 'vue ssr' | 'react ssr';
   dir: {
     srcPath: string;
     distPath: string;
     publicPath: string;
     envPath: string;
-    mockPath: string;
   };
   ui: {
     vueWithJSX: boolean;
   };
-  useMock: boolean;
   webpackPreset: WebpackPreset;
   webpackConfig: (config: WebpackConfig) => WebpackConfig;
   devServerPreset: DevServerPreset;
   devServerConfig: (config: DevServerConfig) => DevServerConfig;
 }
-export interface CluxConfig extends BaseConfig, ProjConfig {}
+interface CluxConfig extends BaseConfig, ProjConfig {}
 const CluxConfigSchema: any = {
   type: 'object',
   additionalProperties: false,
@@ -61,9 +58,6 @@ const CluxConfigSchema: any = {
   properties: {
     type: {
       enum: ['vue', 'vue ssr', 'react', 'react ssr'],
-    },
-    useMock: {
-      type: 'boolean',
     },
     webpackConfig: {
       instanceof: 'Function',
@@ -149,10 +143,6 @@ const CluxConfigSchema: any = {
           type: 'string',
           description: 'Relative to the project root directory. Defalut is ./env',
         },
-        mockPath: {
-          type: 'string',
-          description: 'Relative to the project root directory. Defalut is ./mock',
-        },
       },
     },
     ui: {
@@ -177,7 +167,7 @@ const rootPath = process.cwd();
 const cluxConfig: Partial<BaseConfig> = fs.existsSync(path.join(rootPath, 'clux.config.js')) ? require(path.join(rootPath, 'clux.config.js')) : {};
 validate(CluxConfigSchema, cluxConfig, {name: '@clux/CluxConfig'});
 
-export interface Config {
+interface Config {
   devServerConfig: DevServerConfig;
   clientWebpackConfig: WebpackConfig;
   serverWebpackConfig: WebpackConfig;
@@ -196,11 +186,7 @@ export interface Config {
   };
 }
 
-export interface GenConfig {
-  (projEnvName: string, nodeEnv: 'production' | 'development', debugMode: boolean): Config;
-}
-
-module.exports = function (projEnvName: string, nodeEnv: 'production' | 'development', debugMode: boolean) {
+function moduleExports(projEnvName: string, nodeEnv: 'production' | 'development', debugMode: boolean): Config {
   const defaultBaseConfig: BaseConfig = {
     type: 'react',
     dir: {
@@ -208,12 +194,10 @@ module.exports = function (projEnvName: string, nodeEnv: 'production' | 'develop
       distPath: path.join(rootPath, './dist'),
       publicPath: path.join(rootPath, './public'),
       envPath: path.join(rootPath, './env'),
-      mockPath: path.join(rootPath, './mock'),
     },
     ui: {
       vueWithJSX: false,
     },
-    useMock: true,
     webpackPreset: {
       urlLoaderLimitSize: 8192,
       cssProcessors: {less: false, scss: false, sass: false},
@@ -249,7 +233,7 @@ module.exports = function (projEnvName: string, nodeEnv: 'production' | 'develop
     vueType = vueWithJSX ? 'jsx' : 'templete';
   }
 
-  let {devServerConfig, clientWebpackConfig, serverWebpackConfig} = genBaseConfig({
+  let {devServerConfig, clientWebpackConfig, serverWebpackConfig} = genConfig({
     debugMode,
     nodeEnv,
     rootPath,
@@ -290,4 +274,10 @@ module.exports = function (projEnvName: string, nodeEnv: 'production' | 'develop
       vueRender: vueType,
     },
   };
-};
+}
+
+declare namespace moduleExports {
+  export {EnvConfig, ProjConfig, WebpackPreset, DevServerPreset, BaseConfig, CluxConfig, Config, WebpackLoader, WebpackConfig, DevServerConfig};
+}
+
+export = moduleExports;

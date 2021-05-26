@@ -10,6 +10,6 @@ module.exports = {
   parserOptions: {
     project: './tsconfig.json',
   },
-  rules: {},
+  rules: {'@typescript-eslint/no-namespace': 'off'},
   ignorePatterns: tsconfig.exclude,
 };

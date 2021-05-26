@@ -1,10 +1,11 @@
 /* eslint-disable no-console */
 import * as path from 'path';
 import * as fs from 'fs';
+import * as jsonFormat from 'json-format';
 import * as TJS from 'typescript-json-schema';
 import * as chalk from 'chalk';
 
-export function patch(_tsconfig?: string | Object, _entryFilePath?: string, _echo?: boolean) {
+function moduleExports(_tsconfig?: string | Object, _entryFilePath?: string, _echo?: boolean) {
   const rootPath = process.cwd();
   const srcPath = path.join(rootPath, 'src');
   let tsconfig;
@@ -40,7 +41,7 @@ export function patch(_tsconfig?: string | Object, _entryFilePath?: string, _ech
     }, {});
     const json2 = `'${JSON.stringify(actions)}'`;
     if (_echo) {
-      console.info(json2);
+      console.info(`\n${chalk.green(jsonFormat(actions, {type: 'space'}))}\n`);
     } else if (json !== json2) {
       const newSource = source.replace(arr[0], `patchActions(${typeName}, ${json2})`);
       fs.writeFileSync(entryFilePath, newSource);
@@ -50,3 +51,4 @@ export function patch(_tsconfig?: string | Object, _entryFilePath?: string, _ech
     }
   }
 }
+export = moduleExports;

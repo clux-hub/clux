@@ -28,6 +28,7 @@ module.exports = {
     'import/no-extraneous-dependencies': 'off',
     'import/no-cycle': 'off',
     'import/prefer-default-export': 'off',
+    '@typescript-eslint/no-namespace': 'off',
     '@typescript-eslint/ban-types': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
     '@typescript-eslint/ban-ts-comment': 'off',

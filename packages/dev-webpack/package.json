@@ -1,6 +1,6 @@
 {
   "name": "@clux/dev-webpack",
-  "version": "0.0.40",
+  "version": "0.0.43",
   "description": "Common development tools for webpack",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/dev-webpack",
   "author": "clux-hub <clux_hub@163.com>",
@@ -23,7 +23,7 @@
     "build": "../../node_modules/.bin/tsc --build ./src"
   },
   "peerDependencies": {
-    "@clux/dev-pkg": "^0.0.1",
+    "@clux/core": "^0.0.1",
     "@clux/dev-pkg-webpack": "^0.0.1"
   },
   "dependencies": {

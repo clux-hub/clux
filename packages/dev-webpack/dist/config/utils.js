@@ -1,6 +1,4 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.genBaseConfig = void 0;
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
@@ -167,7 +165,7 @@ function oneOfTsLoader(isProdModel, isVue, isServer) {
         { use: loaders },
     ];
 }
-function genBaseConfig({ debugMode, nodeEnv, rootPath, srcPath, distPath, publicPath, clientPublicPath, envPath, cssProcessors, vueType, limitSize, globalVar, apiProxy, useSSR, devServerPort, }) {
+function moduleExports({ debugMode, nodeEnv, rootPath, srcPath, distPath, publicPath, clientPublicPath, envPath, cssProcessors, vueType, limitSize, globalVar, apiProxy, useSSR, devServerPort, }) {
     const isProdModel = nodeEnv === 'production';
     let clentDevtool = debugMode ? 'eval-cheap-module-source-map' : 'eval';
     let serverDevtool = debugMode ? 'eval-cheap-module-source-map' : 'eval';
@@ -422,4 +420,4 @@ function genBaseConfig({ debugMode, nodeEnv, rootPath, srcPath, distPath, public
     };
     return { clientWebpackConfig, serverWebpackConfig, devServerConfig };
 }
-exports.genBaseConfig = genBaseConfig;
+module.exports = moduleExports;
