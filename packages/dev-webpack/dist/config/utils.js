@@ -272,7 +272,6 @@ function moduleExports({ debugMode, nodeEnv, rootPath, srcPath, distPath, public
             ].filter(Boolean),
         },
         plugins: [
-            new webpack.ProgressPlugin(),
             isVue && new VueLoaderPlugin(),
             isVue
                 ? new ForkTsCheckerWebpackPlugin({
@@ -295,7 +294,7 @@ function moduleExports({ debugMode, nodeEnv, rootPath, srcPath, distPath, public
                     },
                 }),
             new EslintWebpackPlugin({ cache: true, extensions: scriptExtensions }),
-            new StylelintPlugin({ files: `**/*.{${cssExtensions.join(',')}}` }),
+            new StylelintPlugin({ files: `src/**/*.{${cssExtensions.join(',')}}` }),
             new HtmlWebpackPlugin({
                 minify: false,
                 inject: 'body',

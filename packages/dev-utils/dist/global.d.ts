@@ -1,2 +1,3 @@
 declare module 'typescript-json-schema';
-declare module 'json-format';
+declare module 'debug';
+declare module 'deep-extend';

@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-const json_format_1 = __importDefault(require("json-format"));
 const typescript_json_schema_1 = __importDefault(require("typescript-json-schema"));
 const chalk_1 = __importDefault(require("chalk"));
 function moduleExports(_tsconfig, _entryFilePath, _echo) {
@@ -44,7 +43,7 @@ function moduleExports(_tsconfig, _entryFilePath, _echo) {
         }, {});
         const json2 = `'${JSON.stringify(actions)}'`;
         if (_echo) {
-            console.info(`\n${chalk_1.default.green(json_format_1.default(actions, { type: 'space' }))}\n`);
+            console.info(`\n${chalk_1.default.green(JSON.stringify(actions, null, 4))}\n`);
         }
         else if (json !== json2) {
             const newSource = source.replace(arr[0], `patchActions(${typeName}, ${json2})`);

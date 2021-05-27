@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 import path from 'path';
 import fs from 'fs';
-import jsonFormat from 'json-format';
 import TJS from 'typescript-json-schema';
 import chalk from 'chalk';
 
@@ -41,7 +40,7 @@ function moduleExports(_tsconfig?: string | Object, _entryFilePath?: string, _ec
     }, {});
     const json2 = `'${JSON.stringify(actions)}'`;
     if (_echo) {
-      console.info(`\n${chalk.green(jsonFormat(actions, {type: 'space'}))}\n`);
+      console.info(`\n${chalk.green(JSON.stringify(actions, null, 4))}\n`);
     } else if (json !== json2) {
       const newSource = source.replace(arr[0], `patchActions(${typeName}, ${json2})`);
       fs.writeFileSync(entryFilePath, newSource);

@@ -1,6 +1,6 @@
 {
   "name": "@clux/dev-utils",
-  "version": "0.0.7",
+  "version": "0.0.20",
   "description": "Common development tools.",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/dev-utils",
   "author": "clux-hub <clux_hub@163.com>",
@@ -28,8 +28,12 @@
   "dependencies": {
     "chalk": "^4.0.0",
     "commander": "^6.0.0 || ^7.0.0",
-    "json-format": "^1.0.0",
-    "typescript-json-schema": "^0.46.0"
+    "deep-extend": "^0.6.0",
+    "fs-extra": "^9.0.0",
+    "typescript-json-schema": "^0.46.0",
+    "nodemon": "*",
+    "ts-node": "*",
+    "tsconfig-paths": "*"
   },
   "gitHead": "c2d8bb9ed8d10102413bdf655c7326e94f4a4464"
 }
