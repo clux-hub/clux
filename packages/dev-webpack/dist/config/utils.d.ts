@@ -8,7 +8,12 @@ interface WebpackConfig {
     [key: string]: any;
 }
 interface DevServerConfig {
-    port: number;
+    port?: number;
+    https?: boolean;
+    host?: string;
+    dev?: {
+        publicPath?: string;
+    };
     [key: string]: any;
 }
 interface ConfigOptions {

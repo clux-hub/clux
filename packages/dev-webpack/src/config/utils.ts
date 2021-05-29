@@ -24,7 +24,10 @@ interface WebpackConfig {
 }
 
 interface DevServerConfig {
-  port: number;
+  port?: number;
+  https?: boolean;
+  host?: string;
+  dev?: {publicPath?: string};
   [key: string]: any;
 }
 
@@ -382,6 +385,7 @@ function moduleExports({
       useSSR && SsrPlugin,
       !isProdModel && !isVue && new ReactRefreshWebpackPlugin({overlay: false}),
       !isProdModel && new webpack.HotModuleReplacementPlugin(),
+      new webpack.ProgressPlugin(),
     ].filter(Boolean),
   };
 
@@ -459,7 +463,7 @@ function moduleExports({
             },
           ].filter(Boolean),
         },
-        plugins: [new webpack.ProgressPlugin(), isVue && new VueLoaderPlugin(), useSSR && SsrPlugin].filter(Boolean),
+        plugins: [isVue && new VueLoaderPlugin(), SsrPlugin, new webpack.ProgressPlugin()].filter(Boolean),
       }
     : {name: 'server'};
 

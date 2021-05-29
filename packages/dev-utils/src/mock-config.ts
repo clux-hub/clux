@@ -18,7 +18,7 @@ export = function (rootPath: string, projEnv: string, port?: number, mockPath?: 
   const projEnvPath = path.join(rootPath, `./env/${projEnv}`);
   fs.ensureDirSync(projEnvPath);
   const envCluxConfig: Partial<CluxConfig> = fs.existsSync(path.join(projEnvPath, `clux.config.js`))
-    ? require(path.join(rootPath, `./env/${projEnv}clux.config.js`))
+    ? require(path.join(rootPath, `./env/${projEnv}/clux.config.js`))
     : {};
 
   const defaultBaseConfig: CluxConfig = {

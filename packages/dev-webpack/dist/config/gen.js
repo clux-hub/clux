@@ -149,7 +149,7 @@ function moduleExports(rootPath, projEnv, nodeEnv, debugMode, devServerPort) {
     const projEnvPath = path_1.default.join(rootPath, `./env/${projEnv}`);
     fs_extra_1.default.ensureDirSync(projEnvPath);
     const envCluxConfig = fs_extra_1.default.existsSync(path_1.default.join(projEnvPath, `clux.config.js`))
-        ? require(path_1.default.join(rootPath, `./env/${projEnv}clux.config.js`))
+        ? require(path_1.default.join(rootPath, `./env/${projEnv}/clux.config.js`))
         : {};
     schema_utils_1.validate(CluxConfigSchema, envCluxConfig, { name: '@clux/CluxConfig' });
     const defaultBaseConfig = {

@@ -318,6 +318,7 @@ function moduleExports({ debugMode, nodeEnv, rootPath, srcPath, distPath, public
             useSSR && SsrPlugin,
             !isProdModel && !isVue && new ReactRefreshWebpackPlugin({ overlay: false }),
             !isProdModel && new webpack.HotModuleReplacementPlugin(),
+            new webpack.ProgressPlugin(),
         ].filter(Boolean),
     };
     const serverWebpackConfig = useSSR
@@ -394,7 +395,7 @@ function moduleExports({ debugMode, nodeEnv, rootPath, srcPath, distPath, public
                     },
                 ].filter(Boolean),
             },
-            plugins: [new webpack.ProgressPlugin(), isVue && new VueLoaderPlugin(), useSSR && SsrPlugin].filter(Boolean),
+            plugins: [isVue && new VueLoaderPlugin(), SsrPlugin, new webpack.ProgressPlugin()].filter(Boolean),
         }
         : { name: 'server' };
     global['ENV'] = globalVar.server;

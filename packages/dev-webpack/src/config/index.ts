@@ -1,13 +1,15 @@
 /* eslint-disable no-console */
 import fs from 'fs-extra';
 import path from 'path';
+// import url from 'url';
+// import defaultGateway from 'default-gateway';
 import WebpackDevServer from 'webpack-dev-server';
 import TerserPlugin from 'terser-webpack-plugin';
 import chalk from 'chalk';
 import webpack from 'webpack';
 import genConfig from './gen';
 
-export function dev(projEnvName: string, debug: boolean, devServerPort: number) {
+export async function dev(projEnvName: string, debug: boolean, devServerPort: number) {
   const config = genConfig(process.cwd(), projEnvName, 'development', debug, devServerPort);
   const {
     devServerConfig,
@@ -34,18 +36,54 @@ export function dev(projEnvName: string, debug: boolean, devServerPort: number) 
   console.info(`EnvName: ${chalk.magenta(projEnv)} EnvInfo: \n${chalk.blue(JSON.stringify(envInfo, null, 4))} \n`);
 
   const compiler = webpack(clientWebpackConfig);
+  compiler.hooks.failed.tap('clux-webpack dev', (msg) => {
+    console.error(msg);
+    process.exit(1);
+  });
+
+  const protocol = devServerConfig.https ? 'https' : 'http';
+  const host = devServerConfig.host || '0.0.0.0';
+  const port = devServerConfig.port || 8080;
+  const publicPath = devServerConfig.dev?.publicPath || '/';
+  const localUrl = `${protocol}://localhost:${port}${publicPath}`;
+
   const devServer = new WebpackDevServer(compiler, devServerConfig);
 
-  devServer.listen(devServerConfig.port, '0.0.0.0', (err: any) => {
+  ['SIGINT', 'SIGTERM'].forEach((signal) => {
+    process.on(signal, () => {
+      devServer.close(() => {
+        process.exit(0);
+      });
+    });
+  });
+
+  let isFirstCompile = true;
+  compiler.hooks.done.tap('clux-webpack dev', (stats) => {
+    if (stats.hasErrors()) {
+      return;
+    }
+
+    if (isFirstCompile) {
+      isFirstCompile = false;
+      console.info(`
+***************************************
+*                                     *
+*           ${chalk.green.bold('Welcome to Clux')}           *
+*                                     *
+***************************************
+`);
+      console.info(`.....${chalk.magenta('Dev server')} running at ${chalk.magenta(localUrl)}`);
+    }
+  });
+
+  devServer.listen(port, host, (err: any) => {
     if (err) {
       console.error(err);
       process.exit(1);
     }
-    console.info(
-      `\n \n.....starting a ${chalk.redBright('DevServer')} on ${chalk.underline.redBright(`http://localhost:${devServerConfig.port}/`)} \n`
-    );
   });
 }
+
 export function build(projEnvName: string, debug: boolean) {
   const config = genConfig(process.cwd(), projEnvName, 'production', debug);
   const {
@@ -141,3 +179,58 @@ export function pack(input: string, output: string, target: string) {
     );
   });
 }
+
+// function prepareUrls(protocol: string, host: string, port: number, pathname = '/') {
+//   const formatUrl = (hostname: string) =>
+//     url.format({
+//       protocol,
+//       hostname,
+//       port,
+//       pathname,
+//     });
+//   const prettyPrintUrl = (hostname: string) =>
+//     url.format({
+//       protocol,
+//       hostname,
+//       port: chalk.bold(port),
+//       pathname,
+//     });
+
+//   const isUnspecifiedHost = host === '0.0.0.0' || host === '::';
+//   let prettyHost;
+//   let lanUrlForConfig;
+//   let lanUrlForTerminal = chalk.gray('unavailable');
+//   if (isUnspecifiedHost) {
+//     prettyHost = 'localhost';
+//     try {
+//       // This can only return an IPv4 address
+//       const result = defaultGateway.v4.sync();
+//       lanUrlForConfig = address.ip(result && result.interface);
+//       if (lanUrlForConfig) {
+//         // Check if the address is a private ip
+//         // https://en.wikipedia.org/wiki/Private_network#Private_IPv4_address_spaces
+//         if (/^10[.]|^172[.](1[6-9]|2[0-9]|3[0-1])[.]|^192[.]168[.]/.test(lanUrlForConfig)) {
+//           // Address is private, format it for later use
+//           lanUrlForTerminal = prettyPrintUrl(lanUrlForConfig);
+//         } else {
+//           // Address is not private, so we will discard it
+//           lanUrlForConfig = undefined;
+//         }
+//       }
+//     } catch (_e) {
+//       // ignored
+//     }
+//   } else {
+//     prettyHost = host;
+//     lanUrlForConfig = host;
+//     lanUrlForTerminal = prettyPrintUrl(lanUrlForConfig);
+//   }
+//   const localUrlForTerminal = prettyPrintUrl(prettyHost);
+//   const localUrlForBrowser = formatUrl(prettyHost);
+//   return {
+//     lanUrlForConfig,
+//     lanUrlForTerminal,
+//     localUrlForTerminal,
+//     localUrlForBrowser,
+//   };
+// }

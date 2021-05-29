@@ -11,7 +11,7 @@ const terser_webpack_plugin_1 = __importDefault(require("terser-webpack-plugin")
 const chalk_1 = __importDefault(require("chalk"));
 const webpack_1 = __importDefault(require("webpack"));
 const gen_1 = __importDefault(require("./gen"));
-function dev(projEnvName, debug, devServerPort) {
+async function dev(projEnvName, debug, devServerPort) {
     const config = gen_1.default(process.cwd(), projEnvName, 'development', debug, devServerPort);
     const { devServerConfig, clientWebpackConfig, projectConfig: { projectType, nodeEnv, debugMode, projEnv, nodeEnvConfig: { clientPublicPath, clientGlobalVar, serverGlobalVar }, vueRender, }, } = config;
     const envInfo = {
@@ -22,13 +22,45 @@ function dev(projEnvName, debug, devServerPort) {
     console.info(`projectType: ${chalk_1.default.magenta(projectType)}${vueRender ? ` (${chalk_1.default.green(vueRender)})` : ''} runMode: ${chalk_1.default.magenta(nodeEnv)} debugMode: ${chalk_1.default.magenta(debugMode)}`);
     console.info(`EnvName: ${chalk_1.default.magenta(projEnv)} EnvInfo: \n${chalk_1.default.blue(JSON.stringify(envInfo, null, 4))} \n`);
     const compiler = webpack_1.default(clientWebpackConfig);
+    compiler.hooks.failed.tap('clux-webpack dev', (msg) => {
+        console.error(msg);
+        process.exit(1);
+    });
+    const protocol = devServerConfig.https ? 'https' : 'http';
+    const host = devServerConfig.host || '0.0.0.0';
+    const port = devServerConfig.port || 8080;
+    const publicPath = devServerConfig.dev?.publicPath || '/';
+    const localUrl = `${protocol}://localhost:${port}${publicPath}`;
     const devServer = new webpack_dev_server_1.default(compiler, devServerConfig);
-    devServer.listen(devServerConfig.port, '0.0.0.0', (err) => {
+    ['SIGINT', 'SIGTERM'].forEach((signal) => {
+        process.on(signal, () => {
+            devServer.close(() => {
+                process.exit(0);
+            });
+        });
+    });
+    let isFirstCompile = true;
+    compiler.hooks.done.tap('clux-webpack dev', (stats) => {
+        if (stats.hasErrors()) {
+            return;
+        }
+        if (isFirstCompile) {
+            isFirstCompile = false;
+            console.info(`
+***************************************
+*                                     *
+*           ${chalk_1.default.green.bold('Welcome to Clux')}           *
+*                                     *
+***************************************
+`);
+            console.info(`.....${chalk_1.default.magenta('Dev server')} running at ${chalk_1.default.magenta(localUrl)}`);
+        }
+    });
+    devServer.listen(port, host, (err) => {
         if (err) {
             console.error(err);
             process.exit(1);
         }
-        console.info(`\n \n.....starting a ${chalk_1.default.redBright('DevServer')} on ${chalk_1.default.underline.redBright(`http://localhost:${devServerConfig.port}/`)} \n`);
     });
 }
 exports.dev = dev;

@@ -28,5 +28,5 @@ server.on('error', (error) => {
     }
 });
 server.on('listening', () => {
-    console.info(`\n.....starting a ${chalk_1.default.green('MockServer')} on ${chalk_1.default.underline.green(`http://localhost:${port}/`)}\n`);
+    console.info(`\n.....${chalk_1.default.magenta('Mock server')} running at ${chalk_1.default.magenta(`http://localhost:${port}/`)}\n`);
 });

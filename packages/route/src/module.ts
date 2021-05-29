@@ -95,10 +95,18 @@ class RouteModuleHandlers implements IRouteModuleHandlers {
 
 export type RouteModule = CommonModule & {locationTransform: LocationTransform<any>};
 
+const defaultNativeLocationMap: NativeLocationMap = {
+  in(nativeLocation) {
+    return nativeLocation;
+  },
+  out(nativeLocation) {
+    return nativeLocation;
+  },
+};
 export function createRouteModule<P extends RootParams, G extends PagenameMap<P>>(
   defaultParams: P,
   pagenameMap: G,
-  nativeLocationMap: NativeLocationMap,
+  nativeLocationMap: NativeLocationMap = defaultNativeLocationMap,
   notfoundPagename: string = '/404',
   paramsKey: string = '_'
 ) {

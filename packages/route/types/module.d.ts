@@ -27,7 +27,7 @@ export declare const routeMiddleware: ControllerMiddleware;
 export declare type RouteModule = CommonModule & {
     locationTransform: LocationTransform<any>;
 };
-export declare function createRouteModule<P extends RootParams, G extends PagenameMap<P>>(defaultParams: P, pagenameMap: G, nativeLocationMap: NativeLocationMap, notfoundPagename?: string, paramsKey?: string): {
+export declare function createRouteModule<P extends RootParams, G extends PagenameMap<P>>(defaultParams: P, pagenameMap: G, nativeLocationMap?: NativeLocationMap, notfoundPagename?: string, paramsKey?: string): {
     default: {
         moduleName: "route";
         model: import("@clux/core").Model;

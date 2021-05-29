@@ -102,7 +102,17 @@ class RouteModuleHandlers {
 
 }
 
-export function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
+const defaultNativeLocationMap = {
+  in(nativeLocation) {
+    return nativeLocation;
+  },
+
+  out(nativeLocation) {
+    return nativeLocation;
+  }
+
+};
+export function createRouteModule(defaultParams, pagenameMap, nativeLocationMap = defaultNativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
   const handlers = RouteModuleHandlers;
   const locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
   const result = exportModule('route', handlers, {});

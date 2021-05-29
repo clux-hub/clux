@@ -3219,7 +3219,19 @@ var RouteModuleHandlers = function () {
   return RouteModuleHandlers;
 }();
 
+var defaultNativeLocationMap = {
+  in: function _in(nativeLocation) {
+    return nativeLocation;
+  },
+  out: function out(nativeLocation) {
+    return nativeLocation;
+  }
+};
 function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
+  if (nativeLocationMap === void 0) {
+    nativeLocationMap = defaultNativeLocationMap;
+  }
+
   if (notfoundPagename === void 0) {
     notfoundPagename = '/404';
   }
