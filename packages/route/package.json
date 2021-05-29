@@ -1,6 +1,6 @@
 {
   "name": "@clux/route",
-  "version": "0.0.13",
+  "version": "0.0.16",
   "description": "",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/route",
   "author": "clux-hub <clux_hub@163.com>",
@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@babel/runtime": "~7.12.18",
-    "@clux/core": "^0.0.13"
+    "@clux/core": "^0.0.16"
   },
   "gitHead": "7d6eb6d666143271ba0575fea99cf3f927fce764"
 }

@@ -1,6 +1,6 @@
 {
   "name": "@clux/route-browser",
-  "version": "0.0.13",
+  "version": "0.0.16",
   "description": "Using @clux/route in browser",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/route-browser",
   "author": "clux-hub <clux_hub@163.com>",
@@ -30,8 +30,8 @@
   },
   "dependencies": {
     "@babel/runtime": "~7.12.18",
-    "@clux/core": "^0.0.13",
-    "@clux/route": "^0.0.13",
+    "@clux/core": "^0.0.16",
+    "@clux/route": "^0.0.16",
     "@types/history": "~4.7.7",
     "history": "~4.10.1"
   },

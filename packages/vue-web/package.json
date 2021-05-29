@@ -1,6 +1,6 @@
 {
   "name": "@clux/vue-web",
-  "version": "0.0.13",
+  "version": "0.0.16",
   "description": "The practice of clux on vue + web",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/vue-web",
   "author": "clux-hub <clux_hub@163.com>",
@@ -36,8 +36,8 @@
     "vuex": "^4.0.0"
   },
   "dependencies": {
-    "@clux/core": "^0.0.13",
-    "@clux/route-browser": "^0.0.13"
+    "@clux/core": "^0.0.16",
+    "@clux/route-browser": "^0.0.16"
   },
   "devDependencies": {
     "vue": "^3.0.0",
