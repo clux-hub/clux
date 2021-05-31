@@ -2127,10 +2127,8 @@ const routeMiddleware = ({
     Object.keys(rootRouteParams).forEach(moduleName => {
       const routeParams = rootRouteParams[moduleName];
 
-      if (routeParams) {
-        var _rootState$moduleName;
-
-        if ((_rootState$moduleName = rootState[moduleName]) != null && _rootState$moduleName.initialized) {
+      if (routeParams && Object.keys(routeParams).length > 0) {
+        if (rootState[moduleName]) {
           dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
         }
       }

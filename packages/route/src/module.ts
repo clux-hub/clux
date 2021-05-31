@@ -59,8 +59,8 @@ export const routeMiddleware: ControllerMiddleware = ({dispatch, getState}) => (
     const rootState = getState();
     Object.keys(rootRouteParams).forEach((moduleName) => {
       const routeParams = rootRouteParams[moduleName];
-      if (routeParams) {
-        if (rootState[moduleName]?.initialized) {
+      if (routeParams && Object.keys(routeParams).length > 0) {
+        if (rootState[moduleName]) {
           dispatch(routeParamsAction(moduleName, routeParams, routeState.action));
         }
       }

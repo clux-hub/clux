@@ -1,6 +1,6 @@
 {
   "name": "@clux/dev-webpack",
-  "version": "0.0.56",
+  "version": "0.0.57",
   "description": "Common development tools for webpack",
   "repository": "https://github.com/clux-hub/clux/tree/master/packages/dev-webpack",
   "author": "clux-hub <clux_hub@163.com>",

@@ -66,13 +66,15 @@ export async function dev(projEnvName: string, debug: boolean, devServerPort: nu
     if (isFirstCompile) {
       isFirstCompile = false;
       console.info(`
+
 ***************************************
 *                                     *
 *           ${chalk.green.bold('Welcome to Clux')}           *
 *                                     *
 ***************************************
+
 `);
-      console.info(`.....${chalk.magenta('Dev server')} running at ${chalk.magenta(localUrl)}`);
+      console.info(`.....${chalk.magenta('DevServer')} running at ${chalk.magenta(localUrl)}`);
     }
   });
 

@@ -47,13 +47,15 @@ async function dev(projEnvName, debug, devServerPort) {
         if (isFirstCompile) {
             isFirstCompile = false;
             console.info(`
+
 ***************************************
 *                                     *
 *           ${chalk_1.default.green.bold('Welcome to Clux')}           *
 *                                     *
 ***************************************
+
 `);
-            console.info(`.....${chalk_1.default.magenta('Dev server')} running at ${chalk_1.default.magenta(localUrl)}`);
+            console.info(`.....${chalk_1.default.magenta('DevServer')} running at ${chalk_1.default.magenta(localUrl)}`);
         }
     });
     devServer.listen(port, host, (err) => {
