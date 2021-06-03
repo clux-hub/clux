@@ -98,7 +98,7 @@ export interface CoreModuleState {
   loading?: Record<string, LoadingState>;
 }
 
-export type Model = (controller: IStore) => void | Promise<void>;
+export type Model = (store: IStore) => void | Promise<void>;
 
 export interface CommonModule<ModuleName extends string = string> {
   default: {

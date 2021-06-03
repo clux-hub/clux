@@ -83,16 +83,16 @@ export function getView(moduleName, viewName) {
   return callback(moduleOrPromise);
 }
 
-function _loadModel(moduleName, controller) {
+function _loadModel(moduleName, store) {
   var moduleOrPromise = getModuleByName(moduleName);
 
   if (isPromise(moduleOrPromise)) {
     return moduleOrPromise.then(function (module) {
-      return module.default.model(controller);
+      return module.default.model(store);
     });
   }
 
-  return moduleOrPromise.default.model(controller);
+  return moduleOrPromise.default.model(store);
 }
 
 export { _loadModel as loadModel };

@@ -23,7 +23,7 @@ export declare const exportModule: ExportModule<any>;
 export declare function cacheModule<T extends CommonModule>(module: T): () => T;
 export declare function getModuleByName(moduleName: string): Promise<CommonModule> | CommonModule;
 export declare function getView<T>(moduleName: string, viewName: string): T | Promise<T>;
-export declare function loadModel<MG extends ModuleGetter>(moduleName: keyof MG, controller: IStore): void | Promise<void>;
+export declare function loadModel<MG extends ModuleGetter>(moduleName: keyof MG, store: IStore): void | Promise<void>;
 declare type ActionsThis<Ins> = {
     [K in keyof Ins]: Ins[K] extends (args: never) => any ? Handler<Ins[K]> : never;
 };

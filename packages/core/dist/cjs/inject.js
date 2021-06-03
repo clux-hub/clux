@@ -106,16 +106,16 @@ function getView(moduleName, viewName) {
   return callback(moduleOrPromise);
 }
 
-function _loadModel(moduleName, controller) {
+function _loadModel(moduleName, store) {
   var moduleOrPromise = getModuleByName(moduleName);
 
   if ((0, _sprite.isPromise)(moduleOrPromise)) {
     return moduleOrPromise.then(function (module) {
-      return module.default.model(controller);
+      return module.default.model(store);
     });
   }
 
-  return moduleOrPromise.default.model(controller);
+  return moduleOrPromise.default.model(store);
 }
 
 var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {

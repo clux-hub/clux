@@ -150,12 +150,12 @@ export function getView<T>(moduleName: string, viewName: string): T | Promise<T>
 /**
  * 动态加载并初始化其他模块的model
  */
-export function loadModel<MG extends ModuleGetter>(moduleName: keyof MG, controller: IStore): void | Promise<void> {
+export function loadModel<MG extends ModuleGetter>(moduleName: keyof MG, store: IStore): void | Promise<void> {
   const moduleOrPromise = getModuleByName(moduleName as string);
   if (isPromise(moduleOrPromise)) {
-    return moduleOrPromise.then((module) => module.default.model(controller));
+    return moduleOrPromise.then((module) => module.default.model(store));
   }
-  return moduleOrPromise.default.model(controller);
+  return moduleOrPromise.default.model(store);
 }
 
 type ActionsThis<Ins> = {

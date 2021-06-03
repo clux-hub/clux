@@ -6,6 +6,6 @@ export { LoadingState, deepMerge, SingleDispatcher, MultipleDispatcher, isPromis
 export { renderApp, ssrApp } from './render';
 export { env } from './env';
 export type { ExportModule } from './inject';
-export type { ControllerMiddleware, StoreBuilder } from './store';
+export type { IStoreMiddleware, StoreBuilder } from './store';
 export type { Action, CoreModuleState, CommonModule, ModuleGetter, Model, IStore, BStore, BStoreOptions, IModuleHandlers, Dispatch, GetState, State, } from './basic';
 export type { RootModuleAPI, RootModuleState, RootModuleFacade, RootModuleActions, BaseLoadView, ReturnModule } from './inject';

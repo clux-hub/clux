@@ -1,4 +1,4 @@
-import {getView, ModuleGetter, renderApp, BStore, BStoreOptions, IStore, ControllerMiddleware, StoreBuilder} from 'src/index';
+import {getView, ModuleGetter, renderApp, BStore, BStoreOptions, IStore, IStoreMiddleware, StoreBuilder} from 'src/index';
 import {createRedux} from 'src/lib/with-redux';
 import {messages} from './utils';
 import {App, moduleGetter} from './modules';
@@ -6,7 +6,7 @@ import {App, moduleGetter} from './modules';
 export function createAppWithRedux(
   // eslint-disable-next-line @typescript-eslint/no-shadow
   moduleGetter: ModuleGetter,
-  middlewares?: ControllerMiddleware[],
+  middlewares?: IStoreMiddleware[],
   appModuleName?: string,
   appViewName?: string
 ) {
@@ -26,7 +26,7 @@ describe('init', () => {
   let mockStore: IStore;
   const actionLogs: string[] = [];
 
-  const storeMiddlewares: ControllerMiddleware = () => (next) => (action) => {
+  const storeMiddlewares: IStoreMiddleware = () => (next) => (action) => {
     actionLogs.push(action.type);
     return next(action);
   };

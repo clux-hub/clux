@@ -62,7 +62,7 @@ export interface IStore<S extends State = {}> {
 export interface CoreModuleState {
     loading?: Record<string, LoadingState>;
 }
-export declare type Model = (controller: IStore) => void | Promise<void>;
+export declare type Model = (store: IStore) => void | Promise<void>;
 export interface CommonModule<ModuleName extends string = string> {
     default: {
         moduleName: ModuleName;
