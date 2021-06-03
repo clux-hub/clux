@@ -15,8 +15,9 @@ import {
   config,
   reducer,
   mergeState,
+  moduleInitAction,
+  moduleReInitAction,
 } from './basic';
-import {moduleInitAction, moduleReInitAction} from './actions';
 
 type Handler<F> = F extends (...args: infer P) => any
   ? (

@@ -135,7 +135,30 @@ export const ActionTypes = {
    */
   Error: `clux${config.NSP}Error`,
 };
-
+export function errorAction(error: Object) {
+  return {
+    type: ActionTypes.Error,
+    payload: [error],
+  };
+}
+export function moduleInitAction(moduleName: string, initState: any) {
+  return {
+    type: `${moduleName}${config.NSP}${ActionTypes.MInit}`,
+    payload: [initState],
+  };
+}
+export function moduleReInitAction(moduleName: string, initState: any) {
+  return {
+    type: `${moduleName}${config.NSP}${ActionTypes.MReInit}`,
+    payload: [initState],
+  };
+}
+export function moduleLoadingAction(moduleName: string, loadingState: {[group: string]: LoadingState}) {
+  return {
+    type: `${moduleName}${config.NSP}${ActionTypes.MLoading}`,
+    payload: [loadingState],
+  };
+}
 export const MetaData: {
   facadeMap: FacadeMap;
   clientStore: IStore;
@@ -200,20 +223,13 @@ const loadings: Record<string, TaskCounter> = {};
  * @param moduleName moduleName+groupName合起来作为该加载项的key
  * @param groupName moduleName+groupName合起来作为该加载项的key
  */
-export function setLoading<T extends Promise<any>>(item: T, moduleName: string = MetaData.appModuleName, groupName = 'global'): T {
-  if (env.isServer) {
-    return item;
-  }
+export function setLoading<T extends Promise<any>>(store: IStore, item: T, moduleName: string, groupName: string = 'global'): T {
   const key = moduleName + config.NSP + groupName;
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener((loadingState) => {
-      const store = MetaData.clientStore;
-      if (store) {
-        const actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
-        const action = actions({[groupName]: loadingState});
-        store.dispatch(action);
-      }
+      const action = moduleLoadingAction(moduleName, {[groupName]: loadingState});
+      store.dispatch(action);
     });
   }
   loadings[key].addItem(item);
@@ -265,7 +281,7 @@ export function effect(loadingForGroupName?: string | null, loadingForModuleName
           } else if (!loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
-          setLoading(promiseResult, loadingForModuleName, loadingForGroupName as string);
+          setLoading(MetaData.clientStore, promiseResult, loadingForModuleName, loadingForGroupName as string);
         }
       };
       if (!fun.__decorators__) {
