@@ -7,6 +7,7 @@ import {
   ActionHandlerList,
   ActionTypes,
   config,
+  errorAction,
   MetaData,
   IStore,
   BStore,
@@ -16,7 +17,6 @@ import {
   GetState,
   State,
 } from './basic';
-import {errorAction} from './actions';
 import {loadModel} from './inject';
 
 export function isProcessedError(error: any): boolean {

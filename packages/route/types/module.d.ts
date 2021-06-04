@@ -1,4 +1,4 @@
-import { CoreModuleHandlers, CoreModuleState, ControllerMiddleware, CommonModule } from '@clux/core';
+import { CoreModuleHandlers, CoreModuleState, IStoreMiddleware, CommonModule } from '@clux/core';
 import { LocationTransform } from './transform';
 import type { RootParams, RouteState, HistoryAction } from './basic';
 import type { PagenameMap, NativeLocationMap } from './transform';
@@ -23,7 +23,7 @@ export declare function routeChangeAction<P extends RootParams>(routeState: Rout
     type: string;
     payload: RouteState<P>[];
 };
-export declare const routeMiddleware: ControllerMiddleware;
+export declare const routeMiddleware: IStoreMiddleware;
 export declare type RouteModule = CommonModule & {
     locationTransform: LocationTransform<any>;
 };
@@ -31,9 +31,9 @@ export declare function createRouteModule<P extends RootParams, G extends Pagena
     default: {
         moduleName: "route";
         model: import("@clux/core").Model;
-        initState: RouteState<P>;
-        views: { [k in keyof G]: any; };
+        params: {};
         actions: {};
+        components: { [k in keyof G]: any; };
     };
     locationTransform: LocationTransform<P>;
 };

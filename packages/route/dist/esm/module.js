@@ -146,7 +146,7 @@ export function createRouteModule(defaultParams, pagenameMap, nativeLocationMap,
 
   var handlers = RouteModuleHandlers;
   var locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
-  var result = exportModule('route', handlers, {});
+  var result = exportModule('route', handlers, {}, {});
   return {
     default: result,
     locationTransform: locationTransform

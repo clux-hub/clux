@@ -16,8 +16,6 @@ var _sprite = require("./sprite");
 
 var _basic = require("./basic");
 
-var _actions = require("./actions");
-
 var _inject = require("./inject");
 
 function isProcessedError(error) {
@@ -182,7 +180,7 @@ function enhanceStore(baseStore, middlewares) {
       if (isProcessedError(error)) {
         throw error;
       } else {
-        return _dispatch2((0, _actions.errorAction)(setProcessedError(error, false)));
+        return _dispatch2((0, _basic.errorAction)(setProcessedError(error, false)));
       }
     });
   }

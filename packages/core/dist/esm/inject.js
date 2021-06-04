@@ -1,14 +1,11 @@
 import _decorate from "@babel/runtime/helpers/esm/decorate";
-import { env } from './env';
 import { isPromise } from './sprite';
-import { injectActions, MetaData, config, reducer, mergeState } from './basic';
-import { moduleInitAction, moduleReInitAction } from './actions';
-export var exportModule = function exportModule(moduleName, ModuleHandles, views) {
+import { injectActions, MetaData, config, reducer, mergeState, moduleInitAction, moduleReInitAction } from './basic';
+export function exportModule(moduleName, ModuleHandles, params, components) {
   var model = function model(store) {
     if (!store.injectedModules[moduleName]) {
-      var moduleHandles = new ModuleHandles();
+      var moduleHandles = new ModuleHandles(moduleName);
       store.injectedModules[moduleName] = moduleHandles;
-      moduleHandles.moduleName = moduleName;
       moduleHandles.store = store;
       injectActions(moduleName, moduleHandles);
       var _initState = moduleHandles.initState;
@@ -27,64 +24,44 @@ export var exportModule = function exportModule(moduleName, ModuleHandles, views
   return {
     moduleName: moduleName,
     model: model,
-    views: views,
-    initState: undefined,
+    components: components,
+    params: params,
     actions: undefined
   };
-};
-export function cacheModule(module) {
-  var moduleName = module.default.moduleName;
-  var moduleGetter = MetaData.moduleGetter;
-  var fn = moduleGetter[moduleName];
-
-  if (fn.__module__ === module) {
-    return fn;
+}
+export function getModule(moduleName) {
+  if (MetaData.resourceCaches[moduleName]) {
+    return MetaData.resourceCaches[moduleName];
   }
 
-  fn = function fn() {
-    return module;
-  };
+  var moduleOrPromise = MetaData.moduleGetter[moduleName]();
 
-  fn.__module__ = module;
-  moduleGetter[moduleName] = fn;
-  return fn;
-}
-export function getModuleByName(moduleName) {
-  var result = MetaData.moduleGetter[moduleName]();
-
-  if (isPromise(result)) {
-    return result.then(function (module) {
-      cacheModule(module);
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(function (module) {
+      MetaData.resourceCaches[moduleName] = module;
       return module;
     });
   }
 
-  cacheModule(result);
-  return result;
+  MetaData.resourceCaches[moduleName] = moduleOrPromise;
+  return moduleOrPromise;
 }
-export function getView(moduleName, viewName) {
-  var callback = function callback(module) {
-    var view = module.default.views[viewName];
-
-    if (env.isServer) {
-      return view;
+export function getModuleList(moduleNames) {
+  return Promise.all(moduleNames.map(function (moduleName) {
+    if (MetaData.resourceCaches[moduleName]) {
+      return MetaData.resourceCaches[moduleName];
     }
 
-    module.default.model(MetaData.clientStore);
-    return view;
-  };
-
-  var moduleOrPromise = getModuleByName(moduleName);
-
-  if (isPromise(moduleOrPromise)) {
-    return moduleOrPromise.then(callback);
-  }
-
-  return callback(moduleOrPromise);
+    return getModule(moduleName);
+  }));
 }
 
 function _loadModel(moduleName, store) {
-  var moduleOrPromise = getModuleByName(moduleName);
+  if (store === void 0) {
+    store = MetaData.clientStore;
+  }
+
+  var moduleOrPromise = getModule(moduleName);
 
   if (isPromise(moduleOrPromise)) {
     return moduleOrPromise.then(function (module) {
@@ -96,10 +73,53 @@ function _loadModel(moduleName, store) {
 }
 
 export { _loadModel as loadModel };
+export function getComponet(moduleName, componentName) {
+  var key = moduleName + "," + componentName;
+
+  if (MetaData.resourceCaches[key]) {
+    return MetaData.resourceCaches[key];
+  }
+
+  var moduleCallback = function moduleCallback(module) {
+    var componentOrPromise = module.default.components[componentName]();
+
+    if (isPromise(componentOrPromise)) {
+      return componentOrPromise.then(function (view) {
+        MetaData.resourceCaches[key] = view;
+        return view;
+      });
+    }
+
+    MetaData.resourceCaches[key] = componentOrPromise;
+    return componentOrPromise;
+  };
+
+  var moduleOrPromise = getModule(moduleName);
+
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(moduleCallback);
+  }
+
+  return moduleCallback(moduleOrPromise);
+}
+export function getComponentList(keys) {
+  return Promise.all(keys.map(function (key) {
+    if (MetaData.resourceCaches[key]) {
+      return MetaData.resourceCaches[key];
+    }
+
+    var _key$split = key.split(','),
+        moduleName = _key$split[0],
+        componentName = _key$split[1];
+
+    return getComponet(moduleName, componentName);
+  }));
+}
 export var CoreModuleHandlers = _decorate(null, function (_initialize) {
-  var CoreModuleHandlers = function CoreModuleHandlers(initState) {
+  var CoreModuleHandlers = function CoreModuleHandlers(moduleName, initState) {
     _initialize(this);
 
+    this.moduleName = moduleName;
     this.initState = initState;
   };
 
@@ -109,12 +129,6 @@ export var CoreModuleHandlers = _decorate(null, function (_initialize) {
       kind: "field",
       key: "store",
       value: void 0
-    }, {
-      kind: "field",
-      key: "moduleName",
-      value: function value() {
-        return '';
-      }
     }, {
       kind: "get",
       key: "actions",
@@ -196,30 +210,6 @@ export var CoreModuleHandlers = _decorate(null, function (_initialize) {
     }]
   };
 });
-
-function clearHandlers(moduleName, actionHandlerMap) {
-  for (var actionName in actionHandlerMap) {
-    if (actionHandlerMap.hasOwnProperty(actionName)) {
-      var maps = actionHandlerMap[actionName];
-      delete maps[moduleName];
-    }
-  }
-}
-
-export function modelHotReplacement(moduleName, ModuleHandles) {
-  var store = MetaData.clientStore;
-
-  if (store.injectedModules[moduleName]) {
-    clearHandlers(moduleName, MetaData.reducersMap);
-    clearHandlers(moduleName, MetaData.effectsMap);
-    var moduleHandles = new ModuleHandles();
-    store.injectedModules[moduleName] = moduleHandles;
-    moduleHandles.moduleName = moduleName;
-    moduleHandles.store = store;
-    injectActions(moduleName, moduleHandles);
-    env.console.log("[HMR] @clux Updated model: " + moduleName);
-  }
-}
 export function getRootModuleAPI(data) {
   if (!MetaData.facadeMap) {
     if (data) {

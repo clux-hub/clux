@@ -3,15 +3,14 @@ import './env';
 import React from 'react';
 import {hydrate, render} from 'react-dom';
 import {routeMiddleware, setRouteConfig, routeConfig} from '@clux/route';
-import {env, getRootModuleAPI, renderApp, ssrApp, setConfig as setCoreConfig, exportModule as baseExportModule} from '@clux/core';
+import {env, getRootModuleAPI, renderApp, ssrApp, setConfig as setCoreConfig} from '@clux/core';
 import {createRouter} from '@clux/route-browser';
 import {loadView, setLoadViewOptions} from './loadView';
 import {MetaData} from './sington';
 import type {ComponentType} from 'react';
 import type {
   ModuleGetter,
-  ExportModule,
-  ControllerMiddleware,
+  IStoreMiddleware,
   StoreBuilder,
   BStoreOptions,
   BStore,
@@ -33,7 +32,6 @@ export type {ReduxStore, ReduxOptions} from '@clux/core/lib/with-redux';
 export {
   ActionTypes,
   LoadingState,
-  modelHotReplacement,
   env,
   effect,
   errorAction,
@@ -45,6 +43,7 @@ export {
   clientSide,
   deepMerge,
   deepMergeState,
+  exportModule,
   isProcessedError,
   setProcessedError,
   delayPromise,
@@ -82,8 +81,6 @@ export function setConfig(conf: {
   setLoadViewOptions(conf);
 }
 
-export const exportModule: ExportModule<ComponentType<any>> = baseExportModule;
-
 export interface RenderOptions {
   id?: string;
   ssrKey?: string;
@@ -94,8 +91,8 @@ export interface SSROptions {
   url: string;
 }
 
-export function createApp(moduleGetter: ModuleGetter, middlewares: ControllerMiddleware[] = [], appModuleName?: string, appViewName?: string) {
-  const controllerMiddleware = [routeMiddleware, ...middlewares];
+export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddleware[] = [], appModuleName?: string, appViewName?: string) {
+  const istoreMiddleware = [routeMiddleware, ...middlewares];
   const {locationTransform} = moduleGetter['route']() as RouteModule;
   return {
     useStore<O extends BStoreOptions = BStoreOptions, B extends BStore = BStore>({storeOptions, storeCreator}: StoreBuilder<O, B>) {
@@ -108,7 +105,7 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: ControllerMid
           const panel = env.document.getElementById(id);
           const initState = {...storeOptions.initState, route: routeState, ...ssrData};
           const baseStore = storeCreator({...storeOptions, initState});
-          const {store, beforeRender} = renderApp(baseStore, Object.keys(initState), moduleGetter, controllerMiddleware, appModuleName, appViewName);
+          const {store, beforeRender} = renderApp(baseStore, Object.keys(initState), [], moduleGetter, istoreMiddleware, appModuleName, appViewName);
           router.setStore(store);
           MetaData.router = router;
           return {
@@ -128,14 +125,7 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: ControllerMid
           const routeState = router.getRouteState();
           const initState = {...storeOptions.initState, route: routeState};
           const baseStore = storeCreator({...storeOptions, initState});
-          const {store, beforeRender} = ssrApp(
-            baseStore,
-            Object.keys(routeState.params),
-            moduleGetter,
-            controllerMiddleware,
-            appModuleName,
-            appViewName
-          );
+          const {store, beforeRender} = ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, istoreMiddleware, appModuleName, appViewName);
           router.setStore(store);
           MetaData.router = router;
           return {
@@ -171,13 +161,13 @@ export function patchActions(typeName: string, json?: string): void {
 }
 
 export type GetAPP<A extends RootModuleFacade> = {
-  State: {[M in keyof A]: A[M]['state']};
-  GetRouter: () => IRouter<A['route']['state']['params'], Extract<keyof A['route']['views'], string>>;
+  RouteParams: {[M in keyof A]: A[M]['params']};
+  GetRouter: () => IRouter<{[M in keyof A]: A[M]['params']}, Extract<keyof A['route']['components'], string>>;
   GetActions<N extends keyof A>(...args: N[]): {[K in N]: A[K]['actions']};
   LoadView: LoadView<A>;
   Modules: RootModuleAPI<A>;
   Actions: RootModuleActions<A>;
-  Pagenames: {[K in keyof A['route']['views']]: K};
+  Pagenames: {[K in keyof A['route']['components']]: K};
 };
 
 export function getApp<T extends {GetActions: any; GetRouter: any; LoadView: any; Modules: any; Pagenames: any}>(): Pick<

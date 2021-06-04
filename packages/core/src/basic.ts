@@ -62,8 +62,7 @@ export type ActionCreatorList = Record<string, ActionCreator>;
 export type ActionCreatorMap = Record<string, ActionCreatorList>;
 
 export interface IModuleHandlers {
-  initState: any;
-  moduleName: string;
+  readonly initState: any;
   store: IStore;
 }
 
@@ -103,10 +102,10 @@ export type Model = (store: IStore) => void | Promise<void>;
 export interface CommonModule<ModuleName extends string = string> {
   default: {
     moduleName: ModuleName;
-    initState: Record<string, any>;
     model: Model;
-    views: Record<string, any>;
+    params: Record<string, any>;
     actions: Record<string, (...args: any[]) => Action>;
+    components: Record<string, () => any>;
   };
 }
 
@@ -168,7 +167,8 @@ export const MetaData: {
   injectedModules: Record<string, boolean>;
   reducersMap: ActionHandlerMap;
   effectsMap: ActionHandlerMap;
-} = {injectedModules: {}, reducersMap: {}, effectsMap: {}} as any;
+  resourceCaches: Record<string, any>;
+} = {injectedModules: {}, reducersMap: {}, effectsMap: {}, resourceCaches: {}} as any;
 
 function transformAction(actionName: string, handler: ActionHandler, listenerModule: string, actionHandlerMap: ActionHandlerMap) {
   if (!actionHandlerMap[actionName]) {

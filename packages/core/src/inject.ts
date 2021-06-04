@@ -1,9 +1,7 @@
-import {env} from './env';
 import {isPromise} from './sprite';
 import {
   Action,
   IModuleHandlers,
-  ActionHandlerMap,
   injectActions,
   CoreModuleState,
   CommonModule,
@@ -26,7 +24,6 @@ type Handler<F> = F extends (...args: infer P) => any
       type: string;
     }
   : never;
-
 type Actions<T> = Pick<
   {[K in keyof T]: Handler<T[K]>},
   {
@@ -34,53 +31,42 @@ type Actions<T> = Pick<
   }[keyof T]
 >;
 
-export interface Module<
-  N extends string = string,
-  H extends IModuleHandlers = IModuleHandlers,
-  VS extends Record<string, any> = Record<string, any>
-> {
-  default: {
-    /**
-     * 模块名称
-     */
-    moduleName: N;
-    model: Model;
-    initState: H['initState'];
-    /**
-     * 模块供外部使用的views
-     */
-    views: VS;
-    /**
-     * 模块可供调用的actionCreator
-     */
-    actions: Actions<H>;
-  };
-}
+type HandlerThis<T> = T extends (...args: infer P) => any
+  ? (
+      ...args: P
+    ) => {
+      type: string;
+    }
+  : undefined;
 
-/**
- * 导出Module
- * @param ModuleHandles 模块的ModuleHandlers类，必须继承BaseModuleHandlers
- * @param views 模块需要导出给外部使用的View，若无需给外部使用可不导出
- */
-export type ExportModule<Component> = <N extends string, V extends Record<string, Component>, H extends IModuleHandlers>(
+type ActionsThis<T> = {[K in keyof T]: HandlerThis<T[K]>};
+
+// export interface Module<N extends string, H extends IModuleHandlers, P extends Record<string, any>, CS extends Record<string, () => any>> {
+//   moduleName: N;
+//   model: Model;
+//   params: P;
+//   actions: Actions<H>;
+//   components: CS;
+// }
+
+export function exportModule<N extends string, H extends IModuleHandlers, P extends Record<string, any>, CS extends Record<string, () => any>>(
   moduleName: N,
   ModuleHandles: {
-    new (): H;
+    new (moduleName: string): H;
   },
-  views: V
-) => Module<N, H, V>['default'];
-
-/**
- * 导出Module，该方法为ExportModule接口的实现
- * @param ModuleHandles 模块的ModuleHandlers类，必须继承CoreModuleHandlers
- * @param views 模块需要导出给外部使用的View，若无需给外部使用可不导出
- */
-export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views) => {
+  params: P,
+  components: CS
+): {
+  moduleName: N;
+  model: Model;
+  params: P;
+  actions: Actions<H>;
+  components: CS;
+} {
   const model: Model = (store) => {
     if (!store.injectedModules[moduleName]) {
-      const moduleHandles = new ModuleHandles();
+      const moduleHandles = new ModuleHandles(moduleName);
       store.injectedModules[moduleName] = moduleHandles;
-      moduleHandles.moduleName = moduleName;
       moduleHandles.store = store;
       injectActions(moduleName, moduleHandles as any);
       const initState = moduleHandles.initState;
@@ -95,73 +81,76 @@ export const exportModule: ExportModule<any> = (moduleName, ModuleHandles, views
   return {
     moduleName,
     model,
-    views,
-    initState: undefined as any,
+    components,
+    params,
     actions: undefined as any,
   };
-};
-
-export function cacheModule<T extends CommonModule>(module: T): () => T {
-  const moduleName = module.default.moduleName;
-  const moduleGetter: ModuleGetter = MetaData.moduleGetter;
-  let fn = moduleGetter[moduleName] as any;
-  if (fn.__module__ === module) {
-    return fn;
-  }
-  fn = () => module;
-  fn.__module__ = module;
-  moduleGetter[moduleName] = fn;
-  return fn;
 }
 
-export function getModuleByName(moduleName: string): Promise<CommonModule> | CommonModule {
-  const result = MetaData.moduleGetter[moduleName]();
-  if (isPromise(result)) {
-    return result.then((module) => {
-      cacheModule(module);
-      return module as Module;
+export function getModule(moduleName: string): Promise<CommonModule> | CommonModule {
+  if (MetaData.resourceCaches[moduleName]) {
+    return MetaData.resourceCaches[moduleName];
+  }
+  const moduleOrPromise = MetaData.moduleGetter[moduleName]();
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then((module) => {
+      MetaData.resourceCaches[moduleName] = module;
+      return module;
     });
   }
-  cacheModule(result);
-  return result as Module;
+  MetaData.resourceCaches[moduleName] = moduleOrPromise;
+  return moduleOrPromise;
 }
-
-/**
- * 动态获取View，与LoadView的区别是：
- * - getView仅获取view，并不渲染，与UI平台无关
- * - LoadView内部会调用getView之后会渲染View
- * - getView会自动加载并初始化该view对应的model
- */
-export function getView<T>(moduleName: string, viewName: string): T | Promise<T> {
-  const callback = (module: CommonModule) => {
-    const view: T = module.default.views[viewName];
-    if (env.isServer) {
-      return view;
-    }
-    module.default.model(MetaData.clientStore);
-    return view;
-  };
-  const moduleOrPromise = getModuleByName(moduleName);
-  if (isPromise(moduleOrPromise)) {
-    return moduleOrPromise.then(callback);
-  }
-  return callback(moduleOrPromise);
+export function getModuleList(moduleNames: string[]): Promise<CommonModule[]> {
+  return Promise.all(
+    moduleNames.map((moduleName) => {
+      if (MetaData.resourceCaches[moduleName]) {
+        return MetaData.resourceCaches[moduleName];
+      }
+      return getModule(moduleName);
+    })
+  );
 }
-
-/**
- * 动态加载并初始化其他模块的model
- */
-export function loadModel<MG extends ModuleGetter>(moduleName: keyof MG, store: IStore): void | Promise<void> {
-  const moduleOrPromise = getModuleByName(moduleName as string);
+export function loadModel<MG extends ModuleGetter>(moduleName: keyof MG, store: IStore = MetaData.clientStore): void | Promise<void> {
+  const moduleOrPromise = getModule(moduleName as string);
   if (isPromise(moduleOrPromise)) {
     return moduleOrPromise.then((module) => module.default.model(store));
   }
   return moduleOrPromise.default.model(store);
 }
-
-type ActionsThis<Ins> = {
-  [K in keyof Ins]: Ins[K] extends (args: never) => any ? Handler<Ins[K]> : never;
-};
+export function getComponet<T>(moduleName: string, componentName: string): T | Promise<T> {
+  const key = `${moduleName},${componentName}`;
+  if (MetaData.resourceCaches[key]) {
+    return MetaData.resourceCaches[key];
+  }
+  const moduleCallback = (module: CommonModule) => {
+    const componentOrPromise = module.default.components[componentName]();
+    if (isPromise(componentOrPromise)) {
+      return componentOrPromise.then((view) => {
+        MetaData.resourceCaches[key] = view;
+        return view;
+      });
+    }
+    MetaData.resourceCaches[key] = componentOrPromise;
+    return componentOrPromise;
+  };
+  const moduleOrPromise = getModule(moduleName);
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(moduleCallback);
+  }
+  return moduleCallback(moduleOrPromise);
+}
+export function getComponentList(keys: string[]): Promise<any[]> {
+  return Promise.all(
+    keys.map((key) => {
+      if (MetaData.resourceCaches[key]) {
+        return MetaData.resourceCaches[key];
+      }
+      const [moduleName, componentName] = key.split(',');
+      return getComponet(moduleName, componentName);
+    })
+  );
+}
 
 /**
  * ModuleHandlers基类
@@ -170,9 +159,7 @@ type ActionsThis<Ins> = {
 export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleState, R extends Record<string, any> = {}> implements IModuleHandlers {
   store!: IStore<R>;
 
-  moduleName: string = '';
-
-  constructor(public readonly initState: S) {}
+  constructor(public readonly moduleName: string, public readonly initState: S) {}
 
   protected get actions(): ActionsThis<this> {
     return MetaData.facadeMap[this.moduleName].actions as any;
@@ -182,16 +169,10 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
     return MetaData.facadeMap[this.moduleName].actions as any;
   }
 
-  /**
-   * 获取本Model的state
-   */
   protected get state(): S {
     return this.store.getState(this.moduleName) as S;
   }
 
-  /**
-   * 获取整个store的state
-   */
   protected get rootState(): R {
     return this.store.getState() as R;
   }
@@ -219,80 +200,33 @@ export abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleS
     return loadModel(moduleName, this.store);
   }
 
-  /**
-   * - 模块被加载并初始化时将触发‘moduleName.Init’的action
-   * - 此方法为该action的默认reducerHandler，通常用来注入初始化moduleState
-   */
   @reducer
   public Init(initState: S): S {
     return initState;
   }
 
-  /**
-   * 通用的reducerHandler，通常用来更新moduleState
-   */
   @reducer
   public Update(payload: Partial<S>, key: string): S {
     return mergeState(this.state, payload);
   }
 
-  /**
-   * - effect异步执行时，将自动派发‘moduleName.Loading’的action
-   * - 此方法为该action的默认reducerHandler，通常用来在moduleState中注入loading状态
-   */
   @reducer
   public Loading(payload: Record<string, string>): S {
     const loading = mergeState(this.state.loading, payload);
     return mergeState(this.state, {loading});
-    // const state = this.state;
-    // return {
-    //   ...state,
-    //   loading: {...state.loading, ...payload},
-    // };
   }
 }
 
-function clearHandlers(moduleName: string, actionHandlerMap: ActionHandlerMap) {
-  // eslint-disable-next-line no-restricted-syntax
-  for (const actionName in actionHandlerMap) {
-    // eslint-disable-next-line no-prototype-builtins
-    if (actionHandlerMap.hasOwnProperty(actionName)) {
-      const maps = actionHandlerMap[actionName];
-      delete maps[moduleName];
-    }
-  }
-}
+export type ReturnData<T> = T extends Promise<infer R> ? R : T;
 
-/**
- * 当model发生变化时，用来热更新model
- * - 注意通常initState发生变更时不确保热更新100%有效，此时会console警告
- * - 通常actionHandlers发生变更时热更新有效
- */
-export function modelHotReplacement(
-  moduleName: string,
-  ModuleHandles: {
-    new (): IModuleHandlers;
-  }
-) {
-  const store = MetaData.clientStore;
-  if (store.injectedModules[moduleName]) {
-    clearHandlers(moduleName, MetaData.reducersMap);
-    clearHandlers(moduleName, MetaData.effectsMap);
-    const moduleHandles = new ModuleHandles();
-    store.injectedModules[moduleName] = moduleHandles;
-    moduleHandles.moduleName = moduleName;
-    moduleHandles.store = store;
-    injectActions(moduleName, moduleHandles as any);
-    env.console.log(`[HMR] @clux Updated model: ${moduleName}`);
-  }
-}
-
-export type ReturnModule<T> = T extends Promise<infer R> ? R : T;
+type ReturnComponents<CS extends Record<string, () => any>> = {
+  [K in keyof CS]: CS[K] extends () => Promise<{default: infer P}> ? P : ReturnType<CS[K]>;
+};
 
 type ModuleFacade<M extends CommonModule> = {
   name: string;
-  views: M['default']['views'];
-  state: M['default']['initState'];
+  components: ReturnComponents<M['default']['components']>;
+  params: M['default']['params'];
   actions: M['default']['actions'];
   actionNames: {[K in keyof M['default']['actions']]: string};
 };
@@ -301,13 +235,13 @@ export type RootModuleFacade<
   G extends {
     [N in Extract<keyof G, string>]: () => CommonModule<N> | Promise<CommonModule<N>>;
   } = any
-> = {[K in Extract<keyof G, string>]: ModuleFacade<ReturnModule<ReturnType<G[K]>>>};
+> = {[K in Extract<keyof G, string>]: ModuleFacade<ReturnData<ReturnType<G[K]>>>};
 
 export type RootModuleActions<A extends RootModuleFacade> = {[K in keyof A]: keyof A[K]['actions']};
 
 export type RootModuleAPI<A extends RootModuleFacade = RootModuleFacade> = {[K in keyof A]: Pick<A[K], 'name' | 'actions' | 'actionNames'>};
 
-export type RootModuleState<A extends RootModuleFacade = RootModuleFacade> = {[K in keyof A]: A[K]['state']};
+export type RootModuleParams<A extends RootModuleFacade = RootModuleFacade> = {[K in keyof A]: A[K]['params']};
 
 export function getRootModuleAPI<T extends RootModuleFacade = any>(data?: Record<string, string[]>): RootModuleAPI<T> {
   if (!MetaData.facadeMap) {
@@ -366,12 +300,3 @@ export function getRootModuleAPI<T extends RootModuleFacade = any>(data?: Record
   }
   return MetaData.facadeMap as any;
 }
-
-export type BaseLoadView<A extends RootModuleFacade = {}, Options extends {OnLoading?: any; OnError?: any} = {OnLoading?: any; OnError?: any}> = <
-  M extends keyof A,
-  V extends keyof A[M]['views']
->(
-  moduleName: M,
-  viewName: V,
-  options?: Options
-) => A[M]['views'][V];

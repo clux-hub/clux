@@ -1,4 +1,4 @@
-import {getView, ModuleGetter, renderApp, BStore, BStoreOptions, IStore, IStoreMiddleware, StoreBuilder} from 'src/index';
+import {getComponet, ModuleGetter, renderApp, BStore, BStoreOptions, IStore, IStoreMiddleware, StoreBuilder} from 'src/index';
 import {createRedux} from 'src/lib/with-redux';
 import {messages} from './utils';
 import {App, moduleGetter} from './modules';
@@ -15,7 +15,7 @@ export function createAppWithRedux(
       return {
         render() {
           const baseStore = storeCreator(storeOptions);
-          return renderApp(baseStore, [], moduleGetter, middlewares, appModuleName, appViewName);
+          return renderApp(baseStore, [], [], moduleGetter, middlewares, appModuleName, appViewName);
         },
       };
     },
@@ -54,8 +54,10 @@ describe('init', () => {
     });
   });
   test('加载moduleB.Main,moduleC.Main', async () => {
-    const viewB = await getView<Function>('moduleB', 'Main');
-    const viewC = await getView<Function>('moduleC', 'Main');
+    const viewB = await getComponet<Function>('moduleB', 'Main');
+    const viewC = await getComponet<Function>('moduleC', 'Main');
+    expect(viewB()).toBe('moduleB_views_Main');
+    expect(viewC()).toBe('moduleC_views_Main');
     expect(actionLogs).toEqual(['moduleB.Init', 'moduleC.Init']);
     expect(mockStore.getState()).toEqual({
       thirdParty: 123,
@@ -63,8 +65,6 @@ describe('init', () => {
       moduleB: {count: 0},
       moduleC: {count: 0},
     });
-    expect(viewB()).toBe('moduleB_views_Main');
-    expect(viewC()).toBe('moduleC_views_Main');
   });
   test('同步handler', () => {
     mockStore.dispatch(App.moduleA.actions.add());

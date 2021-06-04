@@ -18,10 +18,35 @@ export const ActionTypes = {
   MReInit: 'ReInit',
   Error: `clux${config.NSP}Error`
 };
+export function errorAction(error) {
+  return {
+    type: ActionTypes.Error,
+    payload: [error]
+  };
+}
+export function moduleInitAction(moduleName, initState) {
+  return {
+    type: `${moduleName}${config.NSP}${ActionTypes.MInit}`,
+    payload: [initState]
+  };
+}
+export function moduleReInitAction(moduleName, initState) {
+  return {
+    type: `${moduleName}${config.NSP}${ActionTypes.MReInit}`,
+    payload: [initState]
+  };
+}
+export function moduleLoadingAction(moduleName, loadingState) {
+  return {
+    type: `${moduleName}${config.NSP}${ActionTypes.MLoading}`,
+    payload: [loadingState]
+  };
+}
 export const MetaData = {
   injectedModules: {},
   reducersMap: {},
-  effectsMap: {}
+  effectsMap: {},
+  resourceCaches: {}
 };
 
 function transformAction(actionName, handler, listenerModule, actionHandlerMap) {
@@ -65,25 +90,16 @@ export function injectActions(moduleName, handlers) {
   }
 }
 const loadings = {};
-export function setLoading(item, moduleName = MetaData.appModuleName, groupName = 'global') {
-  if (env.isServer) {
-    return item;
-  }
-
+export function setLoading(store, item, moduleName, groupName = 'global') {
   const key = moduleName + config.NSP + groupName;
 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener(loadingState => {
-      const store = MetaData.clientStore;
-
-      if (store) {
-        const actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
-        const action = actions({
-          [groupName]: loadingState
-        });
-        store.dispatch(action);
-      }
+      const action = moduleLoadingAction(moduleName, {
+        [groupName]: loadingState
+      });
+      store.dispatch(action);
     });
   }
 
@@ -126,7 +142,7 @@ export function effect(loadingForGroupName, loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
 
-          setLoading(promiseResult, loadingForModuleName, loadingForGroupName);
+          setLoading(MetaData.clientStore, promiseResult, loadingForModuleName, loadingForGroupName);
         }
       };
 

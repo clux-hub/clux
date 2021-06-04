@@ -3,40 +3,36 @@
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
 exports.__esModule = true;
-exports.cacheModule = cacheModule;
-exports.getModuleByName = getModuleByName;
-exports.getView = getView;
+exports.exportModule = exportModule;
+exports.getModule = getModule;
+exports.getModuleList = getModuleList;
 exports.loadModel = _loadModel;
-exports.modelHotReplacement = modelHotReplacement;
+exports.getComponet = getComponet;
+exports.getComponentList = getComponentList;
 exports.getRootModuleAPI = getRootModuleAPI;
-exports.CoreModuleHandlers = exports.exportModule = void 0;
+exports.CoreModuleHandlers = void 0;
 
 var _decorate2 = _interopRequireDefault(require("@babel/runtime/helpers/decorate"));
-
-var _env = require("./env");
 
 var _sprite = require("./sprite");
 
 var _basic = require("./basic");
 
-var _actions = require("./actions");
-
-var exportModule = function exportModule(moduleName, ModuleHandles, views) {
+function exportModule(moduleName, ModuleHandles, params, components) {
   var model = function model(store) {
     if (!store.injectedModules[moduleName]) {
-      var moduleHandles = new ModuleHandles();
+      var moduleHandles = new ModuleHandles(moduleName);
       store.injectedModules[moduleName] = moduleHandles;
-      moduleHandles.moduleName = moduleName;
       moduleHandles.store = store;
       (0, _basic.injectActions)(moduleName, moduleHandles);
       var _initState = moduleHandles.initState;
       var preModuleState = store.getState(moduleName);
 
       if (preModuleState) {
-        return store.dispatch((0, _actions.moduleReInitAction)(moduleName, _initState));
+        return store.dispatch((0, _basic.moduleReInitAction)(moduleName, _initState));
       }
 
-      return store.dispatch((0, _actions.moduleInitAction)(moduleName, _initState));
+      return store.dispatch((0, _basic.moduleInitAction)(moduleName, _initState));
     }
 
     return undefined;
@@ -45,69 +41,46 @@ var exportModule = function exportModule(moduleName, ModuleHandles, views) {
   return {
     moduleName: moduleName,
     model: model,
-    views: views,
-    initState: undefined,
+    components: components,
+    params: params,
     actions: undefined
   };
-};
-
-exports.exportModule = exportModule;
-
-function cacheModule(module) {
-  var moduleName = module.default.moduleName;
-  var moduleGetter = _basic.MetaData.moduleGetter;
-  var fn = moduleGetter[moduleName];
-
-  if (fn.__module__ === module) {
-    return fn;
-  }
-
-  fn = function fn() {
-    return module;
-  };
-
-  fn.__module__ = module;
-  moduleGetter[moduleName] = fn;
-  return fn;
 }
 
-function getModuleByName(moduleName) {
-  var result = _basic.MetaData.moduleGetter[moduleName]();
+function getModule(moduleName) {
+  if (_basic.MetaData.resourceCaches[moduleName]) {
+    return _basic.MetaData.resourceCaches[moduleName];
+  }
 
-  if ((0, _sprite.isPromise)(result)) {
-    return result.then(function (module) {
-      cacheModule(module);
+  var moduleOrPromise = _basic.MetaData.moduleGetter[moduleName]();
+
+  if ((0, _sprite.isPromise)(moduleOrPromise)) {
+    return moduleOrPromise.then(function (module) {
+      _basic.MetaData.resourceCaches[moduleName] = module;
       return module;
     });
   }
 
-  cacheModule(result);
-  return result;
+  _basic.MetaData.resourceCaches[moduleName] = moduleOrPromise;
+  return moduleOrPromise;
 }
 
-function getView(moduleName, viewName) {
-  var callback = function callback(module) {
-    var view = module.default.views[viewName];
-
-    if (_env.env.isServer) {
-      return view;
+function getModuleList(moduleNames) {
+  return Promise.all(moduleNames.map(function (moduleName) {
+    if (_basic.MetaData.resourceCaches[moduleName]) {
+      return _basic.MetaData.resourceCaches[moduleName];
     }
 
-    module.default.model(_basic.MetaData.clientStore);
-    return view;
-  };
-
-  var moduleOrPromise = getModuleByName(moduleName);
-
-  if ((0, _sprite.isPromise)(moduleOrPromise)) {
-    return moduleOrPromise.then(callback);
-  }
-
-  return callback(moduleOrPromise);
+    return getModule(moduleName);
+  }));
 }
 
 function _loadModel(moduleName, store) {
-  var moduleOrPromise = getModuleByName(moduleName);
+  if (store === void 0) {
+    store = _basic.MetaData.clientStore;
+  }
+
+  var moduleOrPromise = getModule(moduleName);
 
   if ((0, _sprite.isPromise)(moduleOrPromise)) {
     return moduleOrPromise.then(function (module) {
@@ -118,10 +91,55 @@ function _loadModel(moduleName, store) {
   return moduleOrPromise.default.model(store);
 }
 
+function getComponet(moduleName, componentName) {
+  var key = moduleName + "," + componentName;
+
+  if (_basic.MetaData.resourceCaches[key]) {
+    return _basic.MetaData.resourceCaches[key];
+  }
+
+  var moduleCallback = function moduleCallback(module) {
+    var componentOrPromise = module.default.components[componentName]();
+
+    if ((0, _sprite.isPromise)(componentOrPromise)) {
+      return componentOrPromise.then(function (view) {
+        _basic.MetaData.resourceCaches[key] = view;
+        return view;
+      });
+    }
+
+    _basic.MetaData.resourceCaches[key] = componentOrPromise;
+    return componentOrPromise;
+  };
+
+  var moduleOrPromise = getModule(moduleName);
+
+  if ((0, _sprite.isPromise)(moduleOrPromise)) {
+    return moduleOrPromise.then(moduleCallback);
+  }
+
+  return moduleCallback(moduleOrPromise);
+}
+
+function getComponentList(keys) {
+  return Promise.all(keys.map(function (key) {
+    if (_basic.MetaData.resourceCaches[key]) {
+      return _basic.MetaData.resourceCaches[key];
+    }
+
+    var _key$split = key.split(','),
+        moduleName = _key$split[0],
+        componentName = _key$split[1];
+
+    return getComponet(moduleName, componentName);
+  }));
+}
+
 var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
-  var CoreModuleHandlers = function CoreModuleHandlers(initState) {
+  var CoreModuleHandlers = function CoreModuleHandlers(moduleName, initState) {
     _initialize(this);
 
+    this.moduleName = moduleName;
     this.initState = initState;
   };
 
@@ -131,12 +149,6 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
       kind: "field",
       key: "store",
       value: void 0
-    }, {
-      kind: "field",
-      key: "moduleName",
-      value: function value() {
-        return '';
-      }
     }, {
       kind: "get",
       key: "actions",
@@ -219,31 +231,6 @@ var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
   };
 });
 exports.CoreModuleHandlers = CoreModuleHandlers;
-
-function clearHandlers(moduleName, actionHandlerMap) {
-  for (var actionName in actionHandlerMap) {
-    if (actionHandlerMap.hasOwnProperty(actionName)) {
-      var maps = actionHandlerMap[actionName];
-      delete maps[moduleName];
-    }
-  }
-}
-
-function modelHotReplacement(moduleName, ModuleHandles) {
-  var store = _basic.MetaData.clientStore;
-
-  if (store.injectedModules[moduleName]) {
-    clearHandlers(moduleName, _basic.MetaData.reducersMap);
-    clearHandlers(moduleName, _basic.MetaData.effectsMap);
-    var moduleHandles = new ModuleHandles();
-    store.injectedModules[moduleName] = moduleHandles;
-    moduleHandles.moduleName = moduleName;
-    moduleHandles.store = store;
-    (0, _basic.injectActions)(moduleName, moduleHandles);
-
-    _env.env.console.log("[HMR] @clux Updated model: " + moduleName);
-  }
-}
 
 function getRootModuleAPI(data) {
   if (!_basic.MetaData.facadeMap) {

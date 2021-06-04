@@ -1,7 +1,6 @@
 import { env } from './env';
 import { isPromise } from './sprite';
-import { ActionTypes, config, MetaData } from './basic';
-import { errorAction } from './actions';
+import { ActionTypes, config, errorAction, MetaData } from './basic';
 import { loadModel } from './inject';
 export function isProcessedError(error) {
   return error && !!error.__cluxProcessed__;

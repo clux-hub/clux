@@ -1,51 +1,56 @@
 import { MetaData } from './basic';
-import { getModuleByName, loadModel } from './inject';
+import { getModuleList, getComponentList, getComponet } from './inject';
 import { enhanceStore } from './store';
 
 const defFun = () => undefined;
 
-export function renderApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
+export function renderApp(baseStore, preloadModules, preloadComponents, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
   MetaData.appModuleName = appModuleName;
-  MetaData.appViewName = appViewName;
+  MetaData.moduleGetter = moduleGetter;
 
-  if (!MetaData.moduleGetter) {
-    MetaData.moduleGetter = moduleGetter;
+  if (typeof moduleGetter[appModuleName] !== 'function') {
+    throw `${appModuleName} could not be found in moduleGetter`;
   }
 
+  preloadModules = preloadModules.filter(moduleName => moduleGetter[moduleName] && moduleName !== appModuleName);
+  preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares);
-  preLoadModules = preLoadModules.filter(item => moduleGetter[item] && item !== appModuleName);
   return {
     store,
 
     async beforeRender() {
       MetaData.clientStore = store;
-      await loadModel(appModuleName, store);
-      await Promise.all(preLoadModules.map(moduleName => loadModel(moduleName, store)));
-      const appModule = getModuleByName(appModuleName);
-      return appModule.default.views[appViewName];
+      const modules = await getModuleList(preloadModules);
+      await getComponentList(preloadComponents);
+      const appModule = modules[0].default;
+      await appModule.model(store);
+      return getComponet(appModuleName, appViewName);
     }
 
   };
 }
-export function ssrApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
+export function ssrApp(baseStore, preloadModules, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
   MetaData.appModuleName = appModuleName;
-  MetaData.appViewName = appViewName;
+  MetaData.moduleGetter = moduleGetter;
 
-  if (!MetaData.moduleGetter) {
-    MetaData.moduleGetter = moduleGetter;
+  if (typeof moduleGetter[appModuleName] !== 'function') {
+    throw `${appModuleName} could not be found in moduleGetter`;
   }
 
+  preloadModules = preloadModules.filter(moduleName => moduleGetter[moduleName] && moduleName !== appModuleName);
+  preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares);
-  preLoadModules = preLoadModules.filter(item => moduleGetter[item] && item !== appModuleName);
   return {
     store,
 
     async beforeRender() {
-      await loadModel(appModuleName, store);
-      await Promise.all(preLoadModules.map(moduleName => loadModel(moduleName, store)));
-      const appModule = getModuleByName(appModuleName);
+      const [{
+        default: appModule
+      }, ...otherModules] = await getModuleList(preloadModules);
+      await appModule.model(store);
+      await Promise.all(otherModules.map(module => module.default.model(store)));
       store.dispatch = defFun;
-      return appModule.default.views[appViewName];
+      return getComponet(appModuleName, appViewName);
     }
 
   };

@@ -1,9 +1,9 @@
 import {deepMerge} from '@clux/core';
 import {extendDefault, excludeDefault, splitPrivate} from './deep-extend';
-import {Location, NativeLocation, DeepPartial, RootParams, routeConfig, PartialLocation} from './basic';
+import {NativeLocation, DeepPartial, RootParams, routeConfig, PartialLocation} from './basic';
 
 export type LocationTransform<P extends RootParams> = {
-  in: (nativeLocation: NativeLocation | PartialLocation<P>) => Location<P>;
+  in: (nativeLocation: NativeLocation | PartialLocation<P>) => PartialLocation<P>;
   out: (cluxLocation: PartialLocation<P>) => NativeLocation;
 };
 
@@ -18,8 +18,7 @@ export type NativeLocationMap = {
   in(nativeLocation: NativeLocation): NativeLocation;
   out(nativeLocation: NativeLocation): NativeLocation;
 };
-export function assignDefaultData(data: {[moduleName: string]: any}): {[moduleName: string]: any} {
-  const def = routeConfig.defaultParams;
+export function assignDefaultData(data: {[moduleName: string]: any}, def: {[key: string]: any}): {[moduleName: string]: any} {
   return Object.keys(data).reduce((params, moduleName) => {
     // eslint-disable-next-line no-prototype-builtins
     if (def.hasOwnProperty(moduleName)) {
@@ -34,13 +33,12 @@ function dataIsNativeLocation(data: PartialLocation | NativeLocation): data is N
 }
 
 export function createLocationTransform<P extends RootParams>(
-  defaultParams: P,
   pagenameMap: PagenameMap<P>,
   nativeLocationMap: NativeLocationMap,
   notfoundPagename: string = '/404',
   paramsKey: string = '_'
 ): LocationTransform<P> {
-  routeConfig.defaultParams = defaultParams;
+  // routeConfig.defaultParams = defaultParams;
   let pagenames = Object.keys(pagenameMap);
   pagenameMap = pagenames
     .sort((a, b) => b.length - a.length)
@@ -93,10 +91,10 @@ export function createLocationTransform<P extends RootParams>(
         pagename = `${notfoundPagename}/`;
         params = pagenameMap[pagename] ? pagenameMap[pagename].argsToParams([path.replace(/\/$/, '')]) : {};
       }
-      return {pagename: `/${pagename.replace(/^\/+|\/+$/g, '')}`, params: assignDefaultData(params) as P};
+      return {pagename: `/${pagename.replace(/^\/+|\/+$/g, '')}`, params}; // assignDefaultData(params, routeConfig.defaultParams) as P
     },
     out(cluxLocation): NativeLocation {
-      let params = excludeDefault(cluxLocation.params, defaultParams, true) as DeepPartial<P>;
+      let params = excludeDefault(cluxLocation.params, routeConfig.defaultParams, true) as DeepPartial<P>;
       const pagename = `/${cluxLocation.pagename}/`.replace(/^\/+|\/+$/g, '/');
       let pathParams: DeepPartial<P>;
       let pathname: string;

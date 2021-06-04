@@ -1,11 +1,7 @@
 "use strict";
 
 exports.__esModule = true;
-exports.env = exports.ssrApp = exports.renderApp = exports.delayPromise = exports.clientSide = exports.serverSide = exports.isServer = exports.isPromise = exports.MultipleDispatcher = exports.SingleDispatcher = exports.deepMerge = exports.LoadingState = exports.modelHotReplacement = exports.getModuleByName = exports.getRootModuleAPI = exports.getView = exports.exportModule = exports.loadModel = exports.cacheModule = exports.CoreModuleHandlers = exports.isProcessedError = exports.setProcessedError = exports.getActionData = exports.setLoading = exports.setConfig = exports.deepMergeState = exports.mergeState = exports.logger = exports.action = exports.mutation = exports.effect = exports.config = exports.reducer = exports.ActionTypes = exports.errorAction = void 0;
-
-var _actions = require("./actions");
-
-exports.errorAction = _actions.errorAction;
+exports.env = exports.ssrApp = exports.renderApp = exports.delayPromise = exports.clientSide = exports.serverSide = exports.isServer = exports.isPromise = exports.MultipleDispatcher = exports.SingleDispatcher = exports.deepMerge = exports.LoadingState = exports.getModuleList = exports.getModule = exports.getRootModuleAPI = exports.getComponentList = exports.getComponet = exports.exportModule = exports.loadModel = exports.CoreModuleHandlers = exports.isProcessedError = exports.setProcessedError = exports.getActionData = exports.setLoading = exports.setConfig = exports.deepMergeState = exports.mergeState = exports.logger = exports.errorAction = exports.action = exports.mutation = exports.effect = exports.config = exports.reducer = exports.ActionTypes = void 0;
 
 var _basic = require("./basic");
 
@@ -15,6 +11,7 @@ exports.config = _basic.config;
 exports.effect = _basic.effect;
 exports.mutation = _basic.mutation;
 exports.action = _basic.action;
+exports.errorAction = _basic.errorAction;
 exports.logger = _basic.logger;
 exports.mergeState = _basic.mergeState;
 exports.deepMergeState = _basic.deepMergeState;
@@ -30,13 +27,13 @@ exports.isProcessedError = _store.isProcessedError;
 var _inject = require("./inject");
 
 exports.CoreModuleHandlers = _inject.CoreModuleHandlers;
-exports.cacheModule = _inject.cacheModule;
 exports.loadModel = _inject.loadModel;
 exports.exportModule = _inject.exportModule;
-exports.getView = _inject.getView;
+exports.getComponet = _inject.getComponet;
+exports.getComponentList = _inject.getComponentList;
 exports.getRootModuleAPI = _inject.getRootModuleAPI;
-exports.getModuleByName = _inject.getModuleByName;
-exports.modelHotReplacement = _inject.modelHotReplacement;
+exports.getModule = _inject.getModule;
+exports.getModuleList = _inject.getModuleList;
 
 var _sprite = require("./sprite");
 

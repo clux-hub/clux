@@ -18,10 +18,35 @@ export var ActionTypes = {
   MReInit: 'ReInit',
   Error: "clux" + config.NSP + "Error"
 };
+export function errorAction(error) {
+  return {
+    type: ActionTypes.Error,
+    payload: [error]
+  };
+}
+export function moduleInitAction(moduleName, initState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes.MInit,
+    payload: [initState]
+  };
+}
+export function moduleReInitAction(moduleName, initState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes.MReInit,
+    payload: [initState]
+  };
+}
+export function moduleLoadingAction(moduleName, loadingState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes.MLoading,
+    payload: [loadingState]
+  };
+}
 export var MetaData = {
   injectedModules: {},
   reducersMap: {},
-  effectsMap: {}
+  effectsMap: {},
+  resourceCaches: {}
 };
 
 function transformAction(actionName, handler, listenerModule, actionHandlerMap) {
@@ -67,17 +92,9 @@ export function injectActions(moduleName, handlers) {
   }
 }
 var loadings = {};
-export function setLoading(item, moduleName, groupName) {
-  if (moduleName === void 0) {
-    moduleName = MetaData.appModuleName;
-  }
-
+export function setLoading(store, item, moduleName, groupName) {
   if (groupName === void 0) {
     groupName = 'global';
-  }
-
-  if (env.isServer) {
-    return item;
   }
 
   var key = moduleName + config.NSP + groupName;
@@ -85,17 +102,10 @@ export function setLoading(item, moduleName, groupName) {
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener(function (loadingState) {
-      var store = MetaData.clientStore;
+      var _moduleLoadingAction;
 
-      if (store) {
-        var _actions;
-
-        var actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
-
-        var _action = actions((_actions = {}, _actions[groupName] = loadingState, _actions));
-
-        store.dispatch(_action);
-      }
+      var action = moduleLoadingAction(moduleName, (_moduleLoadingAction = {}, _moduleLoadingAction[groupName] = loadingState, _moduleLoadingAction));
+      store.dispatch(action);
     });
   }
 
@@ -138,7 +148,7 @@ export function effect(loadingForGroupName, loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
 
-          setLoading(promiseResult, loadingForModuleName, loadingForGroupName);
+          setLoading(MetaData.clientStore, promiseResult, loadingForModuleName, loadingForGroupName);
         }
       };
 

@@ -1,7 +1,7 @@
 import {
   CoreModuleHandlers,
   CoreModuleState,
-  ControllerMiddleware,
+  IStoreMiddleware,
   config,
   reducer,
   deepMerge,
@@ -51,7 +51,7 @@ export function routeChangeAction<P extends RootParams>(routeState: RouteState<P
     payload: [routeState],
   };
 }
-export const routeMiddleware: ControllerMiddleware = ({dispatch, getState}) => (next) => (action) => {
+export const routeMiddleware: IStoreMiddleware = ({dispatch, getState}) => (next) => (action) => {
   if (action.type === RouteActionTypes.RouteChange) {
     const result = next(action);
     const routeState: RouteState<any> = action.payload![0];
@@ -103,16 +103,15 @@ const defaultNativeLocationMap: NativeLocationMap = {
     return nativeLocation;
   },
 };
-export function createRouteModule<P extends RootParams, G extends PagenameMap<P>>(
-  defaultParams: P,
+export function createRouteModule<G extends PagenameMap<any>>(
   pagenameMap: G,
   nativeLocationMap: NativeLocationMap = defaultNativeLocationMap,
   notfoundPagename: string = '/404',
   paramsKey: string = '_'
 ) {
-  const handlers: {new (): IRouteModuleHandlers<P>} = RouteModuleHandlers as any;
-  const locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
-  const result = exportModule('route', handlers, {} as {[k in keyof G]: any});
+  const handlers: {new (): IRouteModuleHandlers} = RouteModuleHandlers as any;
+  const locationTransform = createLocationTransform(pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+  const result = exportModule('route', handlers, {}, {} as {[k in keyof G]: any});
   return {
     default: result,
     locationTransform,

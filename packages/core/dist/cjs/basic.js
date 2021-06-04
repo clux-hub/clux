@@ -2,6 +2,10 @@
 
 exports.__esModule = true;
 exports.setConfig = setConfig;
+exports.errorAction = errorAction;
+exports.moduleInitAction = moduleInitAction;
+exports.moduleReInitAction = moduleReInitAction;
+exports.moduleLoadingAction = moduleLoadingAction;
 exports.injectActions = injectActions;
 exports.setLoading = setLoading;
 exports.reducer = reducer;
@@ -37,10 +41,40 @@ var ActionTypes = {
   Error: "clux" + config.NSP + "Error"
 };
 exports.ActionTypes = ActionTypes;
+
+function errorAction(error) {
+  return {
+    type: ActionTypes.Error,
+    payload: [error]
+  };
+}
+
+function moduleInitAction(moduleName, initState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes.MInit,
+    payload: [initState]
+  };
+}
+
+function moduleReInitAction(moduleName, initState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes.MReInit,
+    payload: [initState]
+  };
+}
+
+function moduleLoadingAction(moduleName, loadingState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes.MLoading,
+    payload: [loadingState]
+  };
+}
+
 var MetaData = {
   injectedModules: {},
   reducersMap: {},
-  effectsMap: {}
+  effectsMap: {},
+  resourceCaches: {}
 };
 exports.MetaData = MetaData;
 
@@ -89,17 +123,9 @@ function injectActions(moduleName, handlers) {
 
 var loadings = {};
 
-function setLoading(item, moduleName, groupName) {
-  if (moduleName === void 0) {
-    moduleName = MetaData.appModuleName;
-  }
-
+function setLoading(store, item, moduleName, groupName) {
   if (groupName === void 0) {
     groupName = 'global';
-  }
-
-  if (_env.env.isServer) {
-    return item;
   }
 
   var key = moduleName + config.NSP + groupName;
@@ -107,17 +133,10 @@ function setLoading(item, moduleName, groupName) {
   if (!loadings[key]) {
     loadings[key] = new _sprite.TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener(function (loadingState) {
-      var store = MetaData.clientStore;
+      var _moduleLoadingAction;
 
-      if (store) {
-        var _actions;
-
-        var actions = MetaData.facadeMap[moduleName].actions[ActionTypes.MLoading];
-
-        var _action = actions((_actions = {}, _actions[groupName] = loadingState, _actions));
-
-        store.dispatch(_action);
-      }
+      var action = moduleLoadingAction(moduleName, (_moduleLoadingAction = {}, _moduleLoadingAction[groupName] = loadingState, _moduleLoadingAction));
+      store.dispatch(action);
     });
   }
 
@@ -162,7 +181,7 @@ function effect(loadingForGroupName, loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
 
-          setLoading(promiseResult, loadingForModuleName, loadingForGroupName);
+          setLoading(MetaData.clientStore, promiseResult, loadingForModuleName, loadingForGroupName);
         }
       };
 

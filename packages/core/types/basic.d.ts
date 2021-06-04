@@ -33,8 +33,7 @@ export declare type ActionCreator = (...args: any[]) => Action;
 export declare type ActionCreatorList = Record<string, ActionCreator>;
 export declare type ActionCreatorMap = Record<string, ActionCreatorList>;
 export interface IModuleHandlers {
-    initState: any;
-    moduleName: string;
+    readonly initState: any;
     store: IStore;
 }
 export declare type Dispatch = (action: Action) => void | Promise<void>;
@@ -66,10 +65,10 @@ export declare type Model = (store: IStore) => void | Promise<void>;
 export interface CommonModule<ModuleName extends string = string> {
     default: {
         moduleName: ModuleName;
-        initState: Record<string, any>;
         model: Model;
-        views: Record<string, any>;
+        params: Record<string, any>;
         actions: Record<string, (...args: any[]) => Action>;
+        components: Record<string, () => any>;
     };
 }
 export declare type ModuleGetter = Record<string, () => CommonModule | Promise<CommonModule>>;
@@ -84,6 +83,26 @@ export declare const ActionTypes: {
     MReInit: string;
     Error: string;
 };
+export declare function errorAction(error: Object): {
+    type: string;
+    payload: Object[];
+};
+export declare function moduleInitAction(moduleName: string, initState: any): {
+    type: string;
+    payload: any[];
+};
+export declare function moduleReInitAction(moduleName: string, initState: any): {
+    type: string;
+    payload: any[];
+};
+export declare function moduleLoadingAction(moduleName: string, loadingState: {
+    [group: string]: LoadingState;
+}): {
+    type: string;
+    payload: {
+        [group: string]: LoadingState;
+    }[];
+};
 export declare const MetaData: {
     facadeMap: FacadeMap;
     clientStore: IStore;
@@ -93,9 +112,10 @@ export declare const MetaData: {
     injectedModules: Record<string, boolean>;
     reducersMap: ActionHandlerMap;
     effectsMap: ActionHandlerMap;
+    resourceCaches: Record<string, any>;
 };
 export declare function injectActions(moduleName: string, handlers: ActionHandlerList): void;
-export declare function setLoading<T extends Promise<any>>(item: T, moduleName?: string, groupName?: string): T;
+export declare function setLoading<T extends Promise<any>>(store: IStore, item: T, moduleName: string, groupName?: string): T;
 export declare function reducer(target: any, key: string, descriptor: PropertyDescriptor): any;
 export declare function effect(loadingForGroupName?: string | null, loadingForModuleName?: string): (target: any, key: string, descriptor: PropertyDescriptor) => any;
 export declare const mutation: typeof reducer;
