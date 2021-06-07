@@ -103,13 +103,13 @@ export class MPNativeRouter extends BaseNativeRouter {
 export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> implements IRouter<P, N> {
   public declare nativeRouter: MPNativeRouter;
 
-  constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform<P>) {
+  constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform) {
     super(mpNativeRouter.getLocation(), mpNativeRouter, locationTransform);
   }
 }
 
 export function createRouter<P extends RootParams, N extends string>(
-  locationTransform: LocationTransform<P>,
+  locationTransform: LocationTransform,
   routeENV: RouteENV,
   tabPages: Record<string, boolean>
 ) {

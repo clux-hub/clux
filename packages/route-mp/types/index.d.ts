@@ -34,9 +34,9 @@ export declare class MPNativeRouter extends BaseNativeRouter {
 }
 export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> implements IRouter<P, N> {
     nativeRouter: MPNativeRouter;
-    constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform<P>);
+    constructor(mpNativeRouter: MPNativeRouter, locationTransform: LocationTransform);
 }
-export declare function createRouter<P extends RootParams, N extends string>(locationTransform: LocationTransform<P>, routeENV: RouteENV, tabPages: Record<string, boolean>): Router<P, N>;
+export declare function createRouter<P extends RootParams, N extends string>(locationTransform: LocationTransform, routeENV: RouteENV, tabPages: Record<string, boolean>): Router<P, N>;
 export interface IRouter<P extends RootParams, N extends string> extends IBaseRouter<P, N> {
     nativeRouter: MPNativeRouter;
 }

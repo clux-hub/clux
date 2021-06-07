@@ -1,6 +1,7 @@
-import { ComponentType } from 'react';
-import type { BaseLoadView, RootModuleFacade } from '@clux/core';
-export declare type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, {
+import React, { ComponentType } from 'react';
+import type { LoadComponent as BaseLoadComponent, RootModuleFacade } from '@clux/core';
+export declare const depsContext: React.Context<{}>;
+export declare type LoadView<A extends RootModuleFacade = {}> = BaseLoadComponent<A, {
     OnError?: ComponentType<{
         message: string;
     }>;
@@ -12,4 +13,4 @@ export declare function setLoadViewOptions({ LoadViewOnError, LoadViewOnLoading,
     }>;
     LoadViewOnLoading?: ComponentType<{}>;
 }): void;
-export declare const loadView: LoadView;
+export declare const loadView: LoadView<Record<string, any>>;

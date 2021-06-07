@@ -1,11 +1,10 @@
-/* eslint-disable no-await-in-loop */
 import {MetaData, ModuleGetter, BStore, IStore} from './basic';
 import {getModuleList, getComponentList, getComponet} from './inject';
 import {IStoreMiddleware, enhanceStore} from './store';
 
 const defFun: any = () => undefined;
 
-export function renderApp<ST extends BStore = BStore>(
+export async function renderApp<ST extends BStore = BStore>(
   baseStore: ST,
   preloadModules: string[],
   preloadComponents: string[],
@@ -22,21 +21,20 @@ export function renderApp<ST extends BStore = BStore>(
   preloadModules = preloadModules.filter((moduleName) => moduleGetter[moduleName] && moduleName !== appModuleName);
   preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares) as IStore<any> & ST;
+  MetaData.clientStore = store;
+  // 防止view中瀑布式懒加载
+  const modules = await getModuleList(preloadModules);
+  await getComponentList(preloadComponents);
+  const appModule = modules[0].default;
+  await appModule.model(store);
+  const AppView = getComponet(appModuleName, appViewName);
   return {
     store,
-    async beforeRender() {
-      MetaData.clientStore = store;
-      // 防止view中瀑布式懒加载
-      const modules = await getModuleList(preloadModules);
-      await getComponentList(preloadComponents);
-      const appModule = modules[0].default;
-      await appModule.model(store);
-      return getComponet(appModuleName, appViewName);
-    },
+    AppView,
   };
 }
 
-export function ssrApp<ST extends BStore = BStore>(
+export async function ssrApp<ST extends BStore = BStore>(
   baseStore: ST,
   preloadModules: string[],
   moduleGetter: ModuleGetter,
@@ -52,14 +50,13 @@ export function ssrApp<ST extends BStore = BStore>(
   preloadModules = preloadModules.filter((moduleName) => moduleGetter[moduleName] && moduleName !== appModuleName);
   preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares) as IStore<any> & ST;
+  const [{default: appModule}, ...otherModules] = await getModuleList(preloadModules);
+  await appModule.model(store);
+  await Promise.all(otherModules.map((module) => module.default.model(store)));
+  store.dispatch = defFun;
+  const AppView = getComponet(appModuleName, appViewName);
   return {
     store,
-    async beforeRender() {
-      const [{default: appModule}, ...otherModules] = await getModuleList(preloadModules);
-      await appModule.model(store);
-      await Promise.all(otherModules.map((module) => module.default.model(store)));
-      store.dispatch = defFun;
-      return getComponet(appModuleName, appViewName);
-    },
+    AppView,
   };
 }

@@ -1,8 +1,19 @@
-import { deepMerge } from '@clux/core';
+import { deepMerge, getCachedModules, env } from '@clux/core';
 import { extendDefault, excludeDefault, splitPrivate } from './deep-extend';
 import { routeConfig } from './basic';
+export function getDefaultParams() {
+  if (routeConfig.defaultParams) {
+    return routeConfig.defaultParams;
+  }
+
+  const modules = getCachedModules();
+  return Object.keys(modules).reduce((data, moduleName) => {
+    data[moduleName] = modules[moduleName].default.params;
+    return data;
+  }, {});
+}
 export function assignDefaultData(data) {
-  const def = routeConfig.defaultParams;
+  const def = getDefaultParams();
   return Object.keys(data).reduce((params, moduleName) => {
     if (def.hasOwnProperty(moduleName)) {
       params[moduleName] = extendDefault(data[moduleName], def[moduleName]);
@@ -11,13 +22,10 @@ export function assignDefaultData(data) {
     return params;
   }, {});
 }
-
-function dataIsNativeLocation(data) {
+export function dataIsNativeLocation(data) {
   return data['pathname'];
 }
-
-export function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
-  routeConfig.defaultParams = defaultParams;
+export function createLocationTransform(pagenameMap, nativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
   let pagenames = Object.keys(pagenameMap);
   pagenameMap = pagenames.sort((a, b) => b.length - a.length).reduce((map, pagename) => {
     const fullPagename = `/${pagename}/`.replace(/^\/+|\/+$/g, '/');
@@ -73,12 +81,12 @@ export function createLocationTransform(defaultParams, pagenameMap, nativeLocati
 
       return {
         pagename: `/${pagename.replace(/^\/+|\/+$/g, '')}`,
-        params: assignDefaultData(params)
+        params
       };
     },
 
     out(cluxLocation) {
-      let params = excludeDefault(cluxLocation.params, defaultParams, true);
+      let params = excludeDefault(cluxLocation.params, getDefaultParams(), true);
       const pagename = `/${cluxLocation.pagename}/`.replace(/^\/+|\/+$/g, '/');
       let pathParams;
       let pathname;
@@ -106,5 +114,126 @@ export function createLocationTransform(defaultParams, pagenameMap, nativeLocati
       return nativeLocationMap.out(nativeLocation);
     }
 
+  };
+}
+export function nativeLocationToCluxLocation(nativeLocation, locationTransform) {
+  let cluxLocation;
+
+  try {
+    cluxLocation = locationTransform.in(nativeLocation);
+  } catch (error) {
+    env.console.warn(error);
+    cluxLocation = {
+      pagename: '/',
+      params: {}
+    };
+  }
+
+  return cluxLocation;
+}
+
+function splitQuery(query) {
+  return (query || '').split('&').reduce((params, str) => {
+    const sections = str.split('=');
+
+    if (sections.length > 1) {
+      const [key, ...arr] = sections;
+
+      if (!params) {
+        params = {};
+      }
+
+      params[key] = decodeURIComponent(arr.join('='));
+    }
+
+    return params;
+  }, undefined);
+}
+
+export function nativeUrlToNativeLocation(url) {
+  if (!url) {
+    return {
+      pathname: '/',
+      searchData: undefined,
+      hashData: undefined
+    };
+  }
+
+  const arr = url.split(/[?#]/);
+
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+
+  const [path, search, hash] = arr;
+  return {
+    pathname: `/${path.replace(/^\/+|\/+$/g, '')}`,
+    searchData: splitQuery(search),
+    hashData: splitQuery(hash)
+  };
+}
+export function nativeUrlToCluxLocation(nativeUrl, locationTransform) {
+  return nativeLocationToCluxLocation(nativeUrlToNativeLocation(nativeUrl), locationTransform);
+}
+
+function joinQuery(params) {
+  return Object.keys(params || {}).map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
+}
+
+export function nativeLocationToNativeUrl({
+  pathname,
+  searchData,
+  hashData
+}) {
+  const search = joinQuery(searchData);
+  const hash = joinQuery(hashData);
+  return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
+}
+export function cluxLocationToNativeUrl(location, locationTransform) {
+  const nativeLocation = locationTransform.out(location);
+  return nativeLocationToNativeUrl(nativeLocation);
+}
+export function cluxLocationToCluxUrl(location) {
+  return [location.pagename, JSON.stringify(location.params || {})].join('?');
+}
+export function urlToCluxLocation(url, locationTransform) {
+  const [pathname, ...others] = url.split('?');
+  const query = others.join('?');
+  let location;
+
+  try {
+    if (query.startsWith('{')) {
+      const data = JSON.parse(query);
+      location = locationTransform.in({
+        pagename: pathname,
+        params: data
+      });
+    } else {
+      const nativeLocation = nativeUrlToNativeLocation(url);
+      location = locationTransform.in(nativeLocation);
+    }
+  } catch (error) {
+    env.console.warn(error);
+    location = {
+      pagename: '/',
+      params: {}
+    };
+  }
+
+  return location;
+}
+export function payloadToCluxLocation(payload, curRouteState) {
+  let params = payload.params;
+  const extendParams = payload.extendParams === 'current' ? curRouteState.params : payload.extendParams;
+
+  if (extendParams && params) {
+    params = deepMerge({}, extendParams, params);
+  } else if (extendParams) {
+    params = extendParams;
+  }
+
+  return {
+    pagename: payload.pagename || curRouteState.pagename,
+    params: params || {}
   };
 }

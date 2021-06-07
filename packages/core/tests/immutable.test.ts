@@ -32,16 +32,18 @@ describe('init', () => {
   };
 
   beforeAll(() => {
-    const {store, beforeRender} = createAppWithRedux(moduleGetter, [storeMiddlewares], 'moduleA', 'Main')
+    return createAppWithRedux(moduleGetter, [storeMiddlewares], 'moduleA', 'Main')
       .useStore(
         createRedux({
           enhancers: [],
           initState: {thirdParty: 123},
         })
       )
-      .render();
-    mockStore = store;
-    return beforeRender();
+      .render()
+      .then(({store, AppView}) => {
+        mockStore = store;
+        AppView();
+      });
   });
   beforeEach(() => {
     actionLogs.length = 0;

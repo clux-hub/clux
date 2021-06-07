@@ -4,6 +4,7 @@ export declare const config: {
     MSP: string;
     MutableData: boolean;
     DepthTimeOnLoading: number;
+    ViewFlag: string;
 };
 export declare function setConfig(_config: {
     NSP?: string;
@@ -107,12 +108,12 @@ export declare const MetaData: {
     facadeMap: FacadeMap;
     clientStore: IStore;
     appModuleName: string;
-    appViewName: string;
     moduleGetter: ModuleGetter;
     injectedModules: Record<string, boolean>;
     reducersMap: ActionHandlerMap;
     effectsMap: ActionHandlerMap;
-    resourceCaches: Record<string, any>;
+    moduleCaches: Record<string, CommonModule>;
+    componentCaches: Record<string, any>;
 };
 export declare function injectActions(moduleName: string, handlers: ActionHandlerList): void;
 export declare function setLoading<T extends Promise<any>>(store: IStore, item: T, moduleName: string, groupName?: string): T;

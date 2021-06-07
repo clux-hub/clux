@@ -5,7 +5,7 @@ import {hydrate, render} from 'react-dom';
 import {routeMiddleware, setRouteConfig, routeConfig} from '@clux/route';
 import {env, getRootModuleAPI, renderApp, ssrApp, setConfig as setCoreConfig} from '@clux/core';
 import {createRouter} from '@clux/route-browser';
-import {loadView, setLoadViewOptions} from './loadView';
+import {loadView, setLoadViewOptions, depsContext} from './loadView';
 import {MetaData} from './sington';
 import type {ComponentType} from 'react';
 import type {
@@ -99,42 +99,47 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddlew
       return {
         render({id = 'root', ssrKey = 'cluxInitStore'}: RenderOptions = {}) {
           const router = createRouter('Browser', locationTransform);
-          const routeState = router.getRouteState();
-          const ssrData = env[ssrKey];
+          MetaData.router = router;
+          const ssrData: {state: any; deps: string[]} = env[ssrKey];
           const renderFun = ssrData ? hydrate : render;
           const panel = env.document.getElementById(id);
-          const initState = {...storeOptions.initState, route: routeState, ...ssrData};
-          const baseStore = storeCreator({...storeOptions, initState});
-          const {store, beforeRender} = renderApp(baseStore, Object.keys(initState), [], moduleGetter, istoreMiddleware, appModuleName, appViewName);
-          router.setStore(store);
-          MetaData.router = router;
-          return {
-            store,
-            run() {
-              return beforeRender().then((AppView: ComponentType<any>) => {
-                renderFun(<AppView store={store} />, panel);
-              });
-            },
-          };
+          return router.initedPromise.then((routeState) => {
+            const initState = {...storeOptions.initState, route: routeState, ...ssrData.state};
+            const baseStore = storeCreator({...storeOptions, initState});
+            return renderApp(baseStore, Object.keys(initState), ssrData.deps, moduleGetter, istoreMiddleware, appModuleName, appViewName).then(
+              ({store, AppView}) => {
+                router.setStore(store);
+                const deps = {};
+                renderFun(
+                  <depsContext.Provider value={deps}>
+                    <AppView store={store} />
+                  </depsContext.Provider>,
+                  panel
+                );
+                env.console.log(deps as any);
+                return store;
+              }
+            );
+          });
         },
         ssr({id = 'root', ssrKey = 'cluxInitStore', url}: SSROptions) {
           if (!SSRTPL) {
             SSRTPL = env.decodeBas64('process.env.CLUX_ENV_SSRTPL');
           }
           const router = createRouter(url, locationTransform);
-          const routeState = router.getRouteState();
-          const initState = {...storeOptions.initState, route: routeState};
-          const baseStore = storeCreator({...storeOptions, initState});
-          const {store, beforeRender} = ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, istoreMiddleware, appModuleName, appViewName);
-          router.setStore(store);
           MetaData.router = router;
-          return {
-            store,
-            run() {
-              return beforeRender().then((AppView: ComponentType<any>) => {
+          return router.initedPromise.then((routeState) => {
+            const initState = {...storeOptions.initState, route: routeState};
+            const baseStore = storeCreator({...storeOptions, initState});
+            return ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, istoreMiddleware, appModuleName, appViewName).then(
+              ({store, AppView}) => {
                 const data = store.getState();
-                let html: string = require('react-dom/server').renderToString(<AppView store={store} />);
-
+                const deps = {};
+                let html: string = require('react-dom/server').renderToString(
+                  <depsContext.Provider value={deps}>
+                    <AppView store={store} />
+                  </depsContext.Provider>
+                );
                 const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${id}['"][^<>]*>`, 'm'));
                 if (match) {
                   const pageHead = html.split(/<head>|<\/head>/, 3);
@@ -145,9 +150,9 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddlew
                   ).replace(match[0], match[0] + html);
                 }
                 return html;
-              });
-            },
-          };
+              }
+            );
+          });
         },
       };
     },

@@ -1,15 +1,12 @@
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { env, deepMerge, isPromise } from '@clux/core';
-import { uriToLocation, nativeUrlToNativeLocation, nativeLocationToNativeUrl, History, routeConfig, setRouteConfig } from './basic';
+import { isPromise, getModuleList } from '@clux/core';
+import { routeConfig, setRouteConfig } from './basic';
+import { History, uriToLocation } from './history';
 import { testRouteChangeAction, routeChangeAction } from './module';
-export { setRouteConfig, routeConfig, nativeUrlToNativeLocation } from './basic';
-export { createLocationTransform } from './transform';
+import { assignDefaultData, dataIsNativeLocation, cluxLocationToCluxUrl, cluxLocationToNativeUrl, nativeUrlToCluxLocation, nativeLocationToCluxLocation, nativeLocationToNativeUrl, urlToCluxLocation, payloadToCluxLocation } from './transform';
+export { setRouteConfig, routeConfig } from './basic';
+export { createLocationTransform, nativeUrlToNativeLocation } from './transform';
 export { routeMiddleware, createRouteModule, RouteActionTypes, ModuleWithRouteHandlers } from './module';
-
-function dataIsNativeLocation(data) {
-  return data['pathname'];
-}
-
 export class BaseNativeRouter {
   constructor() {
     _defineProperty(this, "curTask", void 0);
@@ -82,31 +79,44 @@ export class BaseRouter {
 
     _defineProperty(this, "listenerMap", {});
 
+    _defineProperty(this, "initedPromise", void 0);
+
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
     nativeRouter.setRouter(this);
-    const location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
+    const cluxLocation = typeof nativeLocationOrNativeUrl === 'string' ? nativeUrlToCluxLocation(nativeLocationOrNativeUrl, locationTransform) : nativeLocationToCluxLocation(nativeLocationOrNativeUrl, locationTransform);
 
-    const key = this._createKey();
+    const callback = location => {
+      const key = this._createKey();
 
-    const routeState = { ...location,
-      action: 'RELAUNCH',
-      key
-    };
-    this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
+      const routeState = { ...location,
+        action: 'RELAUNCH',
+        key
+      };
+      this.routeState = routeState;
+      this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
-    if (!routeConfig.indexUrl) {
-      setRouteConfig({
-        indexUrl: this.cluxUrl
+      if (!routeConfig.indexUrl) {
+        setRouteConfig({
+          indexUrl: this.cluxUrl
+        });
+      }
+
+      this.history = new History({
+        location,
+        key
       });
-    }
+      return routeState;
+    };
 
-    this._nativeData = undefined;
-    this.history = new History({
-      location,
-      key
-    });
+    const locationOrPromise = this.cluxLocationToLocation(cluxLocation);
+
+    if (isPromise(locationOrPromise)) {
+      this.initedPromise = locationOrPromise.then(callback);
+    } else {
+      const routeState = callback(locationOrPromise);
+      this.initedPromise = Promise.resolve(routeState);
+    }
   }
 
   addListener(callback) {
@@ -144,7 +154,7 @@ export class BaseRouter {
   getNativeLocation() {
     if (!this._nativeData) {
       const nativeLocation = this.locationTransform.out(this.routeState);
-      const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+      const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
       this._nativeData = {
         nativeLocation,
         nativeUrl
@@ -157,7 +167,7 @@ export class BaseRouter {
   getNativeUrl() {
     if (!this._nativeData) {
       const nativeLocation = this.locationTransform.out(this.routeState);
-      const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+      const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
       this._nativeData = {
         nativeLocation,
         nativeUrl
@@ -179,89 +189,62 @@ export class BaseRouter {
     return this.history.findIndex(key);
   }
 
+  cluxLocationToNativeUrl(location) {
+    return cluxLocationToNativeUrl(location, this.locationTransform);
+  }
+
+  urlToCluxLocation(url) {
+    return urlToCluxLocation(url, this.locationTransform);
+  }
+
+  urlToLocation(url) {
+    const cluxLocation = urlToCluxLocation(url, this.locationTransform);
+    return this.cluxLocationToLocation(cluxLocation);
+  }
+
   _createKey() {
     this._tid++;
     return `${this._tid}`;
   }
 
-  nativeUrlToNativeLocation(url) {
-    return nativeUrlToNativeLocation(url);
-  }
+  cluxLocationToLocation(cluxLocation) {
+    const {
+      pagename
+    } = cluxLocation;
+    const params = cluxLocation.params || {};
 
-  nativeLocationToLocation(nativeLocation) {
-    let location;
-
-    try {
-      location = this.locationTransform.in(nativeLocation);
-    } catch (error) {
-      env.console.warn(error);
-      location = {
-        pagename: '/',
-        params: {}
+    if (routeConfig.defaultParams) {
+      return {
+        pagename,
+        params: assignDefaultData(params)
       };
     }
 
-    return location;
+    return getModuleList(Object.keys(params)).then(() => {
+      return {
+        pagename,
+        params: assignDefaultData(params)
+      };
+    });
   }
 
-  nativeUrlToLocation(nativeUrl) {
-    return this.nativeLocationToLocation(this.nativeUrlToNativeLocation(nativeUrl));
-  }
+  preAdditions(data) {
+    let cluxLocation;
 
-  urlToLocation(url) {
-    const [pathname, ...others] = url.split('?');
-    const query = others.join('?');
-    let location;
-
-    try {
-      if (query.startsWith('{')) {
-        const data = JSON.parse(query);
-        location = this.locationTransform.in({
-          pagename: pathname,
-          params: data
-        });
-      } else {
-        const nativeLocation = this.nativeUrlToNativeLocation(url);
-        location = this.locationTransform.in(nativeLocation);
+    if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return null;
       }
-    } catch (error) {
-      env.console.warn(error);
-      location = {
-        pagename: '/',
-        params: {}
-      };
+
+      cluxLocation = urlToCluxLocation(data, this.locationTransform);
+    } else if (dataIsNativeLocation(data)) {
+      cluxLocation = nativeLocationToCluxLocation(data, this.locationTransform);
+    } else {
+      cluxLocation = this.locationTransform.in(payloadToCluxLocation(data, this.routeState));
     }
 
-    return location;
-  }
-
-  nativeLocationToNativeUrl(nativeLocation) {
-    return nativeLocationToNativeUrl(nativeLocation);
-  }
-
-  locationToNativeUrl(location) {
-    const nativeLocation = this.locationTransform.out(location);
-    return this.nativeLocationToNativeUrl(nativeLocation);
-  }
-
-  locationToCluxUrl(location) {
-    return [location.pagename, JSON.stringify(location.params || {})].join('?');
-  }
-
-  payloadToPartial(payload) {
-    let params = payload.params;
-    const extendParams = payload.extendParams === 'current' ? this.routeState.params : payload.extendParams;
-
-    if (extendParams && params) {
-      params = deepMerge({}, extendParams, params);
-    } else if (extendParams) {
-      params = extendParams;
-    }
-
-    return {
-      pagename: payload.pagename || this.routeState.pagename,
-      params: params || {}
-    };
+    return this.cluxLocationToLocation(cluxLocation);
   }
 
   relaunch(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
@@ -269,20 +252,13 @@ export class BaseRouter {
   }
 
   async _relaunch(data, internal, disableNative) {
-    let location;
+    const preData = await this.preAdditions(data);
 
-    if (typeof data === 'string') {
-      if (/^[\w:]*\/\//.test(data)) {
-        this.nativeRouter.toOutside(data);
-        return;
-      }
-
-      location = this.urlToLocation(data);
-    } else if (dataIsNativeLocation(data)) {
-      location = this.nativeLocationToLocation(data);
-    } else {
-      location = this.locationTransform.in(this.payloadToPartial(data));
+    if (!preData) {
+      return;
     }
+
+    const location = preData;
 
     const key = this._createKey();
 
@@ -297,7 +273,7 @@ export class BaseRouter {
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('relaunch', () => {
         const nativeLocation = this.locationTransform.out(routeState);
-        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
         return {
           nativeLocation,
           nativeUrl
@@ -307,7 +283,7 @@ export class BaseRouter {
 
     this._nativeData = nativeData;
     this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
+    this.cluxUrl = cluxLocationToCluxUrl(routeState);
     this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
@@ -322,20 +298,13 @@ export class BaseRouter {
   }
 
   async _push(data, internal, disableNative) {
-    let location;
+    const preData = await this.preAdditions(data);
 
-    if (typeof data === 'string') {
-      if (/^[\w:]*\/\//.test(data)) {
-        this.nativeRouter.toOutside(data);
-        return;
-      }
-
-      location = this.urlToLocation(data);
-    } else if (dataIsNativeLocation(data)) {
-      location = this.nativeLocationToLocation(data);
-    } else {
-      location = this.locationTransform.in(this.payloadToPartial(data));
+    if (!preData) {
+      return;
     }
+
+    const location = preData;
 
     const key = this._createKey();
 
@@ -350,7 +319,7 @@ export class BaseRouter {
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('push', () => {
         const nativeLocation = this.locationTransform.out(routeState);
-        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
         return {
           nativeLocation,
           nativeUrl
@@ -360,7 +329,7 @@ export class BaseRouter {
 
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
+    this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
     if (internal) {
       this.history.getCurrentInternalHistory().push(location, key);
@@ -376,20 +345,13 @@ export class BaseRouter {
   }
 
   async _replace(data, internal, disableNative) {
-    let location;
+    const preData = await this.preAdditions(data);
 
-    if (typeof data === 'string') {
-      if (/^[\w:]*\/\//.test(data)) {
-        this.nativeRouter.toOutside(data);
-        return;
-      }
-
-      location = this.urlToLocation(data);
-    } else if (dataIsNativeLocation(data)) {
-      location = this.nativeLocationToLocation(data);
-    } else {
-      location = this.locationTransform.in(this.payloadToPartial(data));
+    if (!preData) {
+      return;
     }
+
+    const location = preData;
 
     const key = this._createKey();
 
@@ -404,7 +366,7 @@ export class BaseRouter {
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('replace', () => {
         const nativeLocation = this.locationTransform.out(routeState);
-        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
         return {
           nativeLocation,
           nativeUrl
@@ -414,7 +376,7 @@ export class BaseRouter {
 
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
+    this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
     if (internal) {
       this.history.getCurrentInternalHistory().replace(location, key);
@@ -459,7 +421,7 @@ export class BaseRouter {
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('back', () => {
         const nativeLocation = this.locationTransform.out(routeState);
-        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
         return {
           nativeLocation,
           nativeUrl
@@ -469,7 +431,7 @@ export class BaseRouter {
 
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
+    this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
     if (internal) {
       this.history.getCurrentInternalHistory().back(n);

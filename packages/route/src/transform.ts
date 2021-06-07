@@ -1,13 +1,29 @@
-import {deepMerge} from '@clux/core';
+import {deepMerge, getCachedModules, env} from '@clux/core';
 import {extendDefault, excludeDefault, splitPrivate} from './deep-extend';
-import {NativeLocation, DeepPartial, RootParams, routeConfig, PartialLocation} from './basic';
+import {routeConfig, CluxLocation, DeepPartial, RouteState} from './basic';
 
-export type LocationTransform<P extends RootParams> = {
-  in: (nativeLocation: NativeLocation | PartialLocation<P>) => PartialLocation<P>;
-  out: (cluxLocation: PartialLocation<P>) => NativeLocation;
+export function getDefaultParams(): Record<string, any> {
+  if (routeConfig.defaultParams) {
+    return routeConfig.defaultParams;
+  }
+  const modules = getCachedModules();
+  return Object.keys(modules).reduce((data, moduleName) => {
+    data[moduleName] = modules[moduleName].default.params;
+    return data;
+  }, {});
+}
+export interface NativeLocation {
+  pathname: string;
+  searchData?: Record<string, string>;
+  hashData?: Record<string, string>;
+}
+
+export type LocationTransform = {
+  in: (nativeLocation: NativeLocation | CluxLocation) => CluxLocation;
+  out: (cluxLocation: CluxLocation) => NativeLocation;
 };
 
-export type PagenameMap<P extends RootParams> = Record<
+export type PagenameMap<P> = Record<
   string,
   {
     argsToParams(pathArgs: Array<string | undefined>): DeepPartial<P>;
@@ -18,7 +34,8 @@ export type NativeLocationMap = {
   in(nativeLocation: NativeLocation): NativeLocation;
   out(nativeLocation: NativeLocation): NativeLocation;
 };
-export function assignDefaultData(data: {[moduleName: string]: any}, def: {[key: string]: any}): {[moduleName: string]: any} {
+export function assignDefaultData(data: {[moduleName: string]: any}): {[moduleName: string]: any} {
+  const def = getDefaultParams();
   return Object.keys(data).reduce((params, moduleName) => {
     // eslint-disable-next-line no-prototype-builtins
     if (def.hasOwnProperty(moduleName)) {
@@ -28,17 +45,16 @@ export function assignDefaultData(data: {[moduleName: string]: any}, def: {[key:
   }, {});
 }
 
-function dataIsNativeLocation(data: PartialLocation | NativeLocation): data is NativeLocation {
+export function dataIsNativeLocation(data: any): data is NativeLocation {
   return data['pathname'];
 }
 
-export function createLocationTransform<P extends RootParams>(
-  pagenameMap: PagenameMap<P>,
+export function createLocationTransform(
+  pagenameMap: PagenameMap<any>,
   nativeLocationMap: NativeLocationMap,
   notfoundPagename: string = '/404',
   paramsKey: string = '_'
-): LocationTransform<P> {
-  // routeConfig.defaultParams = defaultParams;
+): LocationTransform {
   let pagenames = Object.keys(pagenameMap);
   pagenameMap = pagenames
     .sort((a, b) => b.length - a.length)
@@ -72,7 +88,7 @@ export function createLocationTransform<P extends RootParams>(
       }
       path = `/${path}/`.replace(/^\/+|\/+$/g, '/');
       let pagename = pagenames.find((name) => path.startsWith(name));
-      let params: DeepPartial<P>;
+      let params: Record<string, any>;
       if (pagename) {
         if (dataIsNativeLocation(data)) {
           const searchParams = data.searchData && data.searchData[paramsKey] ? JSON.parse(data.searchData[paramsKey]) : undefined;
@@ -91,12 +107,12 @@ export function createLocationTransform<P extends RootParams>(
         pagename = `${notfoundPagename}/`;
         params = pagenameMap[pagename] ? pagenameMap[pagename].argsToParams([path.replace(/\/$/, '')]) : {};
       }
-      return {pagename: `/${pagename.replace(/^\/+|\/+$/g, '')}`, params}; // assignDefaultData(params, routeConfig.defaultParams) as P
+      return {pagename: `/${pagename.replace(/^\/+|\/+$/g, '')}`, params};
     },
     out(cluxLocation): NativeLocation {
-      let params = excludeDefault(cluxLocation.params, routeConfig.defaultParams, true) as DeepPartial<P>;
+      let params = excludeDefault(cluxLocation.params, getDefaultParams(), true);
       const pagename = `/${cluxLocation.pagename}/`.replace(/^\/+|\/+$/g, '/');
-      let pathParams: DeepPartial<P>;
+      let pathParams: Record<string, any>;
       let pathname: string;
       if (pagenameMap[pagename]) {
         const pathArgs = toStringArgs(pagenameMap[pagename].paramsToArgs(params));
@@ -111,8 +127,8 @@ export function createLocationTransform<P extends RootParams>(
         pathParams = {};
         pathname = pagename;
       }
-      params = excludeDefault(params, pathParams, false) as DeepPartial<P>;
-      const result = splitPrivate(params, pathParams as any);
+      params = excludeDefault(params, pathParams, false);
+      const result = splitPrivate(params, pathParams);
       const nativeLocation = {
         pathname: `/${pathname.replace(/^\/+|\/+$/g, '')}`,
         searchData: result[0] ? {[paramsKey]: JSON.stringify(result[0])} : undefined,
@@ -121,4 +137,109 @@ export function createLocationTransform<P extends RootParams>(
       return nativeLocationMap.out(nativeLocation);
     },
   };
+}
+
+export function nativeLocationToCluxLocation(nativeLocation: NativeLocation, locationTransform: LocationTransform): CluxLocation {
+  let cluxLocation: CluxLocation;
+  try {
+    cluxLocation = locationTransform.in(nativeLocation);
+  } catch (error) {
+    env.console.warn(error);
+    cluxLocation = {pagename: '/', params: {}};
+  }
+  return cluxLocation;
+}
+function splitQuery(query: string): Record<string, string> | undefined {
+  return (query || '').split('&').reduce((params, str) => {
+    const sections = str.split('=');
+    if (sections.length > 1) {
+      const [key, ...arr] = sections;
+      if (!params) {
+        params = {};
+      }
+      params[key] = decodeURIComponent(arr.join('='));
+    }
+    return params;
+  }, undefined as any);
+}
+export function nativeUrlToNativeLocation(url: string): NativeLocation {
+  if (!url) {
+    return {
+      pathname: '/',
+      searchData: undefined,
+      hashData: undefined,
+    };
+  }
+  const arr = url.split(/[?#]/);
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+  const [path, search, hash] = arr;
+  return {
+    pathname: `/${path.replace(/^\/+|\/+$/g, '')}`,
+    searchData: splitQuery(search),
+    hashData: splitQuery(hash),
+  };
+}
+
+export function nativeUrlToCluxLocation(nativeUrl: string, locationTransform: LocationTransform): CluxLocation {
+  return nativeLocationToCluxLocation(nativeUrlToNativeLocation(nativeUrl), locationTransform);
+}
+
+function joinQuery(params: Record<string, string> | undefined): string {
+  return Object.keys(params || {})
+    .map((key) => `${key}=${encodeURIComponent((params as any)[key])}`)
+    .join('&');
+}
+
+export function nativeLocationToNativeUrl({pathname, searchData, hashData}: NativeLocation): string {
+  const search = joinQuery(searchData);
+  const hash = joinQuery(hashData);
+  return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
+}
+
+export function cluxLocationToNativeUrl(location: CluxLocation, locationTransform: LocationTransform): string {
+  const nativeLocation = locationTransform.out(location);
+  return nativeLocationToNativeUrl(nativeLocation);
+}
+
+export function cluxLocationToCluxUrl(location: CluxLocation): string {
+  return [location.pagename, JSON.stringify(location.params || {})].join('?');
+}
+
+export function urlToCluxLocation(url: string, locationTransform: LocationTransform): CluxLocation {
+  const [pathname, ...others] = url.split('?');
+  const query = others.join('?');
+  let location: CluxLocation;
+  try {
+    if (query.startsWith('{')) {
+      const data = JSON.parse(query);
+      location = locationTransform.in({pagename: pathname, params: data});
+    } else {
+      const nativeLocation = nativeUrlToNativeLocation(url);
+      location = locationTransform.in(nativeLocation);
+    }
+  } catch (error) {
+    env.console.warn(error);
+    location = {pagename: '/', params: {}};
+  }
+  return location;
+}
+
+export function payloadToCluxLocation(
+  payload: {
+    pagename?: string;
+    params?: Record<string, any>;
+    extendParams?: Record<string, any> | 'current';
+  },
+  curRouteState: RouteState
+): CluxLocation {
+  let params = payload.params;
+  const extendParams = payload.extendParams === 'current' ? curRouteState.params : payload.extendParams;
+  if (extendParams && params) {
+    params = deepMerge({}, extendParams, params);
+  } else if (extendParams) {
+    params = extendParams;
+  }
+  return {pagename: payload.pagename || curRouteState.pagename, params: params || {}};
 }

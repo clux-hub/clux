@@ -317,7 +317,8 @@ var config = {
   NSP: '.',
   MSP: ',',
   MutableData: false,
-  DepthTimeOnLoading: 2
+  DepthTimeOnLoading: 2,
+  ViewFlag: '__clux_is_view__'
 };
 function setConfig$1(_config) {
   _config.NSP !== undefined && (config.NSP = _config.NSP);
@@ -331,10 +332,40 @@ var ActionTypes$1 = {
   MReInit: 'ReInit',
   Error: "clux" + config.NSP + "Error"
 };
+function errorAction(error) {
+  return {
+    type: ActionTypes$1.Error,
+    payload: [error]
+  };
+}
+function moduleInitAction(moduleName, initState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes$1.MInit,
+    payload: [initState]
+  };
+}
+function moduleReInitAction(moduleName, initState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes$1.MReInit,
+    payload: [initState]
+  };
+}
+function moduleLoadingAction(moduleName, loadingState) {
+  return {
+    type: "" + moduleName + config.NSP + ActionTypes$1.MLoading,
+    payload: [loadingState]
+  };
+}
 var MetaData$1 = {
+  appModuleName: 'stage',
   injectedModules: {},
   reducersMap: {},
-  effectsMap: {}
+  effectsMap: {},
+  moduleCaches: {},
+  componentCaches: {},
+  facadeMap: null,
+  clientStore: null,
+  moduleGetter: null
 };
 
 function transformAction(actionName, handler, listenerModule, actionHandlerMap) {
@@ -380,17 +411,9 @@ function injectActions(moduleName, handlers) {
   }
 }
 var loadings = {};
-function setLoading(item, moduleName, groupName) {
-  if (moduleName === void 0) {
-    moduleName = MetaData$1.appModuleName;
-  }
-
+function setLoading(store, item, moduleName, groupName) {
   if (groupName === void 0) {
     groupName = 'global';
-  }
-
-  if (env.isServer) {
-    return item;
   }
 
   var key = moduleName + config.NSP + groupName;
@@ -398,17 +421,10 @@ function setLoading(item, moduleName, groupName) {
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener(function (loadingState) {
-      var store = MetaData$1.clientStore;
+      var _moduleLoadingAction;
 
-      if (store) {
-        var _actions;
-
-        var actions = MetaData$1.facadeMap[moduleName].actions[ActionTypes$1.MLoading];
-
-        var _action = actions((_actions = {}, _actions[groupName] = loadingState, _actions));
-
-        store.dispatch(_action);
-      }
+      var action = moduleLoadingAction(moduleName, (_moduleLoadingAction = {}, _moduleLoadingAction[groupName] = loadingState, _moduleLoadingAction));
+      store.dispatch(action);
     });
   }
 
@@ -429,7 +445,7 @@ function reducer(target, key, descriptor) {
 function effect(loadingForGroupName, loadingForModuleName) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
-    loadingForModuleName = MetaData$1.appModuleName || '';
+    loadingForModuleName = '';
   }
 
   return function (target, key, descriptor) {
@@ -451,7 +467,7 @@ function effect(loadingForGroupName, loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
 
-          setLoading(promiseResult, loadingForModuleName, loadingForGroupName);
+          setLoading(MetaData$1.clientStore, promiseResult, loadingForModuleName, loadingForGroupName);
         }
       };
 
@@ -510,25 +526,6 @@ function mergeState(target) {
   }
 
   return Object.assign.apply(Object, [{}, target].concat(args));
-}
-
-function errorAction(error) {
-  return {
-    type: ActionTypes$1.Error,
-    payload: [error]
-  };
-}
-function moduleInitAction(moduleName, initState) {
-  return {
-    type: "" + moduleName + config.NSP + ActionTypes$1.MInit,
-    payload: [initState]
-  };
-}
-function moduleReInitAction(moduleName, initState) {
-  return {
-    type: "" + moduleName + config.NSP + ActionTypes$1.MReInit,
-    payload: [initState]
-  };
 }
 
 function _arrayWithHoles(arr) {
@@ -995,12 +992,11 @@ function _optionalCallableProperty(obj, name) {
   return value;
 }
 
-var exportModule$1 = function exportModule(moduleName, ModuleHandles, views) {
+function exportModule(moduleName, ModuleHandles, params, components) {
   var model = function model(store) {
     if (!store.injectedModules[moduleName]) {
-      var moduleHandles = new ModuleHandles();
+      var moduleHandles = new ModuleHandles(moduleName);
       store.injectedModules[moduleName] = moduleHandles;
-      moduleHandles.moduleName = moduleName;
       moduleHandles.store = store;
       injectActions(moduleName, moduleHandles);
       var _initState = moduleHandles.initState;
@@ -1019,77 +1015,113 @@ var exportModule$1 = function exportModule(moduleName, ModuleHandles, views) {
   return {
     moduleName: moduleName,
     model: model,
-    views: views,
-    initState: undefined,
+    components: components,
+    params: params,
     actions: undefined
   };
-};
-function cacheModule(module) {
-  var moduleName = module.default.moduleName;
-  var moduleGetter = MetaData$1.moduleGetter;
-  var fn = moduleGetter[moduleName];
-
-  if (fn.__module__ === module) {
-    return fn;
+}
+function getModule(moduleName) {
+  if (MetaData$1.moduleCaches[moduleName]) {
+    return MetaData$1.moduleCaches[moduleName];
   }
 
-  fn = function fn() {
-    return module;
-  };
+  var moduleOrPromise = MetaData$1.moduleGetter[moduleName]();
 
-  fn.__module__ = module;
-  moduleGetter[moduleName] = fn;
-  return fn;
-}
-function getModuleByName(moduleName) {
-  var result = MetaData$1.moduleGetter[moduleName]();
-
-  if (isPromise(result)) {
-    return result.then(function (module) {
-      cacheModule(module);
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(function (module) {
+      MetaData$1.moduleCaches[moduleName] = module;
       return module;
     });
   }
 
-  cacheModule(result);
-  return result;
+  MetaData$1.moduleCaches[moduleName] = moduleOrPromise;
+  return moduleOrPromise;
 }
-function getView(moduleName, viewName) {
-  var callback = function callback(module) {
-    var view = module.default.views[viewName];
-
-    if (env.isServer) {
-      return view;
+function getModuleList(moduleNames) {
+  return Promise.all(moduleNames.map(function (moduleName) {
+    if (MetaData$1.moduleCaches[moduleName]) {
+      return MetaData$1.moduleCaches[moduleName];
     }
 
-    module.default.model(MetaData$1.clientStore);
-    return view;
-  };
-
-  var moduleOrPromise = getModuleByName(moduleName);
-
-  if (isPromise(moduleOrPromise)) {
-    return moduleOrPromise.then(callback);
-  }
-
-  return callback(moduleOrPromise);
+    return getModule(moduleName);
+  }));
 }
 
-function _loadModel(moduleName, controller) {
-  var moduleOrPromise = getModuleByName(moduleName);
+function _loadModel(moduleName, store) {
+  if (store === void 0) {
+    store = MetaData$1.clientStore;
+  }
+
+  var moduleOrPromise = getModule(moduleName);
 
   if (isPromise(moduleOrPromise)) {
     return moduleOrPromise.then(function (module) {
-      return module.default.model(controller);
+      return module.default.model(store);
     });
   }
 
-  return moduleOrPromise.default.model(controller);
+  return moduleOrPromise.default.model(store);
+}
+function getComponet(moduleName, componentName, initView) {
+  var key = moduleName + "," + componentName;
+
+  if (MetaData$1.componentCaches[key]) {
+    return MetaData$1.componentCaches[key];
+  }
+
+  var moduleCallback = function moduleCallback(module) {
+    var componentOrPromise = module.default.components[componentName]();
+
+    if (isPromise(componentOrPromise)) {
+      return componentOrPromise.then(function (view) {
+        MetaData$1.componentCaches[key] = view;
+
+        if (view[config.ViewFlag] && initView && !env.isServer) {
+          module.default.model(MetaData$1.clientStore);
+        }
+
+        return view;
+      });
+    }
+
+    MetaData$1.componentCaches[key] = componentOrPromise;
+
+    if (componentOrPromise[config.ViewFlag] && initView && !env.isServer) {
+      module.default.model(MetaData$1.clientStore);
+    }
+
+    return componentOrPromise;
+  };
+
+  var moduleOrPromise = getModule(moduleName);
+
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(moduleCallback);
+  }
+
+  return moduleCallback(moduleOrPromise);
+}
+function getComponentList(keys) {
+  return Promise.all(keys.map(function (key) {
+    if (MetaData$1.componentCaches[key]) {
+      return MetaData$1.componentCaches[key];
+    }
+
+    var _key$split = key.split(','),
+        moduleName = _key$split[0],
+        componentName = _key$split[1];
+
+    return getComponet(moduleName, componentName);
+  }));
+}
+function getCachedModules() {
+  return MetaData$1.moduleCaches;
 }
 var CoreModuleHandlers = _decorate(null, function (_initialize) {
-  var CoreModuleHandlers = function CoreModuleHandlers(initState) {
+  var CoreModuleHandlers = function CoreModuleHandlers(moduleName, initState) {
     _initialize(this);
 
+    this.moduleName = moduleName;
     this.initState = initState;
   };
 
@@ -1099,12 +1131,6 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
       kind: "field",
       key: "store",
       value: void 0
-    }, {
-      kind: "field",
-      key: "moduleName",
-      value: function value() {
-        return '';
-      }
     }, {
       kind: "get",
       key: "actions",
@@ -1186,30 +1212,6 @@ var CoreModuleHandlers = _decorate(null, function (_initialize) {
     }]
   };
 });
-
-function clearHandlers(moduleName, actionHandlerMap) {
-  for (var actionName in actionHandlerMap) {
-    if (actionHandlerMap.hasOwnProperty(actionName)) {
-      var maps = actionHandlerMap[actionName];
-      delete maps[moduleName];
-    }
-  }
-}
-
-function modelHotReplacement(moduleName, ModuleHandles) {
-  var store = MetaData$1.clientStore;
-
-  if (store.injectedModules[moduleName]) {
-    clearHandlers(moduleName, MetaData$1.reducersMap);
-    clearHandlers(moduleName, MetaData$1.effectsMap);
-    var moduleHandles = new ModuleHandles();
-    store.injectedModules[moduleName] = moduleHandles;
-    moduleHandles.moduleName = moduleName;
-    moduleHandles.store = store;
-    injectActions(moduleName, moduleHandles);
-    env.console.log("[HMR] @clux Updated model: " + moduleName);
-  }
-}
 function getRootModuleAPI(data) {
   if (!MetaData$1.facadeMap) {
     if (data) {
@@ -2305,111 +2307,140 @@ var defFun = function defFun() {
   return undefined;
 };
 
-function renderApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleName, appViewName) {
-  if (appModuleName === void 0) {
-    appModuleName = 'stage';
-  }
-
-  if (appViewName === void 0) {
-    appViewName = 'main';
-  }
-
-  MetaData$1.appModuleName = appModuleName;
-  MetaData$1.appViewName = appViewName;
-
-  if (!MetaData$1.moduleGetter) {
-    MetaData$1.moduleGetter = moduleGetter;
-  }
-
-  var store = enhanceStore(baseStore, middlewares);
-  preLoadModules = preLoadModules.filter(function (item) {
-    return moduleGetter[item] && item !== appModuleName;
-  });
-  return {
-    store: store,
-    beforeRender: function beforeRender() {
-      return _asyncToGenerator(regenerator.mark(function _callee() {
-        var appModule;
-        return regenerator.wrap(function _callee$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                MetaData$1.clientStore = store;
-                _context.next = 3;
-                return _loadModel(appModuleName, store);
-
-              case 3:
-                _context.next = 5;
-                return Promise.all(preLoadModules.map(function (moduleName) {
-                  return _loadModel(moduleName, store);
-                }));
-
-              case 5:
-                appModule = getModuleByName(appModuleName);
-                return _context.abrupt("return", appModule.default.views[appViewName]);
-
-              case 7:
-              case "end":
-                return _context.stop();
-            }
-          }
-        }, _callee);
-      }))();
-    }
-  };
+function renderApp(_x, _x2, _x3, _x4, _x5, _x6, _x7) {
+  return _renderApp.apply(this, arguments);
 }
-function ssrApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleName, appViewName) {
-  if (appModuleName === void 0) {
-    appModuleName = 'stage';
-  }
 
-  if (appViewName === void 0) {
-    appViewName = 'main';
-  }
-
-  MetaData$1.appModuleName = appModuleName;
-  MetaData$1.appViewName = appViewName;
-
-  if (!MetaData$1.moduleGetter) {
-    MetaData$1.moduleGetter = moduleGetter;
-  }
-
-  var store = enhanceStore(baseStore, middlewares);
-  preLoadModules = preLoadModules.filter(function (item) {
-    return moduleGetter[item] && item !== appModuleName;
-  });
-  return {
-    store: store,
-    beforeRender: function beforeRender() {
-      return _asyncToGenerator(regenerator.mark(function _callee2() {
-        var appModule;
-        return regenerator.wrap(function _callee2$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                _context2.next = 2;
-                return _loadModel(appModuleName, store);
-
-              case 2:
-                _context2.next = 4;
-                return Promise.all(preLoadModules.map(function (moduleName) {
-                  return _loadModel(moduleName, store);
-                }));
-
-              case 4:
-                appModule = getModuleByName(appModuleName);
-                store.dispatch = defFun;
-                return _context2.abrupt("return", appModule.default.views[appViewName]);
-
-              case 7:
-              case "end":
-                return _context2.stop();
+function _renderApp() {
+  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(baseStore, preloadModules, preloadComponents, moduleGetter, middlewares, appModuleName, appViewName) {
+    var store, modules, appModule, AppView;
+    return regenerator.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            if (appModuleName === void 0) {
+              appModuleName = 'stage';
             }
-          }
-        }, _callee2);
-      }))();
-    }
-  };
+
+            if (appViewName === void 0) {
+              appViewName = 'main';
+            }
+
+            MetaData$1.appModuleName = appModuleName;
+            MetaData$1.moduleGetter = moduleGetter;
+
+            if (!(typeof moduleGetter[appModuleName] !== 'function')) {
+              _context.next = 6;
+              break;
+            }
+
+            throw appModuleName + " could not be found in moduleGetter";
+
+          case 6:
+            preloadModules = preloadModules.filter(function (moduleName) {
+              return moduleGetter[moduleName] && moduleName !== appModuleName;
+            });
+            preloadModules.unshift(appModuleName);
+            store = enhanceStore(baseStore, middlewares);
+            MetaData$1.clientStore = store;
+            _context.next = 12;
+            return getModuleList(preloadModules);
+
+          case 12:
+            modules = _context.sent;
+            _context.next = 15;
+            return getComponentList(preloadComponents);
+
+          case 15:
+            appModule = modules[0].default;
+            _context.next = 18;
+            return appModule.model(store);
+
+          case 18:
+            AppView = getComponet(appModuleName, appViewName);
+            return _context.abrupt("return", {
+              store: store,
+              AppView: AppView
+            });
+
+          case 20:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee);
+  }));
+  return _renderApp.apply(this, arguments);
+}
+
+function ssrApp(_x8, _x9, _x10, _x11, _x12, _x13) {
+  return _ssrApp.apply(this, arguments);
+}
+
+function _ssrApp() {
+  _ssrApp = _asyncToGenerator(regenerator.mark(function _callee2(baseStore, preloadModules, moduleGetter, middlewares, appModuleName, appViewName) {
+    var store, _yield$getModuleList, appModule, otherModules, AppView;
+
+    return regenerator.wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            if (appModuleName === void 0) {
+              appModuleName = 'stage';
+            }
+
+            if (appViewName === void 0) {
+              appViewName = 'main';
+            }
+
+            MetaData$1.appModuleName = appModuleName;
+            MetaData$1.moduleGetter = moduleGetter;
+
+            if (!(typeof moduleGetter[appModuleName] !== 'function')) {
+              _context2.next = 6;
+              break;
+            }
+
+            throw appModuleName + " could not be found in moduleGetter";
+
+          case 6:
+            preloadModules = preloadModules.filter(function (moduleName) {
+              return moduleGetter[moduleName] && moduleName !== appModuleName;
+            });
+            preloadModules.unshift(appModuleName);
+            store = enhanceStore(baseStore, middlewares);
+            _context2.next = 11;
+            return getModuleList(preloadModules);
+
+          case 11:
+            _yield$getModuleList = _context2.sent;
+            appModule = _yield$getModuleList[0].default;
+            otherModules = _yield$getModuleList.slice(1);
+            _context2.next = 16;
+            return appModule.model(store);
+
+          case 16:
+            _context2.next = 18;
+            return Promise.all(otherModules.map(function (module) {
+              return module.default.model(store);
+            }));
+
+          case 18:
+            store.dispatch = defFun;
+            AppView = getComponet(appModuleName, appViewName);
+            return _context2.abrupt("return", {
+              store: store,
+              AppView: AppView
+            });
+
+          case 21:
+          case "end":
+            return _context2.stop();
+        }
+      }
+    }, _callee2);
+  }));
+  return _ssrApp.apply(this, arguments);
 }
 
 env.encodeBas64 = function (str) {
@@ -2432,75 +2463,18 @@ var routeConfig = {
   actionMaxHistory: 10,
   pagesMaxHistory: 10,
   pagenames: {},
-  defaultParams: {},
   disableNativeRoute: false,
-  indexUrl: ''
+  indexUrl: '',
+  defaultParams: null
 };
 function setRouteConfig(conf) {
   conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
   conf.disableNativeRoute && (routeConfig.disableNativeRoute = true);
-  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
   conf.indexUrl && (routeConfig.indexUrl = conf.indexUrl);
+  conf.defaultParams && (routeConfig.defaultParams = conf.defaultParams);
 }
 
-function splitQuery(query) {
-  return (query || '').split('&').reduce(function (params, str) {
-    var sections = str.split('=');
-
-    if (sections.length > 1) {
-      var key = sections[0],
-          arr = sections.slice(1);
-
-      if (!params) {
-        params = {};
-      }
-
-      params[key] = decodeURIComponent(arr.join('='));
-    }
-
-    return params;
-  }, undefined);
-}
-
-function joinQuery(params) {
-  return Object.keys(params || {}).map(function (key) {
-    return key + "=" + encodeURIComponent(params[key]);
-  }).join('&');
-}
-
-function nativeUrlToNativeLocation(url) {
-  if (!url) {
-    return {
-      pathname: '/',
-      searchData: undefined,
-      hashData: undefined
-    };
-  }
-
-  var arr = url.split(/[?#]/);
-
-  if (arr.length === 2 && url.indexOf('?') < 0) {
-    arr.splice(1, 0, '');
-  }
-
-  var path = arr[0],
-      search = arr[1],
-      hash = arr[2];
-  return {
-    pathname: "/" + path.replace(/^\/+|\/+$/g, ''),
-    searchData: splitQuery(search),
-    hashData: splitQuery(hash)
-  };
-}
-function nativeLocationToNativeUrl(_ref) {
-  var pathname = _ref.pathname,
-      searchData = _ref.searchData,
-      hashData = _ref.hashData;
-  var search = joinQuery(searchData);
-  var hash = joinQuery(hashData);
-  return ["/" + pathname.replace(/^\/+|\/+$/g, ''), search && "?" + search, hash && "#" + hash].join('');
-}
 function locationToUri(location, key) {
   var pagename = location.pagename,
       params = location.params;
@@ -2511,6 +2485,10 @@ function locationToUri(location, key) {
     query: query,
     key: key
   };
+}
+
+function isHistoryRecord(data) {
+  return data['uri'];
 }
 
 function splitUri() {
@@ -2556,11 +2534,6 @@ function uriToLocation(uri) {
     location: location
   };
 }
-
-function isHistoryRecord(data) {
-  return data['uri'];
-}
-
 var History = function () {
   function History(data, parent) {
     _defineProperty(this, "curRecord", void 0);
@@ -2975,8 +2948,19 @@ function splitPrivate(data, deleteTopLevel) {
   return [publicData, privateData];
 }
 
+function getDefaultParams() {
+  if (routeConfig.defaultParams) {
+    return routeConfig.defaultParams;
+  }
+
+  var modules = getCachedModules();
+  return Object.keys(modules).reduce(function (data, moduleName) {
+    data[moduleName] = modules[moduleName].default.params;
+    return data;
+  }, {});
+}
 function assignDefaultData(data) {
-  var def = routeConfig.defaultParams;
+  var def = getDefaultParams();
   return Object.keys(data).reduce(function (params, moduleName) {
     if (def.hasOwnProperty(moduleName)) {
       params[moduleName] = extendDefault(data[moduleName], def[moduleName]);
@@ -2985,12 +2969,10 @@ function assignDefaultData(data) {
     return params;
   }, {});
 }
-
-function dataIsNativeLocation$1(data) {
+function dataIsNativeLocation(data) {
   return data['pathname'];
 }
-
-function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
+function createLocationTransform(pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
   if (notfoundPagename === void 0) {
     notfoundPagename = '/404';
   }
@@ -2999,7 +2981,6 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
     paramsKey = '_';
   }
 
-  routeConfig.defaultParams = defaultParams;
   var pagenames = Object.keys(pagenameMap);
   pagenameMap = pagenames.sort(function (a, b) {
     return b.length - a.length;
@@ -3028,7 +3009,7 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
     in: function _in(data) {
       var path;
 
-      if (dataIsNativeLocation$1(data)) {
+      if (dataIsNativeLocation(data)) {
         data = nativeLocationMap.in(data);
         path = data.pathname;
       } else {
@@ -3042,7 +3023,7 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
       var params;
 
       if (pagename) {
-        if (dataIsNativeLocation$1(data)) {
+        if (dataIsNativeLocation(data)) {
           var searchParams = data.searchData && data.searchData[paramsKey] ? JSON.parse(data.searchData[paramsKey]) : undefined;
           var hashParams = data.hashData && data.hashData[paramsKey] ? JSON.parse(data.hashData[paramsKey]) : undefined;
 
@@ -3064,13 +3045,13 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
 
       return {
         pagename: "/" + pagename.replace(/^\/+|\/+$/g, ''),
-        params: assignDefaultData(params)
+        params: params
       };
     },
     out: function out(cluxLocation) {
       var _ref, _ref2;
 
-      var params = excludeDefault(cluxLocation.params, defaultParams, true);
+      var params = excludeDefault(cluxLocation.params, getDefaultParams(), true);
       var pagename = ("/" + cluxLocation.pagename + "/").replace(/^\/+|\/+$/g, '/');
       var pathParams;
       var pathname;
@@ -3096,6 +3077,135 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
       };
       return nativeLocationMap.out(nativeLocation);
     }
+  };
+}
+function nativeLocationToCluxLocation(nativeLocation, locationTransform) {
+  var cluxLocation;
+
+  try {
+    cluxLocation = locationTransform.in(nativeLocation);
+  } catch (error) {
+    env.console.warn(error);
+    cluxLocation = {
+      pagename: '/',
+      params: {}
+    };
+  }
+
+  return cluxLocation;
+}
+
+function splitQuery(query) {
+  return (query || '').split('&').reduce(function (params, str) {
+    var sections = str.split('=');
+
+    if (sections.length > 1) {
+      var key = sections[0],
+          arr = sections.slice(1);
+
+      if (!params) {
+        params = {};
+      }
+
+      params[key] = decodeURIComponent(arr.join('='));
+    }
+
+    return params;
+  }, undefined);
+}
+
+function nativeUrlToNativeLocation(url) {
+  if (!url) {
+    return {
+      pathname: '/',
+      searchData: undefined,
+      hashData: undefined
+    };
+  }
+
+  var arr = url.split(/[?#]/);
+
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+
+  var path = arr[0],
+      search = arr[1],
+      hash = arr[2];
+  return {
+    pathname: "/" + path.replace(/^\/+|\/+$/g, ''),
+    searchData: splitQuery(search),
+    hashData: splitQuery(hash)
+  };
+}
+function nativeUrlToCluxLocation(nativeUrl, locationTransform) {
+  return nativeLocationToCluxLocation(nativeUrlToNativeLocation(nativeUrl), locationTransform);
+}
+
+function joinQuery(params) {
+  return Object.keys(params || {}).map(function (key) {
+    return key + "=" + encodeURIComponent(params[key]);
+  }).join('&');
+}
+
+function nativeLocationToNativeUrl(_ref3) {
+  var pathname = _ref3.pathname,
+      searchData = _ref3.searchData,
+      hashData = _ref3.hashData;
+  var search = joinQuery(searchData);
+  var hash = joinQuery(hashData);
+  return ["/" + pathname.replace(/^\/+|\/+$/g, ''), search && "?" + search, hash && "#" + hash].join('');
+}
+function cluxLocationToNativeUrl(location, locationTransform) {
+  var nativeLocation = locationTransform.out(location);
+  return nativeLocationToNativeUrl(nativeLocation);
+}
+function cluxLocationToCluxUrl(location) {
+  return [location.pagename, JSON.stringify(location.params || {})].join('?');
+}
+function urlToCluxLocation(url, locationTransform) {
+  var _url$split = url.split('?'),
+      pathname = _url$split[0],
+      others = _url$split.slice(1);
+
+  var query = others.join('?');
+  var location;
+
+  try {
+    if (query.startsWith('{')) {
+      var data = JSON.parse(query);
+      location = locationTransform.in({
+        pagename: pathname,
+        params: data
+      });
+    } else {
+      var _nativeLocation = nativeUrlToNativeLocation(url);
+
+      location = locationTransform.in(_nativeLocation);
+    }
+  } catch (error) {
+    env.console.warn(error);
+    location = {
+      pagename: '/',
+      params: {}
+    };
+  }
+
+  return location;
+}
+function payloadToCluxLocation(payload, curRouteState) {
+  var params = payload.params;
+  var extendParams = payload.extendParams === 'current' ? curRouteState.params : payload.extendParams;
+
+  if (extendParams && params) {
+    params = deepMerge({}, extendParams, params);
+  } else if (extendParams) {
+    params = extendParams;
+  }
+
+  return {
+    pagename: payload.pagename || curRouteState.pagename,
+    params: params || {}
   };
 }
 
@@ -3225,7 +3335,7 @@ var defaultNativeLocationMap = {
     return nativeLocation;
   }
 };
-function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
+function createRouteModule(pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
   if (nativeLocationMap === void 0) {
     nativeLocationMap = defaultNativeLocationMap;
   }
@@ -3239,16 +3349,12 @@ function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfou
   }
 
   var handlers = RouteModuleHandlers;
-  var locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
-  var result = exportModule$1('route', handlers, {});
+  var locationTransform = createLocationTransform(pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+  var result = exportModule('route', handlers, {}, {});
   return {
     default: result,
     locationTransform: locationTransform
   };
-}
-
-function dataIsNativeLocation(data) {
-  return data['pathname'];
 }
 
 var BaseNativeRouter = function () {
@@ -3313,6 +3419,8 @@ var BaseNativeRouter = function () {
 }();
 var BaseRouter = function () {
   function BaseRouter(nativeLocationOrNativeUrl, nativeRouter, locationTransform) {
+    var _this2 = this;
+
     _defineProperty(this, "_tid", 0);
 
     _defineProperty(this, "curTask", void 0);
@@ -3333,32 +3441,45 @@ var BaseRouter = function () {
 
     _defineProperty(this, "listenerMap", {});
 
+    _defineProperty(this, "initedPromise", void 0);
+
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
     nativeRouter.setRouter(this);
-    var location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
+    var cluxLocation = typeof nativeLocationOrNativeUrl === 'string' ? nativeUrlToCluxLocation(nativeLocationOrNativeUrl, locationTransform) : nativeLocationToCluxLocation(nativeLocationOrNativeUrl, locationTransform);
 
-    var key = this._createKey();
+    var callback = function callback(location) {
+      var key = _this2._createKey();
 
-    var routeState = _extends({}, location, {
-      action: 'RELAUNCH',
-      key: key
-    });
-
-    this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
-
-    if (!routeConfig.indexUrl) {
-      setRouteConfig({
-        indexUrl: this.cluxUrl
+      var routeState = _extends({}, location, {
+        action: 'RELAUNCH',
+        key: key
       });
-    }
 
-    this._nativeData = undefined;
-    this.history = new History({
-      location: location,
-      key: key
-    });
+      _this2.routeState = routeState;
+      _this2.cluxUrl = cluxLocationToCluxUrl(routeState);
+
+      if (!routeConfig.indexUrl) {
+        setRouteConfig({
+          indexUrl: _this2.cluxUrl
+        });
+      }
+
+      _this2.history = new History({
+        location: location,
+        key: key
+      });
+      return routeState;
+    };
+
+    var locationOrPromise = this.cluxLocationToLocation(cluxLocation);
+
+    if (isPromise(locationOrPromise)) {
+      this.initedPromise = locationOrPromise.then(callback);
+    } else {
+      var routeState = callback(locationOrPromise);
+      this.initedPromise = Promise.resolve(routeState);
+    }
   }
 
   var _proto2 = BaseRouter.prototype;
@@ -3399,13 +3520,11 @@ var BaseRouter = function () {
 
   _proto2.getNativeLocation = function getNativeLocation() {
     if (!this._nativeData) {
-      var _nativeLocation = this.locationTransform.out(this.routeState);
-
-      var _nativeUrl = this.nativeLocationToNativeUrl(_nativeLocation);
-
+      var nativeLocation = this.locationTransform.out(this.routeState);
+      var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
       this._nativeData = {
-        nativeLocation: _nativeLocation,
-        nativeUrl: _nativeUrl
+        nativeLocation: nativeLocation,
+        nativeUrl: nativeUrl
       };
     }
 
@@ -3414,13 +3533,11 @@ var BaseRouter = function () {
 
   _proto2.getNativeUrl = function getNativeUrl() {
     if (!this._nativeData) {
-      var _nativeLocation2 = this.locationTransform.out(this.routeState);
-
-      var _nativeUrl2 = this.nativeLocationToNativeUrl(_nativeLocation2);
-
+      var nativeLocation = this.locationTransform.out(this.routeState);
+      var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
       this._nativeData = {
-        nativeLocation: _nativeLocation2,
-        nativeUrl: _nativeUrl2
+        nativeLocation: nativeLocation,
+        nativeUrl: nativeUrl
       };
     }
 
@@ -3439,94 +3556,61 @@ var BaseRouter = function () {
     return this.history.findIndex(key);
   };
 
+  _proto2.cluxLocationToNativeUrl = function cluxLocationToNativeUrl$1(location) {
+    return cluxLocationToNativeUrl(location, this.locationTransform);
+  };
+
+  _proto2.urlToCluxLocation = function urlToCluxLocation$1(url) {
+    return urlToCluxLocation(url, this.locationTransform);
+  };
+
+  _proto2.urlToLocation = function urlToLocation(url) {
+    var cluxLocation = urlToCluxLocation(url, this.locationTransform);
+
+    return this.cluxLocationToLocation(cluxLocation);
+  };
+
   _proto2._createKey = function _createKey() {
     this._tid++;
     return "" + this._tid;
   };
 
-  _proto2.nativeUrlToNativeLocation = function nativeUrlToNativeLocation$1(url) {
-    return nativeUrlToNativeLocation(url);
-  };
+  _proto2.cluxLocationToLocation = function cluxLocationToLocation(cluxLocation) {
+    var pagename = cluxLocation.pagename;
+    var params = cluxLocation.params || {};
 
-  _proto2.nativeLocationToLocation = function nativeLocationToLocation(nativeLocation) {
-    var location;
-
-    try {
-      location = this.locationTransform.in(nativeLocation);
-    } catch (error) {
-      env.console.warn(error);
-      location = {
-        pagename: '/',
-        params: {}
+    if (routeConfig.defaultParams) {
+      return {
+        pagename: pagename,
+        params: assignDefaultData(params)
       };
     }
 
-    return location;
+    return getModuleList(Object.keys(params)).then(function () {
+      return {
+        pagename: pagename,
+        params: assignDefaultData(params)
+      };
+    });
   };
 
-  _proto2.nativeUrlToLocation = function nativeUrlToLocation(nativeUrl) {
-    return this.nativeLocationToLocation(this.nativeUrlToNativeLocation(nativeUrl));
-  };
+  _proto2.preAdditions = function preAdditions(data) {
+    var cluxLocation;
 
-  _proto2.urlToLocation = function urlToLocation(url) {
-    var _url$split = url.split('?'),
-        pathname = _url$split[0],
-        others = _url$split.slice(1);
-
-    var query = others.join('?');
-    var location;
-
-    try {
-      if (query.startsWith('{')) {
-        var _data = JSON.parse(query);
-
-        location = this.locationTransform.in({
-          pagename: pathname,
-          params: _data
-        });
-      } else {
-        var _nativeLocation3 = this.nativeUrlToNativeLocation(url);
-
-        location = this.locationTransform.in(_nativeLocation3);
+    if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return null;
       }
-    } catch (error) {
-      env.console.warn(error);
-      location = {
-        pagename: '/',
-        params: {}
-      };
+
+      cluxLocation = urlToCluxLocation(data, this.locationTransform);
+    } else if (dataIsNativeLocation(data)) {
+      cluxLocation = nativeLocationToCluxLocation(data, this.locationTransform);
+    } else {
+      cluxLocation = this.locationTransform.in(payloadToCluxLocation(data, this.routeState));
     }
 
-    return location;
-  };
-
-  _proto2.nativeLocationToNativeUrl = function nativeLocationToNativeUrl$1(nativeLocation) {
-    return nativeLocationToNativeUrl(nativeLocation);
-  };
-
-  _proto2.locationToNativeUrl = function locationToNativeUrl(location) {
-    var nativeLocation = this.locationTransform.out(location);
-    return this.nativeLocationToNativeUrl(nativeLocation);
-  };
-
-  _proto2.locationToCluxUrl = function locationToCluxUrl(location) {
-    return [location.pagename, JSON.stringify(location.params || {})].join('?');
-  };
-
-  _proto2.payloadToPartial = function payloadToPartial(payload) {
-    var params = payload.params;
-    var extendParams = payload.extendParams === 'current' ? this.routeState.params : payload.extendParams;
-
-    if (extendParams && params) {
-      params = deepMerge({}, extendParams, params);
-    } else if (extendParams) {
-      params = extendParams;
-    }
-
-    return {
-      pagename: payload.pagename || this.routeState.pagename,
-      params: params || {}
-    };
+    return this.cluxLocationToLocation(cluxLocation);
   };
 
   _proto2.relaunch = function relaunch(data, internal, disableNative) {
@@ -3543,76 +3627,64 @@ var BaseRouter = function () {
 
   _proto2._relaunch = function () {
     var _relaunch2 = _asyncToGenerator(regenerator.mark(function _callee(data, internal, disableNative) {
-      var _this2 = this;
+      var _this3 = this;
 
-      var location, key, routeState, nativeData;
+      var preData, location, key, routeState, nativeData;
       return regenerator.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              if (!(typeof data === 'string')) {
-                _context.next = 7;
+              _context.next = 2;
+              return this.preAdditions(data);
+
+            case 2:
+              preData = _context.sent;
+
+              if (preData) {
+                _context.next = 5;
                 break;
               }
 
-              if (!/^[\w:]*\/\//.test(data)) {
-                _context.next = 4;
-                break;
-              }
-
-              this.nativeRouter.toOutside(data);
               return _context.abrupt("return");
 
-            case 4:
-              location = this.urlToLocation(data);
-              _context.next = 8;
-              break;
-
-            case 7:
-              if (dataIsNativeLocation(data)) {
-                location = this.nativeLocationToLocation(data);
-              } else {
-                location = this.locationTransform.in(this.payloadToPartial(data));
-              }
-
-            case 8:
+            case 5:
+              location = preData;
               key = this._createKey();
               routeState = _extends({}, location, {
                 action: 'RELAUNCH',
                 key: key
               });
-              _context.next = 12;
+              _context.next = 10;
               return this.store.dispatch(testRouteChangeAction(routeState));
 
-            case 12:
-              _context.next = 14;
+            case 10:
+              _context.next = 12;
               return this.dispatch(routeState);
 
-            case 14:
+            case 12:
               if (!(!disableNative && !internal)) {
-                _context.next = 18;
+                _context.next = 16;
                 break;
               }
 
-              _context.next = 17;
+              _context.next = 15;
               return this.nativeRouter.execute('relaunch', function () {
-                var nativeLocation = _this2.locationTransform.out(routeState);
+                var nativeLocation = _this3.locationTransform.out(routeState);
 
-                var nativeUrl = _this2.nativeLocationToNativeUrl(nativeLocation);
-
+                var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
                 return {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
               }, key);
 
-            case 17:
+            case 15:
               nativeData = _context.sent;
 
-            case 18:
+            case 16:
               this._nativeData = nativeData;
               this.routeState = routeState;
-              this.cluxUrl = this.locationToCluxUrl(routeState);
+              this.cluxUrl = cluxLocationToCluxUrl(routeState);
               this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
@@ -3621,7 +3693,7 @@ var BaseRouter = function () {
                 this.history.relaunch(location, key);
               }
 
-            case 23:
+            case 21:
             case "end":
               return _context.stop();
           }
@@ -3650,76 +3722,64 @@ var BaseRouter = function () {
 
   _proto2._push = function () {
     var _push2 = _asyncToGenerator(regenerator.mark(function _callee2(data, internal, disableNative) {
-      var _this3 = this;
+      var _this4 = this;
 
-      var location, key, routeState, nativeData;
+      var preData, location, key, routeState, nativeData;
       return regenerator.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
-              if (!(typeof data === 'string')) {
-                _context2.next = 7;
+              _context2.next = 2;
+              return this.preAdditions(data);
+
+            case 2:
+              preData = _context2.sent;
+
+              if (preData) {
+                _context2.next = 5;
                 break;
               }
 
-              if (!/^[\w:]*\/\//.test(data)) {
-                _context2.next = 4;
-                break;
-              }
-
-              this.nativeRouter.toOutside(data);
               return _context2.abrupt("return");
 
-            case 4:
-              location = this.urlToLocation(data);
-              _context2.next = 8;
-              break;
-
-            case 7:
-              if (dataIsNativeLocation(data)) {
-                location = this.nativeLocationToLocation(data);
-              } else {
-                location = this.locationTransform.in(this.payloadToPartial(data));
-              }
-
-            case 8:
+            case 5:
+              location = preData;
               key = this._createKey();
               routeState = _extends({}, location, {
                 action: 'PUSH',
                 key: key
               });
-              _context2.next = 12;
+              _context2.next = 10;
               return this.store.dispatch(testRouteChangeAction(routeState));
 
-            case 12:
-              _context2.next = 14;
+            case 10:
+              _context2.next = 12;
               return this.dispatch(routeState);
 
-            case 14:
+            case 12:
               if (!(!disableNative && !internal)) {
-                _context2.next = 18;
+                _context2.next = 16;
                 break;
               }
 
-              _context2.next = 17;
+              _context2.next = 15;
               return this.nativeRouter.execute('push', function () {
-                var nativeLocation = _this3.locationTransform.out(routeState);
+                var nativeLocation = _this4.locationTransform.out(routeState);
 
-                var nativeUrl = _this3.nativeLocationToNativeUrl(nativeLocation);
-
+                var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
                 return {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
               }, key);
 
-            case 17:
+            case 15:
               nativeData = _context2.sent;
 
-            case 18:
+            case 16:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
-              this.cluxUrl = this.locationToCluxUrl(routeState);
+              this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().push(location, key);
@@ -3729,7 +3789,7 @@ var BaseRouter = function () {
 
               this.store.dispatch(routeChangeAction(routeState));
 
-            case 23:
+            case 21:
             case "end":
               return _context2.stop();
           }
@@ -3758,76 +3818,64 @@ var BaseRouter = function () {
 
   _proto2._replace = function () {
     var _replace2 = _asyncToGenerator(regenerator.mark(function _callee3(data, internal, disableNative) {
-      var _this4 = this;
+      var _this5 = this;
 
-      var location, key, routeState, nativeData;
+      var preData, location, key, routeState, nativeData;
       return regenerator.wrap(function _callee3$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
             case 0:
-              if (!(typeof data === 'string')) {
-                _context3.next = 7;
+              _context3.next = 2;
+              return this.preAdditions(data);
+
+            case 2:
+              preData = _context3.sent;
+
+              if (preData) {
+                _context3.next = 5;
                 break;
               }
 
-              if (!/^[\w:]*\/\//.test(data)) {
-                _context3.next = 4;
-                break;
-              }
-
-              this.nativeRouter.toOutside(data);
               return _context3.abrupt("return");
 
-            case 4:
-              location = this.urlToLocation(data);
-              _context3.next = 8;
-              break;
-
-            case 7:
-              if (dataIsNativeLocation(data)) {
-                location = this.nativeLocationToLocation(data);
-              } else {
-                location = this.locationTransform.in(this.payloadToPartial(data));
-              }
-
-            case 8:
+            case 5:
+              location = preData;
               key = this._createKey();
               routeState = _extends({}, location, {
                 action: 'REPLACE',
                 key: key
               });
-              _context3.next = 12;
+              _context3.next = 10;
               return this.store.dispatch(testRouteChangeAction(routeState));
 
-            case 12:
-              _context3.next = 14;
+            case 10:
+              _context3.next = 12;
               return this.dispatch(routeState);
 
-            case 14:
+            case 12:
               if (!(!disableNative && !internal)) {
-                _context3.next = 18;
+                _context3.next = 16;
                 break;
               }
 
-              _context3.next = 17;
+              _context3.next = 15;
               return this.nativeRouter.execute('replace', function () {
-                var nativeLocation = _this4.locationTransform.out(routeState);
+                var nativeLocation = _this5.locationTransform.out(routeState);
 
-                var nativeUrl = _this4.nativeLocationToNativeUrl(nativeLocation);
-
+                var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
                 return {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
               }, key);
 
-            case 17:
+            case 15:
               nativeData = _context3.sent;
 
-            case 18:
+            case 16:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
-              this.cluxUrl = this.locationToCluxUrl(routeState);
+              this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().replace(location, key);
@@ -3837,7 +3885,7 @@ var BaseRouter = function () {
 
               this.store.dispatch(routeChangeAction(routeState));
 
-            case 23:
+            case 21:
             case "end":
               return _context3.stop();
           }
@@ -3874,7 +3922,7 @@ var BaseRouter = function () {
 
   _proto2._back = function () {
     var _back2 = _asyncToGenerator(regenerator.mark(function _callee4(n, indexUrl, internal, disableNative) {
-      var _this5 = this;
+      var _this6 = this;
 
       var stack, uri, _uriToLocation, key, location, routeState, nativeData;
 
@@ -3928,10 +3976,9 @@ var BaseRouter = function () {
 
               _context4.next = 16;
               return this.nativeRouter.execute('back', function () {
-                var nativeLocation = _this5.locationTransform.out(routeState);
+                var nativeLocation = _this6.locationTransform.out(routeState);
 
-                var nativeUrl = _this5.nativeLocationToNativeUrl(nativeLocation);
-
+                var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
                 return {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
@@ -3944,7 +3991,7 @@ var BaseRouter = function () {
             case 17:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
-              this.cluxUrl = this.locationToCluxUrl(routeState);
+              this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().back(n);
@@ -5229,6 +5276,7 @@ function _objectWithoutPropertiesLoose(source, excluded) {
   return target;
 }
 
+var depsContext = React__default['default'].createContext({});
 var loadViewDefaultOptions = {
   LoadViewOnError: function LoadViewOnError(_ref) {
     var message = _ref.message;
@@ -5260,6 +5308,8 @@ var loadView = function loadView(moduleName, viewName, options) {
       var _this;
 
       _this = _Component.call(this, props) || this;
+
+      _defineProperty(_assertThisInitialized(_this), "context", void 0);
 
       _defineProperty(_assertThisInitialized(_this), "active", true);
 
@@ -5297,11 +5347,13 @@ var loadView = function loadView(moduleName, viewName, options) {
       var _this2 = this;
 
       if (!this.view && !this.loading && !this.error) {
+        var deps = this.context;
+        deps[moduleName + viewName] = true;
         this.loading = true;
         var result;
 
         try {
-          result = getView(moduleName, viewName);
+          result = getComponet(moduleName, viewName, true);
         } catch (e) {
           this.loading = false;
           this.error = e.message || "" + e;
@@ -5356,6 +5408,8 @@ var loadView = function loadView(moduleName, viewName, options) {
 
     return Loader;
   }(React.Component);
+
+  _defineProperty(Loader, "contextType", depsContext);
 
   return React__default['default'].forwardRef(function (props, ref) {
     return React__default['default'].createElement(Loader, _extends({}, props, {
@@ -6042,13 +6096,12 @@ function setConfig(conf) {
   setRouteConfig(conf);
   setLoadViewOptions(conf);
 }
-var exportModule = exportModule$1;
 function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
   if (middlewares === void 0) {
     middlewares = [];
   }
 
-  var controllerMiddleware = [routeMiddleware].concat(middlewares);
+  var istoreMiddleware = [routeMiddleware].concat(middlewares);
 
   var _ref = moduleGetter['route'](),
       locationTransform = _ref.locationTransform;
@@ -6066,86 +6119,77 @@ function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
               ssrKey = _ref3$ssrKey === void 0 ? 'cluxInitStore' : _ref3$ssrKey;
 
           var router = createRouter('Browser', locationTransform);
-          var routeState = router.getRouteState();
+          MetaData.router = router;
           var ssrData = env[ssrKey];
           var renderFun = ssrData ? reactDom.hydrate : reactDom.render;
           var panel = env.document.getElementById(id);
+          return router.initedPromise.then(function (routeState) {
+            var initState = _extends({}, storeOptions.initState, {
+              route: routeState
+            }, ssrData.state);
 
-          var initState = _extends({}, storeOptions.initState, {
-            route: routeState
-          }, ssrData);
-
-          var baseStore = storeCreator(_extends({}, storeOptions, {
-            initState: initState
-          }));
-
-          var _renderApp = renderApp(baseStore, Object.keys(initState), moduleGetter, controllerMiddleware, appModuleName, appViewName),
-              store = _renderApp.store,
-              beforeRender = _renderApp.beforeRender;
-
-          router.setStore(store);
-          MetaData.router = router;
-          return {
-            store: store,
-            run: function run() {
-              return beforeRender().then(function (AppView) {
-                renderFun(React__default['default'].createElement(AppView, {
-                  store: store
-                }), panel);
-              });
-            }
-          };
+            var baseStore = storeCreator(_extends({}, storeOptions, {
+              initState: initState
+            }));
+            return renderApp(baseStore, Object.keys(initState), ssrData.deps, moduleGetter, istoreMiddleware, appModuleName, appViewName).then(function (_ref4) {
+              var store = _ref4.store,
+                  AppView = _ref4.AppView;
+              router.setStore(store);
+              var deps = {};
+              renderFun(React__default['default'].createElement(depsContext.Provider, {
+                value: deps
+              }, React__default['default'].createElement(AppView, {
+                store: store
+              })), panel);
+              env.console.log(deps);
+              return store;
+            });
+          });
         },
-        ssr: function ssr(_ref4) {
-          var _ref4$id = _ref4.id,
-              id = _ref4$id === void 0 ? 'root' : _ref4$id,
-              _ref4$ssrKey = _ref4.ssrKey,
-              ssrKey = _ref4$ssrKey === void 0 ? 'cluxInitStore' : _ref4$ssrKey,
-              url = _ref4.url;
+        ssr: function ssr(_ref5) {
+          var _ref5$id = _ref5.id,
+              id = _ref5$id === void 0 ? 'root' : _ref5$id,
+              _ref5$ssrKey = _ref5.ssrKey,
+              ssrKey = _ref5$ssrKey === void 0 ? 'cluxInitStore' : _ref5$ssrKey,
+              url = _ref5.url;
 
           if (!SSRTPL) {
             SSRTPL = env.decodeBas64('process.env.CLUX_ENV_SSRTPL');
           }
 
           var router = createRouter(url, locationTransform);
-          var routeState = router.getRouteState();
-
-          var initState = _extends({}, storeOptions.initState, {
-            route: routeState
-          });
-
-          var baseStore = storeCreator(_extends({}, storeOptions, {
-            initState: initState
-          }));
-
-          var _ssrApp = ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, controllerMiddleware, appModuleName, appViewName),
-              store = _ssrApp.store,
-              beforeRender = _ssrApp.beforeRender;
-
-          router.setStore(store);
           MetaData.router = router;
-          return {
-            store: store,
-            run: function run() {
-              return beforeRender().then(function (AppView) {
-                var data = store.getState();
+          return router.initedPromise.then(function (routeState) {
+            var initState = _extends({}, storeOptions.initState, {
+              route: routeState
+            });
 
-                var html = require('react-dom/server').renderToString(React__default['default'].createElement(AppView, {
-                  store: store
-                }));
+            var baseStore = storeCreator(_extends({}, storeOptions, {
+              initState: initState
+            }));
+            return ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, istoreMiddleware, appModuleName, appViewName).then(function (_ref6) {
+              var store = _ref6.store,
+                  AppView = _ref6.AppView;
+              var data = store.getState();
+              var deps = {};
 
-                var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + id + "['\"][^<>]*>", 'm'));
+              var html = require('react-dom/server').renderToString(React__default['default'].createElement(depsContext.Provider, {
+                value: deps
+              }, React__default['default'].createElement(AppView, {
+                store: store
+              })));
 
-                if (match) {
-                  var pageHead = html.split(/<head>|<\/head>/, 3);
-                  html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-                  return SSRTPL.replace('</head>', (pageHead[1] || '') + "\r\n<script>window." + ssrKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
-                }
+              var match = SSRTPL.match(new RegExp("<[^<>]+id=['\"]" + id + "['\"][^<>]*>", 'm'));
 
-                return html;
-              });
-            }
-          };
+              if (match) {
+                var pageHead = html.split(/<head>|<\/head>/, 3);
+                html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
+                return SSRTPL.replace('</head>', (pageHead[1] || '') + "\r\n<script>window." + ssrKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
+              }
+
+              return html;
+            });
+          });
         }
       };
     }
@@ -6207,7 +6251,6 @@ exports.getApp = getApp;
 exports.isProcessedError = isProcessedError;
 exports.isServer = isServer;
 exports.logger = logger;
-exports.modelHotReplacement = modelHotReplacement;
 exports.patchActions = patchActions;
 exports.reducer = reducer;
 exports.serverSide = serverSide;

@@ -110,9 +110,9 @@ const defaultNativeLocationMap = {
   }
 
 };
-export function createRouteModule(defaultParams, pagenameMap, nativeLocationMap = defaultNativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
+export function createRouteModule(pagenameMap, nativeLocationMap = defaultNativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
   const handlers = RouteModuleHandlers;
-  const locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+  const locationTransform = createLocationTransform(pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
   const result = exportModule('route', handlers, {}, {});
   return {
     default: result,

@@ -1,6 +1,7 @@
 import _decorate from "@babel/runtime/helpers/esm/decorate";
 import { isPromise } from './sprite';
 import { injectActions, MetaData, config, reducer, mergeState, moduleInitAction, moduleReInitAction } from './basic';
+import { env } from './env';
 export function exportModule(moduleName, ModuleHandles, params, components) {
   const model = store => {
     if (!store.injectedModules[moduleName]) {
@@ -30,26 +31,26 @@ export function exportModule(moduleName, ModuleHandles, params, components) {
   };
 }
 export function getModule(moduleName) {
-  if (MetaData.resourceCaches[moduleName]) {
-    return MetaData.resourceCaches[moduleName];
+  if (MetaData.moduleCaches[moduleName]) {
+    return MetaData.moduleCaches[moduleName];
   }
 
   const moduleOrPromise = MetaData.moduleGetter[moduleName]();
 
   if (isPromise(moduleOrPromise)) {
     return moduleOrPromise.then(module => {
-      MetaData.resourceCaches[moduleName] = module;
+      MetaData.moduleCaches[moduleName] = module;
       return module;
     });
   }
 
-  MetaData.resourceCaches[moduleName] = moduleOrPromise;
+  MetaData.moduleCaches[moduleName] = moduleOrPromise;
   return moduleOrPromise;
 }
 export function getModuleList(moduleNames) {
   return Promise.all(moduleNames.map(moduleName => {
-    if (MetaData.resourceCaches[moduleName]) {
-      return MetaData.resourceCaches[moduleName];
+    if (MetaData.moduleCaches[moduleName]) {
+      return MetaData.moduleCaches[moduleName];
     }
 
     return getModule(moduleName);
@@ -67,11 +68,11 @@ function _loadModel(moduleName, store = MetaData.clientStore) {
 }
 
 export { _loadModel as loadModel };
-export function getComponet(moduleName, componentName) {
+export function getComponet(moduleName, componentName, initView) {
   const key = `${moduleName},${componentName}`;
 
-  if (MetaData.resourceCaches[key]) {
-    return MetaData.resourceCaches[key];
+  if (MetaData.componentCaches[key]) {
+    return MetaData.componentCaches[key];
   }
 
   const moduleCallback = module => {
@@ -79,12 +80,22 @@ export function getComponet(moduleName, componentName) {
 
     if (isPromise(componentOrPromise)) {
       return componentOrPromise.then(view => {
-        MetaData.resourceCaches[key] = view;
+        MetaData.componentCaches[key] = view;
+
+        if (view[config.ViewFlag] && initView && !env.isServer) {
+          module.default.model(MetaData.clientStore);
+        }
+
         return view;
       });
     }
 
-    MetaData.resourceCaches[key] = componentOrPromise;
+    MetaData.componentCaches[key] = componentOrPromise;
+
+    if (componentOrPromise[config.ViewFlag] && initView && !env.isServer) {
+      module.default.model(MetaData.clientStore);
+    }
+
     return componentOrPromise;
   };
 
@@ -98,13 +109,16 @@ export function getComponet(moduleName, componentName) {
 }
 export function getComponentList(keys) {
   return Promise.all(keys.map(key => {
-    if (MetaData.resourceCaches[key]) {
-      return MetaData.resourceCaches[key];
+    if (MetaData.componentCaches[key]) {
+      return MetaData.componentCaches[key];
     }
 
     const [moduleName, componentName] = key.split(',');
     return getComponet(moduleName, componentName);
   }));
+}
+export function getCachedModules() {
+  return MetaData.moduleCaches;
 }
 export let CoreModuleHandlers = _decorate(null, function (_initialize) {
   class CoreModuleHandlers {
@@ -270,4 +284,8 @@ export function getRootModuleAPI(data) {
   }
 
   return MetaData.facadeMap;
+}
+export function defineView(component) {
+  component[config.ViewFlag] = true;
+  return component;
 }

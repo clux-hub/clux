@@ -6,11 +6,13 @@ export const config: {
   MSP: string;
   MutableData: boolean;
   DepthTimeOnLoading: number;
+  ViewFlag: string;
 } = {
   NSP: '.',
   MSP: ',',
   MutableData: false,
   DepthTimeOnLoading: 2,
+  ViewFlag: '__clux_is_view__',
 };
 /**
  * 可供设置的全局参数
@@ -162,13 +164,24 @@ export const MetaData: {
   facadeMap: FacadeMap;
   clientStore: IStore;
   appModuleName: string;
-  appViewName: string;
+  // appViewName: string;
   moduleGetter: ModuleGetter;
   injectedModules: Record<string, boolean>;
   reducersMap: ActionHandlerMap;
   effectsMap: ActionHandlerMap;
-  resourceCaches: Record<string, any>;
-} = {injectedModules: {}, reducersMap: {}, effectsMap: {}, resourceCaches: {}} as any;
+  moduleCaches: Record<string, CommonModule>;
+  componentCaches: Record<string, any>;
+} = {
+  appModuleName: 'stage',
+  injectedModules: {},
+  reducersMap: {},
+  effectsMap: {},
+  moduleCaches: {},
+  componentCaches: {},
+  facadeMap: null as any,
+  clientStore: null as any,
+  moduleGetter: null as any,
+};
 
 function transformAction(actionName: string, handler: ActionHandler, listenerModule: string, actionHandlerMap: ActionHandlerMap) {
   if (!actionHandlerMap[actionName]) {
@@ -254,15 +267,15 @@ export function reducer(target: any, key: string, descriptor: PropertyDescriptor
  * @param loadingForModuleName 可将loading状态合并注入到其他module，默认为入口主模块
  *
  * ```
- * effect(null) 不注入加载状态
  * effect() == effect('global','app')
- * effect('global') = effect('global',thisModuleName)
+ * effect(null) 不注入加载状态
+ * effect('global') == effect('global',thisModuleName)
  * ```
  */
 export function effect(loadingForGroupName?: string | null, loadingForModuleName?: string) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
-    loadingForModuleName = MetaData.appModuleName || '';
+    loadingForModuleName = '';
   }
   return (target: any, key: string, descriptor: PropertyDescriptor) => {
     if (!key && !descriptor) {

@@ -19,7 +19,7 @@ function __extendDefault(target: Object, def: Object): Object {
   });
   return clone;
 }
-export function extendDefault(target: {[key: string]: any}, def: {[key: string]: any}): {[key: string]: any} {
+export function extendDefault(target: any, def: any): {[key: string]: any} {
   if (!isPlainObject(target)) {
     target = {};
   }
@@ -55,7 +55,7 @@ function __excludeDefault(data: {[key: string]: any}, def: {[key: string]: any})
 }
 
 // 主要用来排除默认值，keepTopLevel：不能把顶级module省略，否则无法还原
-export function excludeDefault(data: {[key: string]: any}, def: {[key: string]: any}, keepTopLevel: boolean): {[key: string]: any} {
+export function excludeDefault(data: any, def: any, keepTopLevel: boolean): {[key: string]: any} {
   if (!isPlainObject(data)) {
     return {};
   }

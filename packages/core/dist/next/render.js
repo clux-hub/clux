@@ -4,7 +4,7 @@ import { enhanceStore } from './store';
 
 const defFun = () => undefined;
 
-export function renderApp(baseStore, preloadModules, preloadComponents, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
+export async function renderApp(baseStore, preloadModules, preloadComponents, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
   MetaData.appModuleName = appModuleName;
   MetaData.moduleGetter = moduleGetter;
 
@@ -15,21 +15,18 @@ export function renderApp(baseStore, preloadModules, preloadComponents, moduleGe
   preloadModules = preloadModules.filter(moduleName => moduleGetter[moduleName] && moduleName !== appModuleName);
   preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares);
+  MetaData.clientStore = store;
+  const modules = await getModuleList(preloadModules);
+  await getComponentList(preloadComponents);
+  const appModule = modules[0].default;
+  await appModule.model(store);
+  const AppView = getComponet(appModuleName, appViewName);
   return {
     store,
-
-    async beforeRender() {
-      MetaData.clientStore = store;
-      const modules = await getModuleList(preloadModules);
-      await getComponentList(preloadComponents);
-      const appModule = modules[0].default;
-      await appModule.model(store);
-      return getComponet(appModuleName, appViewName);
-    }
-
+    AppView
   };
 }
-export function ssrApp(baseStore, preloadModules, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
+export async function ssrApp(baseStore, preloadModules, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
   MetaData.appModuleName = appModuleName;
   MetaData.moduleGetter = moduleGetter;
 
@@ -40,18 +37,15 @@ export function ssrApp(baseStore, preloadModules, moduleGetter, middlewares, app
   preloadModules = preloadModules.filter(moduleName => moduleGetter[moduleName] && moduleName !== appModuleName);
   preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares);
+  const [{
+    default: appModule
+  }, ...otherModules] = await getModuleList(preloadModules);
+  await appModule.model(store);
+  await Promise.all(otherModules.map(module => module.default.model(store)));
+  store.dispatch = defFun;
+  const AppView = getComponet(appModuleName, appViewName);
   return {
     store,
-
-    async beforeRender() {
-      const [{
-        default: appModule
-      }, ...otherModules] = await getModuleList(preloadModules);
-      await appModule.model(store);
-      await Promise.all(otherModules.map(module => module.default.model(store)));
-      store.dispatch = defFun;
-      return getComponet(appModuleName, appViewName);
-    }
-
+    AppView
   };
 }

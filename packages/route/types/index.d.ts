@@ -1,12 +1,13 @@
-import { History } from './basic';
-import type { LocationTransform } from './transform';
-import type { RootParams, Location, NativeLocation, RouteState, PayloadLocation, PartialLocation } from './basic';
-export { setRouteConfig, routeConfig, nativeUrlToNativeLocation } from './basic';
-export { createLocationTransform } from './transform';
+import { CluxLocation } from './basic';
+import { History } from './history';
+import type { LocationTransform, NativeLocation } from './transform';
+import type { RootParams, Location, RouteState, PayloadLocation } from './basic';
+export { setRouteConfig, routeConfig } from './basic';
+export { createLocationTransform, nativeUrlToNativeLocation } from './transform';
 export { routeMiddleware, createRouteModule, RouteActionTypes, ModuleWithRouteHandlers } from './module';
 export type { RouteModule } from './module';
-export type { PagenameMap, LocationTransform } from './transform';
-export type { RootParams, Location, NativeLocation, RouteState, HistoryAction, DeepPartial, PayloadLocation } from './basic';
+export type { PagenameMap, LocationTransform, NativeLocation } from './transform';
+export type { RootParams, Location, RouteState, HistoryAction, DeepPartial, PayloadLocation } from './basic';
 interface Store {
     dispatch(action: {
         type: string;
@@ -40,20 +41,21 @@ export declare abstract class BaseNativeRouter {
 }
 export declare abstract class BaseRouter<P extends RootParams, N extends string> implements IBaseRouter<P, N> {
     nativeRouter: BaseNativeRouter;
-    protected locationTransform: LocationTransform<P>;
+    protected locationTransform: LocationTransform;
     private _tid;
     private curTask?;
     private taskList;
     private _nativeData;
     private routeState;
     private cluxUrl;
-    protected store: Store | undefined;
-    readonly history: History;
+    protected store: Store;
+    history: History;
     private _lid;
     protected readonly listenerMap: {
         [id: string]: (data: RouteState<P>) => void | Promise<void>;
     };
-    constructor(nativeLocationOrNativeUrl: NativeLocation | string, nativeRouter: BaseNativeRouter, locationTransform: LocationTransform<P>);
+    initedPromise: Promise<RouteState<P>>;
+    constructor(nativeLocationOrNativeUrl: NativeLocation | string, nativeRouter: BaseNativeRouter, locationTransform: LocationTransform);
     addListener(callback: (data: RouteState<P>) => void | Promise<void>): () => void;
     protected dispatch(data: RouteState<P>): Promise<void[]>;
     getRouteState(): RouteState<P>;
@@ -65,15 +67,12 @@ export declare abstract class BaseRouter<P extends RootParams, N extends string>
     setStore(_store: Store): void;
     getCurKey(): string;
     findHistoryIndexByKey(key: string): number;
+    cluxLocationToNativeUrl(location: CluxLocation): string;
+    urlToCluxLocation(url: string): CluxLocation;
+    urlToLocation(url: string): Location<P> | Promise<Location<P>>;
     private _createKey;
-    nativeUrlToNativeLocation(url: string): NativeLocation;
-    nativeLocationToLocation(nativeLocation: NativeLocation): Location<P>;
-    nativeUrlToLocation(nativeUrl: string): Location<P>;
-    urlToLocation(url: string): Location<P>;
-    nativeLocationToNativeUrl(nativeLocation: NativeLocation): string;
-    locationToNativeUrl(location: PartialLocation<P>): string;
-    locationToCluxUrl(location: PartialLocation<P>): string;
-    payloadToPartial(payload: PayloadLocation<P, N>): PartialLocation<P>;
+    private cluxLocationToLocation;
+    private preAdditions;
     relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
     private _relaunch;
     push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
@@ -100,17 +99,11 @@ export interface IBaseRouter<P extends RootParams, N extends string> {
     setStore(_store: Store): void;
     getCurKey(): string;
     findHistoryIndexByKey(key: string): number;
-    nativeUrlToNativeLocation(url: string): NativeLocation;
-    nativeLocationToLocation(nativeLocation: NativeLocation): Location<P>;
-    nativeUrlToLocation(nativeUrl: string): Location<P>;
-    nativeLocationToNativeUrl(nativeLocation: NativeLocation): string;
-    urlToLocation(url: string): Location<P>;
-    locationToNativeUrl(location: PartialLocation<P>): string;
-    locationToCluxUrl(location: PartialLocation<P>): string;
-    payloadToPartial(payload: PayloadLocation<P, N>): PartialLocation<P>;
     relaunch(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
     push(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
     replace(data: PayloadLocation<P, N> | NativeLocation | string, internal?: boolean, disableNative?: boolean): void;
     back(n?: number, indexUrl?: string, internal?: boolean, disableNative?: boolean): void;
     destroy(): void;
+    cluxLocationToNativeUrl(location: CluxLocation): string;
+    urlToCluxLocation(url: string): CluxLocation;
 }

@@ -4,7 +4,8 @@ export var config = {
   NSP: '.',
   MSP: ',',
   MutableData: false,
-  DepthTimeOnLoading: 2
+  DepthTimeOnLoading: 2,
+  ViewFlag: '__clux_is_view__'
 };
 export function setConfig(_config) {
   _config.NSP !== undefined && (config.NSP = _config.NSP);
@@ -43,10 +44,15 @@ export function moduleLoadingAction(moduleName, loadingState) {
   };
 }
 export var MetaData = {
+  appModuleName: 'stage',
   injectedModules: {},
   reducersMap: {},
   effectsMap: {},
-  resourceCaches: {}
+  moduleCaches: {},
+  componentCaches: {},
+  facadeMap: null,
+  clientStore: null,
+  moduleGetter: null
 };
 
 function transformAction(actionName, handler, listenerModule, actionHandlerMap) {
@@ -126,7 +132,7 @@ export function reducer(target, key, descriptor) {
 export function effect(loadingForGroupName, loadingForModuleName) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
-    loadingForModuleName = MetaData.appModuleName || '';
+    loadingForModuleName = '';
   }
 
   return function (target, key, descriptor) {

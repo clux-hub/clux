@@ -13,7 +13,18 @@ export {
   setLoading,
 } from './basic';
 export {getActionData, setProcessedError, isProcessedError} from './store';
-export {CoreModuleHandlers, loadModel, exportModule, getComponet, getComponentList, getRootModuleAPI, getModule, getModuleList} from './inject';
+export {
+  CoreModuleHandlers,
+  loadModel,
+  exportModule,
+  getComponet,
+  getComponentList,
+  getRootModuleAPI,
+  getModule,
+  getModuleList,
+  getCachedModules,
+  defineView,
+} from './inject';
 export {LoadingState, deepMerge, SingleDispatcher, MultipleDispatcher, isPromise, isServer, serverSide, clientSide, delayPromise} from './sprite';
 export {renderApp, ssrApp} from './render';
 export {env} from './env';
@@ -32,4 +43,4 @@ export type {
   GetState,
   State,
 } from './basic';
-export type {RootModuleAPI, RootModuleParams, RootModuleFacade, RootModuleActions, ReturnData} from './inject';
+export type {RootModuleAPI, RootModuleParams, RootModuleFacade, RootModuleActions, ReturnData, LoadComponent} from './inject';

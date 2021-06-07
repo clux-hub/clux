@@ -2,17 +2,14 @@ import _regeneratorRuntime from "@babel/runtime/regenerator";
 import _asyncToGenerator from "@babel/runtime/helpers/esm/asyncToGenerator";
 import _extends from "@babel/runtime/helpers/esm/extends";
 import _defineProperty from "@babel/runtime/helpers/esm/defineProperty";
-import { env, deepMerge, isPromise } from '@clux/core';
-import { uriToLocation, nativeUrlToNativeLocation as _nativeUrlToNativeLocation, nativeLocationToNativeUrl as _nativeLocationToNativeUrl, History, routeConfig, setRouteConfig } from './basic';
+import { isPromise, getModuleList } from '@clux/core';
+import { routeConfig, setRouteConfig } from './basic';
+import { History, uriToLocation } from './history';
 import { testRouteChangeAction, routeChangeAction } from './module';
-export { setRouteConfig, routeConfig, nativeUrlToNativeLocation } from './basic';
-export { createLocationTransform } from './transform';
+import { assignDefaultData, dataIsNativeLocation, cluxLocationToCluxUrl, cluxLocationToNativeUrl as _cluxLocationToNativeUrl, nativeUrlToCluxLocation, nativeLocationToCluxLocation, nativeLocationToNativeUrl, urlToCluxLocation as _urlToCluxLocation, payloadToCluxLocation } from './transform';
+export { setRouteConfig, routeConfig } from './basic';
+export { createLocationTransform, nativeUrlToNativeLocation } from './transform';
 export { routeMiddleware, createRouteModule, RouteActionTypes, ModuleWithRouteHandlers } from './module';
-
-function dataIsNativeLocation(data) {
-  return data['pathname'];
-}
-
 export var BaseNativeRouter = function () {
   function BaseNativeRouter() {
     _defineProperty(this, "curTask", void 0);
@@ -75,6 +72,8 @@ export var BaseNativeRouter = function () {
 }();
 export var BaseRouter = function () {
   function BaseRouter(nativeLocationOrNativeUrl, nativeRouter, locationTransform) {
+    var _this2 = this;
+
     _defineProperty(this, "_tid", 0);
 
     _defineProperty(this, "curTask", void 0);
@@ -95,32 +94,45 @@ export var BaseRouter = function () {
 
     _defineProperty(this, "listenerMap", {});
 
+    _defineProperty(this, "initedPromise", void 0);
+
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
     nativeRouter.setRouter(this);
-    var location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
+    var cluxLocation = typeof nativeLocationOrNativeUrl === 'string' ? nativeUrlToCluxLocation(nativeLocationOrNativeUrl, locationTransform) : nativeLocationToCluxLocation(nativeLocationOrNativeUrl, locationTransform);
 
-    var key = this._createKey();
+    var callback = function callback(location) {
+      var key = _this2._createKey();
 
-    var routeState = _extends({}, location, {
-      action: 'RELAUNCH',
-      key: key
-    });
-
-    this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
-
-    if (!routeConfig.indexUrl) {
-      setRouteConfig({
-        indexUrl: this.cluxUrl
+      var routeState = _extends({}, location, {
+        action: 'RELAUNCH',
+        key: key
       });
-    }
 
-    this._nativeData = undefined;
-    this.history = new History({
-      location: location,
-      key: key
-    });
+      _this2.routeState = routeState;
+      _this2.cluxUrl = cluxLocationToCluxUrl(routeState);
+
+      if (!routeConfig.indexUrl) {
+        setRouteConfig({
+          indexUrl: _this2.cluxUrl
+        });
+      }
+
+      _this2.history = new History({
+        location: location,
+        key: key
+      });
+      return routeState;
+    };
+
+    var locationOrPromise = this.cluxLocationToLocation(cluxLocation);
+
+    if (isPromise(locationOrPromise)) {
+      this.initedPromise = locationOrPromise.then(callback);
+    } else {
+      var routeState = callback(locationOrPromise);
+      this.initedPromise = Promise.resolve(routeState);
+    }
   }
 
   var _proto2 = BaseRouter.prototype;
@@ -161,13 +173,11 @@ export var BaseRouter = function () {
 
   _proto2.getNativeLocation = function getNativeLocation() {
     if (!this._nativeData) {
-      var _nativeLocation = this.locationTransform.out(this.routeState);
-
-      var _nativeUrl = this.nativeLocationToNativeUrl(_nativeLocation);
-
+      var nativeLocation = this.locationTransform.out(this.routeState);
+      var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
       this._nativeData = {
-        nativeLocation: _nativeLocation,
-        nativeUrl: _nativeUrl
+        nativeLocation: nativeLocation,
+        nativeUrl: nativeUrl
       };
     }
 
@@ -176,13 +186,11 @@ export var BaseRouter = function () {
 
   _proto2.getNativeUrl = function getNativeUrl() {
     if (!this._nativeData) {
-      var _nativeLocation2 = this.locationTransform.out(this.routeState);
-
-      var _nativeUrl2 = this.nativeLocationToNativeUrl(_nativeLocation2);
-
+      var nativeLocation = this.locationTransform.out(this.routeState);
+      var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
       this._nativeData = {
-        nativeLocation: _nativeLocation2,
-        nativeUrl: _nativeUrl2
+        nativeLocation: nativeLocation,
+        nativeUrl: nativeUrl
       };
     }
 
@@ -201,94 +209,61 @@ export var BaseRouter = function () {
     return this.history.findIndex(key);
   };
 
+  _proto2.cluxLocationToNativeUrl = function cluxLocationToNativeUrl(location) {
+    return _cluxLocationToNativeUrl(location, this.locationTransform);
+  };
+
+  _proto2.urlToCluxLocation = function urlToCluxLocation(url) {
+    return _urlToCluxLocation(url, this.locationTransform);
+  };
+
+  _proto2.urlToLocation = function urlToLocation(url) {
+    var cluxLocation = _urlToCluxLocation(url, this.locationTransform);
+
+    return this.cluxLocationToLocation(cluxLocation);
+  };
+
   _proto2._createKey = function _createKey() {
     this._tid++;
     return "" + this._tid;
   };
 
-  _proto2.nativeUrlToNativeLocation = function nativeUrlToNativeLocation(url) {
-    return _nativeUrlToNativeLocation(url);
-  };
+  _proto2.cluxLocationToLocation = function cluxLocationToLocation(cluxLocation) {
+    var pagename = cluxLocation.pagename;
+    var params = cluxLocation.params || {};
 
-  _proto2.nativeLocationToLocation = function nativeLocationToLocation(nativeLocation) {
-    var location;
-
-    try {
-      location = this.locationTransform.in(nativeLocation);
-    } catch (error) {
-      env.console.warn(error);
-      location = {
-        pagename: '/',
-        params: {}
+    if (routeConfig.defaultParams) {
+      return {
+        pagename: pagename,
+        params: assignDefaultData(params)
       };
     }
 
-    return location;
+    return getModuleList(Object.keys(params)).then(function () {
+      return {
+        pagename: pagename,
+        params: assignDefaultData(params)
+      };
+    });
   };
 
-  _proto2.nativeUrlToLocation = function nativeUrlToLocation(nativeUrl) {
-    return this.nativeLocationToLocation(this.nativeUrlToNativeLocation(nativeUrl));
-  };
+  _proto2.preAdditions = function preAdditions(data) {
+    var cluxLocation;
 
-  _proto2.urlToLocation = function urlToLocation(url) {
-    var _url$split = url.split('?'),
-        pathname = _url$split[0],
-        others = _url$split.slice(1);
-
-    var query = others.join('?');
-    var location;
-
-    try {
-      if (query.startsWith('{')) {
-        var _data = JSON.parse(query);
-
-        location = this.locationTransform.in({
-          pagename: pathname,
-          params: _data
-        });
-      } else {
-        var _nativeLocation3 = this.nativeUrlToNativeLocation(url);
-
-        location = this.locationTransform.in(_nativeLocation3);
+    if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return null;
       }
-    } catch (error) {
-      env.console.warn(error);
-      location = {
-        pagename: '/',
-        params: {}
-      };
+
+      cluxLocation = _urlToCluxLocation(data, this.locationTransform);
+    } else if (dataIsNativeLocation(data)) {
+      cluxLocation = nativeLocationToCluxLocation(data, this.locationTransform);
+    } else {
+      cluxLocation = this.locationTransform.in(payloadToCluxLocation(data, this.routeState));
     }
 
-    return location;
-  };
-
-  _proto2.nativeLocationToNativeUrl = function nativeLocationToNativeUrl(nativeLocation) {
-    return _nativeLocationToNativeUrl(nativeLocation);
-  };
-
-  _proto2.locationToNativeUrl = function locationToNativeUrl(location) {
-    var nativeLocation = this.locationTransform.out(location);
-    return this.nativeLocationToNativeUrl(nativeLocation);
-  };
-
-  _proto2.locationToCluxUrl = function locationToCluxUrl(location) {
-    return [location.pagename, JSON.stringify(location.params || {})].join('?');
-  };
-
-  _proto2.payloadToPartial = function payloadToPartial(payload) {
-    var params = payload.params;
-    var extendParams = payload.extendParams === 'current' ? this.routeState.params : payload.extendParams;
-
-    if (extendParams && params) {
-      params = deepMerge({}, extendParams, params);
-    } else if (extendParams) {
-      params = extendParams;
-    }
-
-    return {
-      pagename: payload.pagename || this.routeState.pagename,
-      params: params || {}
-    };
+    return this.cluxLocationToLocation(cluxLocation);
   };
 
   _proto2.relaunch = function relaunch(data, internal, disableNative) {
@@ -305,76 +280,64 @@ export var BaseRouter = function () {
 
   _proto2._relaunch = function () {
     var _relaunch2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee(data, internal, disableNative) {
-      var _this2 = this;
+      var _this3 = this;
 
-      var location, key, routeState, nativeData;
+      var preData, location, key, routeState, nativeData;
       return _regeneratorRuntime.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              if (!(typeof data === 'string')) {
-                _context.next = 7;
+              _context.next = 2;
+              return this.preAdditions(data);
+
+            case 2:
+              preData = _context.sent;
+
+              if (preData) {
+                _context.next = 5;
                 break;
               }
 
-              if (!/^[\w:]*\/\//.test(data)) {
-                _context.next = 4;
-                break;
-              }
-
-              this.nativeRouter.toOutside(data);
               return _context.abrupt("return");
 
-            case 4:
-              location = this.urlToLocation(data);
-              _context.next = 8;
-              break;
-
-            case 7:
-              if (dataIsNativeLocation(data)) {
-                location = this.nativeLocationToLocation(data);
-              } else {
-                location = this.locationTransform.in(this.payloadToPartial(data));
-              }
-
-            case 8:
+            case 5:
+              location = preData;
               key = this._createKey();
               routeState = _extends({}, location, {
                 action: 'RELAUNCH',
                 key: key
               });
-              _context.next = 12;
+              _context.next = 10;
               return this.store.dispatch(testRouteChangeAction(routeState));
 
-            case 12:
-              _context.next = 14;
+            case 10:
+              _context.next = 12;
               return this.dispatch(routeState);
 
-            case 14:
+            case 12:
               if (!(!disableNative && !internal)) {
-                _context.next = 18;
+                _context.next = 16;
                 break;
               }
 
-              _context.next = 17;
+              _context.next = 15;
               return this.nativeRouter.execute('relaunch', function () {
-                var nativeLocation = _this2.locationTransform.out(routeState);
+                var nativeLocation = _this3.locationTransform.out(routeState);
 
-                var nativeUrl = _this2.nativeLocationToNativeUrl(nativeLocation);
-
+                var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
                 return {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
               }, key);
 
-            case 17:
+            case 15:
               nativeData = _context.sent;
 
-            case 18:
+            case 16:
               this._nativeData = nativeData;
               this.routeState = routeState;
-              this.cluxUrl = this.locationToCluxUrl(routeState);
+              this.cluxUrl = cluxLocationToCluxUrl(routeState);
               this.store.dispatch(routeChangeAction(routeState));
 
               if (internal) {
@@ -383,7 +346,7 @@ export var BaseRouter = function () {
                 this.history.relaunch(location, key);
               }
 
-            case 23:
+            case 21:
             case "end":
               return _context.stop();
           }
@@ -412,76 +375,64 @@ export var BaseRouter = function () {
 
   _proto2._push = function () {
     var _push2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee2(data, internal, disableNative) {
-      var _this3 = this;
+      var _this4 = this;
 
-      var location, key, routeState, nativeData;
+      var preData, location, key, routeState, nativeData;
       return _regeneratorRuntime.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
-              if (!(typeof data === 'string')) {
-                _context2.next = 7;
+              _context2.next = 2;
+              return this.preAdditions(data);
+
+            case 2:
+              preData = _context2.sent;
+
+              if (preData) {
+                _context2.next = 5;
                 break;
               }
 
-              if (!/^[\w:]*\/\//.test(data)) {
-                _context2.next = 4;
-                break;
-              }
-
-              this.nativeRouter.toOutside(data);
               return _context2.abrupt("return");
 
-            case 4:
-              location = this.urlToLocation(data);
-              _context2.next = 8;
-              break;
-
-            case 7:
-              if (dataIsNativeLocation(data)) {
-                location = this.nativeLocationToLocation(data);
-              } else {
-                location = this.locationTransform.in(this.payloadToPartial(data));
-              }
-
-            case 8:
+            case 5:
+              location = preData;
               key = this._createKey();
               routeState = _extends({}, location, {
                 action: 'PUSH',
                 key: key
               });
-              _context2.next = 12;
+              _context2.next = 10;
               return this.store.dispatch(testRouteChangeAction(routeState));
 
-            case 12:
-              _context2.next = 14;
+            case 10:
+              _context2.next = 12;
               return this.dispatch(routeState);
 
-            case 14:
+            case 12:
               if (!(!disableNative && !internal)) {
-                _context2.next = 18;
+                _context2.next = 16;
                 break;
               }
 
-              _context2.next = 17;
+              _context2.next = 15;
               return this.nativeRouter.execute('push', function () {
-                var nativeLocation = _this3.locationTransform.out(routeState);
+                var nativeLocation = _this4.locationTransform.out(routeState);
 
-                var nativeUrl = _this3.nativeLocationToNativeUrl(nativeLocation);
-
+                var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
                 return {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
               }, key);
 
-            case 17:
+            case 15:
               nativeData = _context2.sent;
 
-            case 18:
+            case 16:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
-              this.cluxUrl = this.locationToCluxUrl(routeState);
+              this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().push(location, key);
@@ -491,7 +442,7 @@ export var BaseRouter = function () {
 
               this.store.dispatch(routeChangeAction(routeState));
 
-            case 23:
+            case 21:
             case "end":
               return _context2.stop();
           }
@@ -520,76 +471,64 @@ export var BaseRouter = function () {
 
   _proto2._replace = function () {
     var _replace2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee3(data, internal, disableNative) {
-      var _this4 = this;
+      var _this5 = this;
 
-      var location, key, routeState, nativeData;
+      var preData, location, key, routeState, nativeData;
       return _regeneratorRuntime.wrap(function _callee3$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
             case 0:
-              if (!(typeof data === 'string')) {
-                _context3.next = 7;
+              _context3.next = 2;
+              return this.preAdditions(data);
+
+            case 2:
+              preData = _context3.sent;
+
+              if (preData) {
+                _context3.next = 5;
                 break;
               }
 
-              if (!/^[\w:]*\/\//.test(data)) {
-                _context3.next = 4;
-                break;
-              }
-
-              this.nativeRouter.toOutside(data);
               return _context3.abrupt("return");
 
-            case 4:
-              location = this.urlToLocation(data);
-              _context3.next = 8;
-              break;
-
-            case 7:
-              if (dataIsNativeLocation(data)) {
-                location = this.nativeLocationToLocation(data);
-              } else {
-                location = this.locationTransform.in(this.payloadToPartial(data));
-              }
-
-            case 8:
+            case 5:
+              location = preData;
               key = this._createKey();
               routeState = _extends({}, location, {
                 action: 'REPLACE',
                 key: key
               });
-              _context3.next = 12;
+              _context3.next = 10;
               return this.store.dispatch(testRouteChangeAction(routeState));
 
-            case 12:
-              _context3.next = 14;
+            case 10:
+              _context3.next = 12;
               return this.dispatch(routeState);
 
-            case 14:
+            case 12:
               if (!(!disableNative && !internal)) {
-                _context3.next = 18;
+                _context3.next = 16;
                 break;
               }
 
-              _context3.next = 17;
+              _context3.next = 15;
               return this.nativeRouter.execute('replace', function () {
-                var nativeLocation = _this4.locationTransform.out(routeState);
+                var nativeLocation = _this5.locationTransform.out(routeState);
 
-                var nativeUrl = _this4.nativeLocationToNativeUrl(nativeLocation);
-
+                var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
                 return {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
                 };
               }, key);
 
-            case 17:
+            case 15:
               nativeData = _context3.sent;
 
-            case 18:
+            case 16:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
-              this.cluxUrl = this.locationToCluxUrl(routeState);
+              this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().replace(location, key);
@@ -599,7 +538,7 @@ export var BaseRouter = function () {
 
               this.store.dispatch(routeChangeAction(routeState));
 
-            case 23:
+            case 21:
             case "end":
               return _context3.stop();
           }
@@ -636,7 +575,7 @@ export var BaseRouter = function () {
 
   _proto2._back = function () {
     var _back2 = _asyncToGenerator(_regeneratorRuntime.mark(function _callee4(n, indexUrl, internal, disableNative) {
-      var _this5 = this;
+      var _this6 = this;
 
       var stack, uri, _uriToLocation, key, location, routeState, nativeData;
 
@@ -690,10 +629,9 @@ export var BaseRouter = function () {
 
               _context4.next = 16;
               return this.nativeRouter.execute('back', function () {
-                var nativeLocation = _this5.locationTransform.out(routeState);
+                var nativeLocation = _this6.locationTransform.out(routeState);
 
-                var nativeUrl = _this5.nativeLocationToNativeUrl(nativeLocation);
-
+                var nativeUrl = nativeLocationToNativeUrl(nativeLocation);
                 return {
                   nativeLocation: nativeLocation,
                   nativeUrl: nativeUrl
@@ -706,7 +644,7 @@ export var BaseRouter = function () {
             case 17:
               this._nativeData = nativeData || undefined;
               this.routeState = routeState;
-              this.cluxUrl = this.locationToCluxUrl(routeState);
+              this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
               if (internal) {
                 this.history.getCurrentInternalHistory().back(n);

@@ -1,4 +1,4 @@
-import {BaseRouter, BaseNativeRouter, createLocationTransform, DeepPartial, RootParams, NativeData} from 'src/index';
+import {BaseRouter, BaseNativeRouter, createLocationTransform, DeepPartial, RootParams, NativeData, PagenameMap, setRouteConfig} from 'src/index';
 
 import nativeRouterMock from './nativeRouter';
 
@@ -45,16 +45,18 @@ const defaultArticleRouteParams: ArticleRouteParams = {
   itemView: '',
   _itemVerPre: 0,
 };
-export const defaultRouteParams = {
+export const defaultParams = {
   admin: {},
   member: defaultMemberRouteParams,
   article: defaultArticleRouteParams,
 };
 
-type RouteParams = typeof defaultRouteParams;
+setRouteConfig({defaultParams});
+
+type RouteParams = typeof defaultParams;
 type PartialRouteParams = DeepPartial<RouteParams>;
 
-const pagenameMap = {
+const pagenameMap: PagenameMap<RouteParams> = {
   '/admin/member': {
     argsToParams() {
       const params: PartialRouteParams = {admin: {}, member: {}};
@@ -94,7 +96,7 @@ const pagenameMap = {
 
 export type Pagename = keyof typeof pagenameMap;
 
-export const locationTransform = createLocationTransform(defaultRouteParams, pagenameMap, {
+export const locationTransform = createLocationTransform(pagenameMap, {
   in(nativeLocation) {
     let pathname = nativeLocation.pathname;
     if (pathname === '/' || pathname === '/admin2') {

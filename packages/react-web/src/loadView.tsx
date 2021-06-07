@@ -1,8 +1,13 @@
 import React, {ComponentType, Component} from 'react';
-import {getView, isPromise, env} from '@clux/core';
-import type {BaseLoadView, RootModuleFacade} from '@clux/core';
+import {getComponet, isPromise, env} from '@clux/core';
+import type {LoadComponent as BaseLoadComponent, RootModuleFacade} from '@clux/core';
 
-export type LoadView<A extends RootModuleFacade = {}> = BaseLoadView<A, {OnError?: ComponentType<{message: string}>; OnLoading?: ComponentType<{}>}>;
+export const depsContext = React.createContext({});
+
+export type LoadView<A extends RootModuleFacade = {}> = BaseLoadComponent<
+  A,
+  {OnError?: ComponentType<{message: string}>; OnLoading?: ComponentType<{}>}
+>;
 
 const loadViewDefaultOptions: {LoadViewOnError: ComponentType<{message: string}>; LoadViewOnLoading: ComponentType<{}>} = {
   LoadViewOnError: ({message}) => <div className="g-view-error">{message}</div>,
@@ -19,9 +24,13 @@ export function setLoadViewOptions({
   LoadViewOnLoading && (loadViewDefaultOptions.LoadViewOnLoading = LoadViewOnLoading);
 }
 
-export const loadView: LoadView = (moduleName, viewName, options) => {
+export const loadView: LoadView<Record<string, any>> = (moduleName, viewName, options) => {
   const {OnLoading, OnError} = options || {};
   class Loader extends Component<{forwardedRef: any}> {
+    static contextType = depsContext;
+
+    context!: React.ContextType<typeof depsContext>;
+
     private active: boolean = true;
 
     private loading: boolean = false;
@@ -54,10 +63,12 @@ export const loadView: LoadView = (moduleName, viewName, options) => {
 
     execute() {
       if (!this.view && !this.loading && !this.error) {
+        const deps = this.context;
+        deps[moduleName + viewName] = true;
         this.loading = true;
         let result: ComponentType<any> | Promise<ComponentType<any>> | undefined;
         try {
-          result = getView<ComponentType<any>>(moduleName, viewName as string);
+          result = getComponet<ComponentType<any>>(moduleName, viewName as string, true);
         } catch (e: any) {
           this.loading = false;
           this.error = e.message || `${e}`;

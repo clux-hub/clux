@@ -16,6 +16,7 @@ import {
   moduleInitAction,
   moduleReInitAction,
 } from './basic';
+import {env} from './env';
 
 type Handler<F> = F extends (...args: infer P) => any
   ? (
@@ -88,24 +89,24 @@ export function exportModule<N extends string, H extends IModuleHandlers, P exte
 }
 
 export function getModule(moduleName: string): Promise<CommonModule> | CommonModule {
-  if (MetaData.resourceCaches[moduleName]) {
-    return MetaData.resourceCaches[moduleName];
+  if (MetaData.moduleCaches[moduleName]) {
+    return MetaData.moduleCaches[moduleName];
   }
   const moduleOrPromise = MetaData.moduleGetter[moduleName]();
   if (isPromise(moduleOrPromise)) {
     return moduleOrPromise.then((module) => {
-      MetaData.resourceCaches[moduleName] = module;
+      MetaData.moduleCaches[moduleName] = module;
       return module;
     });
   }
-  MetaData.resourceCaches[moduleName] = moduleOrPromise;
+  MetaData.moduleCaches[moduleName] = moduleOrPromise;
   return moduleOrPromise;
 }
 export function getModuleList(moduleNames: string[]): Promise<CommonModule[]> {
   return Promise.all(
     moduleNames.map((moduleName) => {
-      if (MetaData.resourceCaches[moduleName]) {
-        return MetaData.resourceCaches[moduleName];
+      if (MetaData.moduleCaches[moduleName]) {
+        return MetaData.moduleCaches[moduleName];
       }
       return getModule(moduleName);
     })
@@ -118,20 +119,26 @@ export function loadModel<MG extends ModuleGetter>(moduleName: keyof MG, store: 
   }
   return moduleOrPromise.default.model(store);
 }
-export function getComponet<T>(moduleName: string, componentName: string): T | Promise<T> {
+export function getComponet<T = any>(moduleName: string, componentName: string, initView?: boolean): T | Promise<T> {
   const key = `${moduleName},${componentName}`;
-  if (MetaData.resourceCaches[key]) {
-    return MetaData.resourceCaches[key];
+  if (MetaData.componentCaches[key]) {
+    return MetaData.componentCaches[key];
   }
   const moduleCallback = (module: CommonModule) => {
     const componentOrPromise = module.default.components[componentName]();
     if (isPromise(componentOrPromise)) {
       return componentOrPromise.then((view) => {
-        MetaData.resourceCaches[key] = view;
+        MetaData.componentCaches[key] = view;
+        if (view[config.ViewFlag] && initView && !env.isServer) {
+          module.default.model(MetaData.clientStore);
+        }
         return view;
       });
     }
-    MetaData.resourceCaches[key] = componentOrPromise;
+    MetaData.componentCaches[key] = componentOrPromise;
+    if (componentOrPromise[config.ViewFlag] && initView && !env.isServer) {
+      module.default.model(MetaData.clientStore);
+    }
     return componentOrPromise;
   };
   const moduleOrPromise = getModule(moduleName);
@@ -143,15 +150,17 @@ export function getComponet<T>(moduleName: string, componentName: string): T | P
 export function getComponentList(keys: string[]): Promise<any[]> {
   return Promise.all(
     keys.map((key) => {
-      if (MetaData.resourceCaches[key]) {
-        return MetaData.resourceCaches[key];
+      if (MetaData.componentCaches[key]) {
+        return MetaData.componentCaches[key];
       }
       const [moduleName, componentName] = key.split(',');
       return getComponet(moduleName, componentName);
     })
   );
 }
-
+export function getCachedModules() {
+  return MetaData.moduleCaches;
+}
 /**
  * ModuleHandlers基类
  * 所有ModuleHandlers必须继承此基类
@@ -300,3 +309,14 @@ export function getRootModuleAPI<T extends RootModuleFacade = any>(data?: Record
   }
   return MetaData.facadeMap as any;
 }
+
+export function defineView<T>(component: T) {
+  component[config.ViewFlag] = true;
+  return component;
+}
+
+export type LoadComponent<A extends RootModuleFacade = {}, O = any> = <M extends keyof A, V extends keyof A[M]['components']>(
+  moduleName: M,
+  viewName: V,
+  options?: O
+) => A[M]['components'][V];

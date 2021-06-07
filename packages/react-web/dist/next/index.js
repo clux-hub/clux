@@ -235,7 +235,8 @@ const config = {
   NSP: '.',
   MSP: ',',
   MutableData: false,
-  DepthTimeOnLoading: 2
+  DepthTimeOnLoading: 2,
+  ViewFlag: '__clux_is_view__'
 };
 function setConfig$1(_config) {
   _config.NSP !== undefined && (config.NSP = _config.NSP);
@@ -249,10 +250,40 @@ const ActionTypes$1 = {
   MReInit: 'ReInit',
   Error: `clux${config.NSP}Error`
 };
+function errorAction(error) {
+  return {
+    type: ActionTypes$1.Error,
+    payload: [error]
+  };
+}
+function moduleInitAction(moduleName, initState) {
+  return {
+    type: `${moduleName}${config.NSP}${ActionTypes$1.MInit}`,
+    payload: [initState]
+  };
+}
+function moduleReInitAction(moduleName, initState) {
+  return {
+    type: `${moduleName}${config.NSP}${ActionTypes$1.MReInit}`,
+    payload: [initState]
+  };
+}
+function moduleLoadingAction(moduleName, loadingState) {
+  return {
+    type: `${moduleName}${config.NSP}${ActionTypes$1.MLoading}`,
+    payload: [loadingState]
+  };
+}
 const MetaData$1 = {
+  appModuleName: 'stage',
   injectedModules: {},
   reducersMap: {},
-  effectsMap: {}
+  effectsMap: {},
+  moduleCaches: {},
+  componentCaches: {},
+  facadeMap: null,
+  clientStore: null,
+  moduleGetter: null
 };
 
 function transformAction(actionName, handler, listenerModule, actionHandlerMap) {
@@ -296,25 +327,16 @@ function injectActions(moduleName, handlers) {
   }
 }
 const loadings = {};
-function setLoading(item, moduleName = MetaData$1.appModuleName, groupName = 'global') {
-  if (env.isServer) {
-    return item;
-  }
-
+function setLoading(store, item, moduleName, groupName = 'global') {
   const key = moduleName + config.NSP + groupName;
 
   if (!loadings[key]) {
     loadings[key] = new TaskCounter(config.DepthTimeOnLoading);
     loadings[key].addListener(loadingState => {
-      const store = MetaData$1.clientStore;
-
-      if (store) {
-        const actions = MetaData$1.facadeMap[moduleName].actions[ActionTypes$1.MLoading];
-        const action = actions({
-          [groupName]: loadingState
-        });
-        store.dispatch(action);
-      }
+      const action = moduleLoadingAction(moduleName, {
+        [groupName]: loadingState
+      });
+      store.dispatch(action);
     });
   }
 
@@ -335,7 +357,7 @@ function reducer(target, key, descriptor) {
 function effect(loadingForGroupName, loadingForModuleName) {
   if (loadingForGroupName === undefined) {
     loadingForGroupName = 'global';
-    loadingForModuleName = MetaData$1.appModuleName || '';
+    loadingForModuleName = '';
   }
 
   return (target, key, descriptor) => {
@@ -357,7 +379,7 @@ function effect(loadingForGroupName, loadingForModuleName) {
             loadingForModuleName = moduleName;
           }
 
-          setLoading(promiseResult, loadingForModuleName, loadingForGroupName);
+          setLoading(MetaData$1.clientStore, promiseResult, loadingForModuleName, loadingForGroupName);
         }
       };
 
@@ -400,25 +422,6 @@ function mergeState(target = {}, ...args) {
   }
 
   return Object.assign({}, target, ...args);
-}
-
-function errorAction(error) {
-  return {
-    type: ActionTypes$1.Error,
-    payload: [error]
-  };
-}
-function moduleInitAction(moduleName, initState) {
-  return {
-    type: `${moduleName}${config.NSP}${ActionTypes$1.MInit}`,
-    payload: [initState]
-  };
-}
-function moduleReInitAction(moduleName, initState) {
-  return {
-    type: `${moduleName}${config.NSP}${ActionTypes$1.MReInit}`,
-    payload: [initState]
-  };
 }
 
 function _arrayWithHoles(arr) {
@@ -885,12 +888,11 @@ function _optionalCallableProperty(obj, name) {
   return value;
 }
 
-const exportModule$1 = (moduleName, ModuleHandles, views) => {
+function exportModule(moduleName, ModuleHandles, params, components) {
   const model = store => {
     if (!store.injectedModules[moduleName]) {
-      const moduleHandles = new ModuleHandles();
+      const moduleHandles = new ModuleHandles(moduleName);
       store.injectedModules[moduleName] = moduleHandles;
-      moduleHandles.moduleName = moduleName;
       moduleHandles.store = store;
       injectActions(moduleName, moduleHandles);
       const initState = moduleHandles.initState;
@@ -909,74 +911,105 @@ const exportModule$1 = (moduleName, ModuleHandles, views) => {
   return {
     moduleName,
     model,
-    views,
-    initState: undefined,
+    components,
+    params,
     actions: undefined
   };
-};
-function cacheModule(module) {
-  const moduleName = module.default.moduleName;
-  const moduleGetter = MetaData$1.moduleGetter;
-  let fn = moduleGetter[moduleName];
-
-  if (fn.__module__ === module) {
-    return fn;
+}
+function getModule(moduleName) {
+  if (MetaData$1.moduleCaches[moduleName]) {
+    return MetaData$1.moduleCaches[moduleName];
   }
 
-  fn = () => module;
+  const moduleOrPromise = MetaData$1.moduleGetter[moduleName]();
 
-  fn.__module__ = module;
-  moduleGetter[moduleName] = fn;
-  return fn;
-}
-function getModuleByName(moduleName) {
-  const result = MetaData$1.moduleGetter[moduleName]();
-
-  if (isPromise(result)) {
-    return result.then(module => {
-      cacheModule(module);
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(module => {
+      MetaData$1.moduleCaches[moduleName] = module;
       return module;
     });
   }
 
-  cacheModule(result);
-  return result;
+  MetaData$1.moduleCaches[moduleName] = moduleOrPromise;
+  return moduleOrPromise;
 }
-function getView(moduleName, viewName) {
-  const callback = module => {
-    const view = module.default.views[viewName];
-
-    if (env.isServer) {
-      return view;
+function getModuleList(moduleNames) {
+  return Promise.all(moduleNames.map(moduleName => {
+    if (MetaData$1.moduleCaches[moduleName]) {
+      return MetaData$1.moduleCaches[moduleName];
     }
 
-    module.default.model(MetaData$1.clientStore);
-    return view;
-  };
-
-  const moduleOrPromise = getModuleByName(moduleName);
-
-  if (isPromise(moduleOrPromise)) {
-    return moduleOrPromise.then(callback);
-  }
-
-  return callback(moduleOrPromise);
+    return getModule(moduleName);
+  }));
 }
 
-function _loadModel(moduleName, controller) {
-  const moduleOrPromise = getModuleByName(moduleName);
+function _loadModel(moduleName, store = MetaData$1.clientStore) {
+  const moduleOrPromise = getModule(moduleName);
 
   if (isPromise(moduleOrPromise)) {
-    return moduleOrPromise.then(module => module.default.model(controller));
+    return moduleOrPromise.then(module => module.default.model(store));
   }
 
-  return moduleOrPromise.default.model(controller);
+  return moduleOrPromise.default.model(store);
+}
+function getComponet(moduleName, componentName, initView) {
+  const key = `${moduleName},${componentName}`;
+
+  if (MetaData$1.componentCaches[key]) {
+    return MetaData$1.componentCaches[key];
+  }
+
+  const moduleCallback = module => {
+    const componentOrPromise = module.default.components[componentName]();
+
+    if (isPromise(componentOrPromise)) {
+      return componentOrPromise.then(view => {
+        MetaData$1.componentCaches[key] = view;
+
+        if (view[config.ViewFlag] && initView && !env.isServer) {
+          module.default.model(MetaData$1.clientStore);
+        }
+
+        return view;
+      });
+    }
+
+    MetaData$1.componentCaches[key] = componentOrPromise;
+
+    if (componentOrPromise[config.ViewFlag] && initView && !env.isServer) {
+      module.default.model(MetaData$1.clientStore);
+    }
+
+    return componentOrPromise;
+  };
+
+  const moduleOrPromise = getModule(moduleName);
+
+  if (isPromise(moduleOrPromise)) {
+    return moduleOrPromise.then(moduleCallback);
+  }
+
+  return moduleCallback(moduleOrPromise);
+}
+function getComponentList(keys) {
+  return Promise.all(keys.map(key => {
+    if (MetaData$1.componentCaches[key]) {
+      return MetaData$1.componentCaches[key];
+    }
+
+    const [moduleName, componentName] = key.split(',');
+    return getComponet(moduleName, componentName);
+  }));
+}
+function getCachedModules() {
+  return MetaData$1.moduleCaches;
 }
 let CoreModuleHandlers = _decorate(null, function (_initialize) {
   class CoreModuleHandlers {
-    constructor(initState) {
+    constructor(moduleName, initState) {
       _initialize(this);
 
+      this.moduleName = moduleName;
       this.initState = initState;
     }
 
@@ -988,14 +1021,6 @@ let CoreModuleHandlers = _decorate(null, function (_initialize) {
       kind: "field",
       key: "store",
       value: void 0
-    }, {
-      kind: "field",
-      key: "moduleName",
-
-      value() {
-        return '';
-      }
-
     }, {
       kind: "get",
       key: "actions",
@@ -1077,30 +1102,6 @@ let CoreModuleHandlers = _decorate(null, function (_initialize) {
     }]
   };
 });
-
-function clearHandlers(moduleName, actionHandlerMap) {
-  for (const actionName in actionHandlerMap) {
-    if (actionHandlerMap.hasOwnProperty(actionName)) {
-      const maps = actionHandlerMap[actionName];
-      delete maps[moduleName];
-    }
-  }
-}
-
-function modelHotReplacement(moduleName, ModuleHandles) {
-  const store = MetaData$1.clientStore;
-
-  if (store.injectedModules[moduleName]) {
-    clearHandlers(moduleName, MetaData$1.reducersMap);
-    clearHandlers(moduleName, MetaData$1.effectsMap);
-    const moduleHandles = new ModuleHandles();
-    store.injectedModules[moduleName] = moduleHandles;
-    moduleHandles.moduleName = moduleName;
-    moduleHandles.store = store;
-    injectActions(moduleName, moduleHandles);
-    env.console.log(`[HMR] @clux Updated model: ${moduleName}`);
-  }
-}
 function getRootModuleAPI(data) {
   if (!MetaData$1.facadeMap) {
     if (data) {
@@ -1389,50 +1390,49 @@ function enhanceStore(baseStore, middlewares) {
 
 const defFun = () => undefined;
 
-function renderApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
+async function renderApp(baseStore, preloadModules, preloadComponents, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
   MetaData$1.appModuleName = appModuleName;
-  MetaData$1.appViewName = appViewName;
+  MetaData$1.moduleGetter = moduleGetter;
 
-  if (!MetaData$1.moduleGetter) {
-    MetaData$1.moduleGetter = moduleGetter;
+  if (typeof moduleGetter[appModuleName] !== 'function') {
+    throw `${appModuleName} could not be found in moduleGetter`;
   }
 
+  preloadModules = preloadModules.filter(moduleName => moduleGetter[moduleName] && moduleName !== appModuleName);
+  preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares);
-  preLoadModules = preLoadModules.filter(item => moduleGetter[item] && item !== appModuleName);
+  MetaData$1.clientStore = store;
+  const modules = await getModuleList(preloadModules);
+  await getComponentList(preloadComponents);
+  const appModule = modules[0].default;
+  await appModule.model(store);
+  const AppView = getComponet(appModuleName, appViewName);
   return {
     store,
-
-    async beforeRender() {
-      MetaData$1.clientStore = store;
-      await _loadModel(appModuleName, store);
-      await Promise.all(preLoadModules.map(moduleName => _loadModel(moduleName, store)));
-      const appModule = getModuleByName(appModuleName);
-      return appModule.default.views[appViewName];
-    }
-
+    AppView
   };
 }
-function ssrApp(baseStore, preLoadModules, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
+async function ssrApp(baseStore, preloadModules, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
   MetaData$1.appModuleName = appModuleName;
-  MetaData$1.appViewName = appViewName;
+  MetaData$1.moduleGetter = moduleGetter;
 
-  if (!MetaData$1.moduleGetter) {
-    MetaData$1.moduleGetter = moduleGetter;
+  if (typeof moduleGetter[appModuleName] !== 'function') {
+    throw `${appModuleName} could not be found in moduleGetter`;
   }
 
+  preloadModules = preloadModules.filter(moduleName => moduleGetter[moduleName] && moduleName !== appModuleName);
+  preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares);
-  preLoadModules = preLoadModules.filter(item => moduleGetter[item] && item !== appModuleName);
+  const [{
+    default: appModule
+  }, ...otherModules] = await getModuleList(preloadModules);
+  await appModule.model(store);
+  await Promise.all(otherModules.map(module => module.default.model(store)));
+  store.dispatch = defFun;
+  const AppView = getComponet(appModuleName, appViewName);
   return {
     store,
-
-    async beforeRender() {
-      await _loadModel(appModuleName, store);
-      await Promise.all(preLoadModules.map(moduleName => _loadModel(moduleName, store)));
-      const appModule = getModuleByName(appModuleName);
-      store.dispatch = defFun;
-      return appModule.default.views[appViewName];
-    }
-
+    AppView
   };
 }
 
@@ -1456,71 +1456,18 @@ const routeConfig = {
   actionMaxHistory: 10,
   pagesMaxHistory: 10,
   pagenames: {},
-  defaultParams: {},
   disableNativeRoute: false,
-  indexUrl: ''
+  indexUrl: '',
+  defaultParams: null
 };
 function setRouteConfig(conf) {
   conf.actionMaxHistory && (routeConfig.actionMaxHistory = conf.actionMaxHistory);
   conf.pagesMaxHistory && (routeConfig.pagesMaxHistory = conf.pagesMaxHistory);
   conf.disableNativeRoute && (routeConfig.disableNativeRoute = true);
-  conf.pagenames && (routeConfig.pagenames = conf.pagenames);
   conf.indexUrl && (routeConfig.indexUrl = conf.indexUrl);
+  conf.defaultParams && (routeConfig.defaultParams = conf.defaultParams);
 }
 
-function splitQuery(query) {
-  return (query || '').split('&').reduce((params, str) => {
-    const sections = str.split('=');
-
-    if (sections.length > 1) {
-      const [key, ...arr] = sections;
-
-      if (!params) {
-        params = {};
-      }
-
-      params[key] = decodeURIComponent(arr.join('='));
-    }
-
-    return params;
-  }, undefined);
-}
-
-function joinQuery(params) {
-  return Object.keys(params || {}).map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
-}
-
-function nativeUrlToNativeLocation(url) {
-  if (!url) {
-    return {
-      pathname: '/',
-      searchData: undefined,
-      hashData: undefined
-    };
-  }
-
-  const arr = url.split(/[?#]/);
-
-  if (arr.length === 2 && url.indexOf('?') < 0) {
-    arr.splice(1, 0, '');
-  }
-
-  const [path, search, hash] = arr;
-  return {
-    pathname: `/${path.replace(/^\/+|\/+$/g, '')}`,
-    searchData: splitQuery(search),
-    hashData: splitQuery(hash)
-  };
-}
-function nativeLocationToNativeUrl({
-  pathname,
-  searchData,
-  hashData
-}) {
-  const search = joinQuery(searchData);
-  const hash = joinQuery(hashData);
-  return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
-}
 function locationToUri(location, key) {
   const {
     pagename,
@@ -1533,6 +1480,10 @@ function locationToUri(location, key) {
     query,
     key
   };
+}
+
+function isHistoryRecord(data) {
+  return data['uri'];
 }
 
 function splitUri(...args) {
@@ -1563,11 +1514,6 @@ function uriToLocation(uri) {
     location
   };
 }
-
-function isHistoryRecord(data) {
-  return data['uri'];
-}
-
 class History {
   constructor(data, parent) {
     _defineProperty(this, "curRecord", void 0);
@@ -1956,8 +1902,19 @@ function splitPrivate(data, deleteTopLevel) {
   return [publicData, privateData];
 }
 
+function getDefaultParams() {
+  if (routeConfig.defaultParams) {
+    return routeConfig.defaultParams;
+  }
+
+  const modules = getCachedModules();
+  return Object.keys(modules).reduce((data, moduleName) => {
+    data[moduleName] = modules[moduleName].default.params;
+    return data;
+  }, {});
+}
 function assignDefaultData(data) {
-  const def = routeConfig.defaultParams;
+  const def = getDefaultParams();
   return Object.keys(data).reduce((params, moduleName) => {
     if (def.hasOwnProperty(moduleName)) {
       params[moduleName] = extendDefault(data[moduleName], def[moduleName]);
@@ -1966,13 +1923,10 @@ function assignDefaultData(data) {
     return params;
   }, {});
 }
-
-function dataIsNativeLocation$1(data) {
+function dataIsNativeLocation(data) {
   return data['pathname'];
 }
-
-function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
-  routeConfig.defaultParams = defaultParams;
+function createLocationTransform(pagenameMap, nativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
   let pagenames = Object.keys(pagenameMap);
   pagenameMap = pagenames.sort((a, b) => b.length - a.length).reduce((map, pagename) => {
     const fullPagename = `/${pagename}/`.replace(/^\/+|\/+$/g, '/');
@@ -1999,7 +1953,7 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
     in(data) {
       let path;
 
-      if (dataIsNativeLocation$1(data)) {
+      if (dataIsNativeLocation(data)) {
         data = nativeLocationMap.in(data);
         path = data.pathname;
       } else {
@@ -2011,7 +1965,7 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
       let params;
 
       if (pagename) {
-        if (dataIsNativeLocation$1(data)) {
+        if (dataIsNativeLocation(data)) {
           const searchParams = data.searchData && data.searchData[paramsKey] ? JSON.parse(data.searchData[paramsKey]) : undefined;
           const hashParams = data.hashData && data.hashData[paramsKey] ? JSON.parse(data.hashData[paramsKey]) : undefined;
           const pathArgs = path.replace(pagename, '').split('/').map(item => item ? decodeURIComponent(item) : undefined);
@@ -2028,12 +1982,12 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
 
       return {
         pagename: `/${pagename.replace(/^\/+|\/+$/g, '')}`,
-        params: assignDefaultData(params)
+        params
       };
     },
 
     out(cluxLocation) {
-      let params = excludeDefault(cluxLocation.params, defaultParams, true);
+      let params = excludeDefault(cluxLocation.params, getDefaultParams(), true);
       const pagename = `/${cluxLocation.pagename}/`.replace(/^\/+|\/+$/g, '/');
       let pathParams;
       let pathname;
@@ -2061,6 +2015,127 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
       return nativeLocationMap.out(nativeLocation);
     }
 
+  };
+}
+function nativeLocationToCluxLocation(nativeLocation, locationTransform) {
+  let cluxLocation;
+
+  try {
+    cluxLocation = locationTransform.in(nativeLocation);
+  } catch (error) {
+    env.console.warn(error);
+    cluxLocation = {
+      pagename: '/',
+      params: {}
+    };
+  }
+
+  return cluxLocation;
+}
+
+function splitQuery(query) {
+  return (query || '').split('&').reduce((params, str) => {
+    const sections = str.split('=');
+
+    if (sections.length > 1) {
+      const [key, ...arr] = sections;
+
+      if (!params) {
+        params = {};
+      }
+
+      params[key] = decodeURIComponent(arr.join('='));
+    }
+
+    return params;
+  }, undefined);
+}
+
+function nativeUrlToNativeLocation(url) {
+  if (!url) {
+    return {
+      pathname: '/',
+      searchData: undefined,
+      hashData: undefined
+    };
+  }
+
+  const arr = url.split(/[?#]/);
+
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+
+  const [path, search, hash] = arr;
+  return {
+    pathname: `/${path.replace(/^\/+|\/+$/g, '')}`,
+    searchData: splitQuery(search),
+    hashData: splitQuery(hash)
+  };
+}
+function nativeUrlToCluxLocation(nativeUrl, locationTransform) {
+  return nativeLocationToCluxLocation(nativeUrlToNativeLocation(nativeUrl), locationTransform);
+}
+
+function joinQuery(params) {
+  return Object.keys(params || {}).map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
+}
+
+function nativeLocationToNativeUrl({
+  pathname,
+  searchData,
+  hashData
+}) {
+  const search = joinQuery(searchData);
+  const hash = joinQuery(hashData);
+  return [`/${pathname.replace(/^\/+|\/+$/g, '')}`, search && `?${search}`, hash && `#${hash}`].join('');
+}
+function cluxLocationToNativeUrl(location, locationTransform) {
+  const nativeLocation = locationTransform.out(location);
+  return nativeLocationToNativeUrl(nativeLocation);
+}
+function cluxLocationToCluxUrl(location) {
+  return [location.pagename, JSON.stringify(location.params || {})].join('?');
+}
+function urlToCluxLocation(url, locationTransform) {
+  const [pathname, ...others] = url.split('?');
+  const query = others.join('?');
+  let location;
+
+  try {
+    if (query.startsWith('{')) {
+      const data = JSON.parse(query);
+      location = locationTransform.in({
+        pagename: pathname,
+        params: data
+      });
+    } else {
+      const nativeLocation = nativeUrlToNativeLocation(url);
+      location = locationTransform.in(nativeLocation);
+    }
+  } catch (error) {
+    env.console.warn(error);
+    location = {
+      pagename: '/',
+      params: {}
+    };
+  }
+
+  return location;
+}
+function payloadToCluxLocation(payload, curRouteState) {
+  let params = payload.params;
+  const extendParams = payload.extendParams === 'current' ? curRouteState.params : payload.extendParams;
+
+  if (extendParams && params) {
+    params = deepMerge({}, extendParams, params);
+  } else if (extendParams) {
+    params = extendParams;
+  }
+
+  return {
+    pagename: payload.pagename || curRouteState.pagename,
+    params: params || {}
   };
 }
 
@@ -2172,18 +2247,14 @@ const defaultNativeLocationMap = {
   }
 
 };
-function createRouteModule(defaultParams, pagenameMap, nativeLocationMap = defaultNativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
+function createRouteModule(pagenameMap, nativeLocationMap = defaultNativeLocationMap, notfoundPagename = '/404', paramsKey = '_') {
   const handlers = RouteModuleHandlers;
-  const locationTransform = createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
-  const result = exportModule$1('route', handlers, {});
+  const locationTransform = createLocationTransform(pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+  const result = exportModule('route', handlers, {}, {});
   return {
     default: result,
     locationTransform
   };
-}
-
-function dataIsNativeLocation(data) {
-  return data['pathname'];
 }
 
 class BaseNativeRouter {
@@ -2258,31 +2329,44 @@ class BaseRouter {
 
     _defineProperty(this, "listenerMap", {});
 
+    _defineProperty(this, "initedPromise", void 0);
+
     this.nativeRouter = nativeRouter;
     this.locationTransform = locationTransform;
     nativeRouter.setRouter(this);
-    const location = typeof nativeLocationOrNativeUrl === 'string' ? this.nativeUrlToLocation(nativeLocationOrNativeUrl) : this.nativeLocationToLocation(nativeLocationOrNativeUrl);
+    const cluxLocation = typeof nativeLocationOrNativeUrl === 'string' ? nativeUrlToCluxLocation(nativeLocationOrNativeUrl, locationTransform) : nativeLocationToCluxLocation(nativeLocationOrNativeUrl, locationTransform);
 
-    const key = this._createKey();
+    const callback = location => {
+      const key = this._createKey();
 
-    const routeState = { ...location,
-      action: 'RELAUNCH',
-      key
-    };
-    this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
+      const routeState = { ...location,
+        action: 'RELAUNCH',
+        key
+      };
+      this.routeState = routeState;
+      this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
-    if (!routeConfig.indexUrl) {
-      setRouteConfig({
-        indexUrl: this.cluxUrl
+      if (!routeConfig.indexUrl) {
+        setRouteConfig({
+          indexUrl: this.cluxUrl
+        });
+      }
+
+      this.history = new History({
+        location,
+        key
       });
-    }
+      return routeState;
+    };
 
-    this._nativeData = undefined;
-    this.history = new History({
-      location,
-      key
-    });
+    const locationOrPromise = this.cluxLocationToLocation(cluxLocation);
+
+    if (isPromise(locationOrPromise)) {
+      this.initedPromise = locationOrPromise.then(callback);
+    } else {
+      const routeState = callback(locationOrPromise);
+      this.initedPromise = Promise.resolve(routeState);
+    }
   }
 
   addListener(callback) {
@@ -2320,7 +2404,7 @@ class BaseRouter {
   getNativeLocation() {
     if (!this._nativeData) {
       const nativeLocation = this.locationTransform.out(this.routeState);
-      const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+      const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
       this._nativeData = {
         nativeLocation,
         nativeUrl
@@ -2333,7 +2417,7 @@ class BaseRouter {
   getNativeUrl() {
     if (!this._nativeData) {
       const nativeLocation = this.locationTransform.out(this.routeState);
-      const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+      const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
       this._nativeData = {
         nativeLocation,
         nativeUrl
@@ -2355,89 +2439,62 @@ class BaseRouter {
     return this.history.findIndex(key);
   }
 
+  cluxLocationToNativeUrl(location) {
+    return cluxLocationToNativeUrl(location, this.locationTransform);
+  }
+
+  urlToCluxLocation(url) {
+    return urlToCluxLocation(url, this.locationTransform);
+  }
+
+  urlToLocation(url) {
+    const cluxLocation = urlToCluxLocation(url, this.locationTransform);
+    return this.cluxLocationToLocation(cluxLocation);
+  }
+
   _createKey() {
     this._tid++;
     return `${this._tid}`;
   }
 
-  nativeUrlToNativeLocation(url) {
-    return nativeUrlToNativeLocation(url);
-  }
+  cluxLocationToLocation(cluxLocation) {
+    const {
+      pagename
+    } = cluxLocation;
+    const params = cluxLocation.params || {};
 
-  nativeLocationToLocation(nativeLocation) {
-    let location;
-
-    try {
-      location = this.locationTransform.in(nativeLocation);
-    } catch (error) {
-      env.console.warn(error);
-      location = {
-        pagename: '/',
-        params: {}
+    if (routeConfig.defaultParams) {
+      return {
+        pagename,
+        params: assignDefaultData(params)
       };
     }
 
-    return location;
+    return getModuleList(Object.keys(params)).then(() => {
+      return {
+        pagename,
+        params: assignDefaultData(params)
+      };
+    });
   }
 
-  nativeUrlToLocation(nativeUrl) {
-    return this.nativeLocationToLocation(this.nativeUrlToNativeLocation(nativeUrl));
-  }
+  preAdditions(data) {
+    let cluxLocation;
 
-  urlToLocation(url) {
-    const [pathname, ...others] = url.split('?');
-    const query = others.join('?');
-    let location;
-
-    try {
-      if (query.startsWith('{')) {
-        const data = JSON.parse(query);
-        location = this.locationTransform.in({
-          pagename: pathname,
-          params: data
-        });
-      } else {
-        const nativeLocation = this.nativeUrlToNativeLocation(url);
-        location = this.locationTransform.in(nativeLocation);
+    if (typeof data === 'string') {
+      if (/^[\w:]*\/\//.test(data)) {
+        this.nativeRouter.toOutside(data);
+        return null;
       }
-    } catch (error) {
-      env.console.warn(error);
-      location = {
-        pagename: '/',
-        params: {}
-      };
+
+      cluxLocation = urlToCluxLocation(data, this.locationTransform);
+    } else if (dataIsNativeLocation(data)) {
+      cluxLocation = nativeLocationToCluxLocation(data, this.locationTransform);
+    } else {
+      cluxLocation = this.locationTransform.in(payloadToCluxLocation(data, this.routeState));
     }
 
-    return location;
-  }
-
-  nativeLocationToNativeUrl(nativeLocation) {
-    return nativeLocationToNativeUrl(nativeLocation);
-  }
-
-  locationToNativeUrl(location) {
-    const nativeLocation = this.locationTransform.out(location);
-    return this.nativeLocationToNativeUrl(nativeLocation);
-  }
-
-  locationToCluxUrl(location) {
-    return [location.pagename, JSON.stringify(location.params || {})].join('?');
-  }
-
-  payloadToPartial(payload) {
-    let params = payload.params;
-    const extendParams = payload.extendParams === 'current' ? this.routeState.params : payload.extendParams;
-
-    if (extendParams && params) {
-      params = deepMerge({}, extendParams, params);
-    } else if (extendParams) {
-      params = extendParams;
-    }
-
-    return {
-      pagename: payload.pagename || this.routeState.pagename,
-      params: params || {}
-    };
+    return this.cluxLocationToLocation(cluxLocation);
   }
 
   relaunch(data, internal = false, disableNative = routeConfig.disableNativeRoute) {
@@ -2445,20 +2502,13 @@ class BaseRouter {
   }
 
   async _relaunch(data, internal, disableNative) {
-    let location;
+    const preData = await this.preAdditions(data);
 
-    if (typeof data === 'string') {
-      if (/^[\w:]*\/\//.test(data)) {
-        this.nativeRouter.toOutside(data);
-        return;
-      }
-
-      location = this.urlToLocation(data);
-    } else if (dataIsNativeLocation(data)) {
-      location = this.nativeLocationToLocation(data);
-    } else {
-      location = this.locationTransform.in(this.payloadToPartial(data));
+    if (!preData) {
+      return;
     }
+
+    const location = preData;
 
     const key = this._createKey();
 
@@ -2473,7 +2523,7 @@ class BaseRouter {
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('relaunch', () => {
         const nativeLocation = this.locationTransform.out(routeState);
-        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
         return {
           nativeLocation,
           nativeUrl
@@ -2483,7 +2533,7 @@ class BaseRouter {
 
     this._nativeData = nativeData;
     this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
+    this.cluxUrl = cluxLocationToCluxUrl(routeState);
     this.store.dispatch(routeChangeAction(routeState));
 
     if (internal) {
@@ -2498,20 +2548,13 @@ class BaseRouter {
   }
 
   async _push(data, internal, disableNative) {
-    let location;
+    const preData = await this.preAdditions(data);
 
-    if (typeof data === 'string') {
-      if (/^[\w:]*\/\//.test(data)) {
-        this.nativeRouter.toOutside(data);
-        return;
-      }
-
-      location = this.urlToLocation(data);
-    } else if (dataIsNativeLocation(data)) {
-      location = this.nativeLocationToLocation(data);
-    } else {
-      location = this.locationTransform.in(this.payloadToPartial(data));
+    if (!preData) {
+      return;
     }
+
+    const location = preData;
 
     const key = this._createKey();
 
@@ -2526,7 +2569,7 @@ class BaseRouter {
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('push', () => {
         const nativeLocation = this.locationTransform.out(routeState);
-        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
         return {
           nativeLocation,
           nativeUrl
@@ -2536,7 +2579,7 @@ class BaseRouter {
 
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
+    this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
     if (internal) {
       this.history.getCurrentInternalHistory().push(location, key);
@@ -2552,20 +2595,13 @@ class BaseRouter {
   }
 
   async _replace(data, internal, disableNative) {
-    let location;
+    const preData = await this.preAdditions(data);
 
-    if (typeof data === 'string') {
-      if (/^[\w:]*\/\//.test(data)) {
-        this.nativeRouter.toOutside(data);
-        return;
-      }
-
-      location = this.urlToLocation(data);
-    } else if (dataIsNativeLocation(data)) {
-      location = this.nativeLocationToLocation(data);
-    } else {
-      location = this.locationTransform.in(this.payloadToPartial(data));
+    if (!preData) {
+      return;
     }
+
+    const location = preData;
 
     const key = this._createKey();
 
@@ -2580,7 +2616,7 @@ class BaseRouter {
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('replace', () => {
         const nativeLocation = this.locationTransform.out(routeState);
-        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
         return {
           nativeLocation,
           nativeUrl
@@ -2590,7 +2626,7 @@ class BaseRouter {
 
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
+    this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
     if (internal) {
       this.history.getCurrentInternalHistory().replace(location, key);
@@ -2635,7 +2671,7 @@ class BaseRouter {
     if (!disableNative && !internal) {
       nativeData = await this.nativeRouter.execute('back', () => {
         const nativeLocation = this.locationTransform.out(routeState);
-        const nativeUrl = this.nativeLocationToNativeUrl(nativeLocation);
+        const nativeUrl = nativeLocationToNativeUrl(nativeLocation);
         return {
           nativeLocation,
           nativeUrl
@@ -2645,7 +2681,7 @@ class BaseRouter {
 
     this._nativeData = nativeData || undefined;
     this.routeState = routeState;
-    this.cluxUrl = this.locationToCluxUrl(routeState);
+    this.cluxUrl = cluxLocationToCluxUrl(routeState);
 
     if (internal) {
       this.history.getCurrentInternalHistory().back(n);
@@ -3894,6 +3930,7 @@ function createRouter(createHistory, locationTransform) {
   return router;
 }
 
+const depsContext = React.createContext({});
 const loadViewDefaultOptions = {
   LoadViewOnError: ({
     message
@@ -3920,6 +3957,8 @@ const loadView = (moduleName, viewName, options) => {
   class Loader extends Component$3 {
     constructor(props) {
       super(props);
+
+      _defineProperty(this, "context", void 0);
 
       _defineProperty(this, "active", true);
 
@@ -3951,11 +3990,13 @@ const loadView = (moduleName, viewName, options) => {
 
     execute() {
       if (!this.view && !this.loading && !this.error) {
+        const deps = this.context;
+        deps[moduleName + viewName] = true;
         this.loading = true;
         let result;
 
         try {
-          result = getView(moduleName, viewName);
+          result = getComponet(moduleName, viewName, true);
         } catch (e) {
           this.loading = false;
           this.error = e.message || `${e}`;
@@ -4009,6 +4050,8 @@ const loadView = (moduleName, viewName, options) => {
     }
 
   }
+
+  _defineProperty(Loader, "contextType", depsContext);
 
   return React.forwardRef((props, ref) => {
     return React.createElement(Loader, _extends({}, props, {
@@ -4702,9 +4745,8 @@ function setConfig(conf) {
   setRouteConfig(conf);
   setLoadViewOptions(conf);
 }
-const exportModule = exportModule$1;
 function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
-  const controllerMiddleware = [routeMiddleware, ...middlewares];
+  const istoreMiddleware = [routeMiddleware, ...middlewares];
   const {
     locationTransform
   } = moduleGetter['route']();
@@ -4719,35 +4761,33 @@ function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
           ssrKey = 'cluxInitStore'
         } = {}) {
           const router = createRouter('Browser', locationTransform);
-          const routeState = router.getRouteState();
+          MetaData.router = router;
           const ssrData = env[ssrKey];
           const renderFun = ssrData ? hydrate : render;
           const panel = env.document.getElementById(id);
-          const initState = { ...storeOptions.initState,
-            route: routeState,
-            ...ssrData
-          };
-          const baseStore = storeCreator({ ...storeOptions,
-            initState
+          return router.initedPromise.then(routeState => {
+            const initState = { ...storeOptions.initState,
+              route: routeState,
+              ...ssrData.state
+            };
+            const baseStore = storeCreator({ ...storeOptions,
+              initState
+            });
+            return renderApp(baseStore, Object.keys(initState), ssrData.deps, moduleGetter, istoreMiddleware, appModuleName, appViewName).then(({
+              store,
+              AppView
+            }) => {
+              router.setStore(store);
+              const deps = {};
+              renderFun(React.createElement(depsContext.Provider, {
+                value: deps
+              }, React.createElement(AppView, {
+                store: store
+              })), panel);
+              env.console.log(deps);
+              return store;
+            });
           });
-          const {
-            store,
-            beforeRender
-          } = renderApp(baseStore, Object.keys(initState), moduleGetter, controllerMiddleware, appModuleName, appViewName);
-          router.setStore(store);
-          MetaData.router = router;
-          return {
-            store,
-
-            run() {
-              return beforeRender().then(AppView => {
-                renderFun(React.createElement(AppView, {
-                  store: store
-                }), panel);
-              });
-            }
-
-          };
         },
 
         ssr({
@@ -4760,43 +4800,38 @@ function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
           }
 
           const router = createRouter(url, locationTransform);
-          const routeState = router.getRouteState();
-          const initState = { ...storeOptions.initState,
-            route: routeState
-          };
-          const baseStore = storeCreator({ ...storeOptions,
-            initState
-          });
-          const {
-            store,
-            beforeRender
-          } = ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, controllerMiddleware, appModuleName, appViewName);
-          router.setStore(store);
           MetaData.router = router;
-          return {
-            store,
+          return router.initedPromise.then(routeState => {
+            const initState = { ...storeOptions.initState,
+              route: routeState
+            };
+            const baseStore = storeCreator({ ...storeOptions,
+              initState
+            });
+            return ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, istoreMiddleware, appModuleName, appViewName).then(({
+              store,
+              AppView
+            }) => {
+              const data = store.getState();
+              const deps = {};
 
-            run() {
-              return beforeRender().then(AppView => {
-                const data = store.getState();
+              let html = require('react-dom/server').renderToString(React.createElement(depsContext.Provider, {
+                value: deps
+              }, React.createElement(AppView, {
+                store: store
+              })));
 
-                let html = require('react-dom/server').renderToString(React.createElement(AppView, {
-                  store: store
-                }));
+              const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${id}['"][^<>]*>`, 'm'));
 
-                const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${id}['"][^<>]*>`, 'm'));
+              if (match) {
+                const pageHead = html.split(/<head>|<\/head>/, 3);
+                html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
+                return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
+              }
 
-                if (match) {
-                  const pageHead = html.split(/<head>|<\/head>/, 3);
-                  html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-                  return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
-                }
-
-                return html;
-              });
-            }
-
-          };
+              return html;
+            });
+          });
         }
 
       };
@@ -4825,4 +4860,4 @@ function getApp() {
   };
 }
 
-export { ActionTypes$1 as ActionTypes, ModuleWithRouteHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, RouteActionTypes, Switch, clientSide, connectRedux, createApp, createRedux, createRouteModule, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, exportModule, getApp, isProcessedError, isServer, logger, modelHotReplacement, patchActions, reducer, serverSide, setConfig, setLoading, setProcessedError, setSsrHtmlTpl };
+export { ActionTypes$1 as ActionTypes, ModuleWithRouteHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, RouteActionTypes, Switch, clientSide, connectRedux, createApp, createRedux, createRouteModule, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, exportModule, getApp, isProcessedError, isServer, logger, patchActions, reducer, serverSide, setConfig, setLoading, setProcessedError, setSsrHtmlTpl };

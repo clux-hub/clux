@@ -9,7 +9,9 @@ exports.getModuleList = getModuleList;
 exports.loadModel = _loadModel;
 exports.getComponet = getComponet;
 exports.getComponentList = getComponentList;
+exports.getCachedModules = getCachedModules;
 exports.getRootModuleAPI = getRootModuleAPI;
+exports.defineView = defineView;
 exports.CoreModuleHandlers = void 0;
 
 var _decorate2 = _interopRequireDefault(require("@babel/runtime/helpers/decorate"));
@@ -17,6 +19,8 @@ var _decorate2 = _interopRequireDefault(require("@babel/runtime/helpers/decorate
 var _sprite = require("./sprite");
 
 var _basic = require("./basic");
+
+var _env = require("./env");
 
 function exportModule(moduleName, ModuleHandles, params, components) {
   var model = function model(store) {
@@ -48,27 +52,27 @@ function exportModule(moduleName, ModuleHandles, params, components) {
 }
 
 function getModule(moduleName) {
-  if (_basic.MetaData.resourceCaches[moduleName]) {
-    return _basic.MetaData.resourceCaches[moduleName];
+  if (_basic.MetaData.moduleCaches[moduleName]) {
+    return _basic.MetaData.moduleCaches[moduleName];
   }
 
   var moduleOrPromise = _basic.MetaData.moduleGetter[moduleName]();
 
   if ((0, _sprite.isPromise)(moduleOrPromise)) {
     return moduleOrPromise.then(function (module) {
-      _basic.MetaData.resourceCaches[moduleName] = module;
+      _basic.MetaData.moduleCaches[moduleName] = module;
       return module;
     });
   }
 
-  _basic.MetaData.resourceCaches[moduleName] = moduleOrPromise;
+  _basic.MetaData.moduleCaches[moduleName] = moduleOrPromise;
   return moduleOrPromise;
 }
 
 function getModuleList(moduleNames) {
   return Promise.all(moduleNames.map(function (moduleName) {
-    if (_basic.MetaData.resourceCaches[moduleName]) {
-      return _basic.MetaData.resourceCaches[moduleName];
+    if (_basic.MetaData.moduleCaches[moduleName]) {
+      return _basic.MetaData.moduleCaches[moduleName];
     }
 
     return getModule(moduleName);
@@ -91,11 +95,11 @@ function _loadModel(moduleName, store) {
   return moduleOrPromise.default.model(store);
 }
 
-function getComponet(moduleName, componentName) {
+function getComponet(moduleName, componentName, initView) {
   var key = moduleName + "," + componentName;
 
-  if (_basic.MetaData.resourceCaches[key]) {
-    return _basic.MetaData.resourceCaches[key];
+  if (_basic.MetaData.componentCaches[key]) {
+    return _basic.MetaData.componentCaches[key];
   }
 
   var moduleCallback = function moduleCallback(module) {
@@ -103,12 +107,22 @@ function getComponet(moduleName, componentName) {
 
     if ((0, _sprite.isPromise)(componentOrPromise)) {
       return componentOrPromise.then(function (view) {
-        _basic.MetaData.resourceCaches[key] = view;
+        _basic.MetaData.componentCaches[key] = view;
+
+        if (view[_basic.config.ViewFlag] && initView && !_env.env.isServer) {
+          module.default.model(_basic.MetaData.clientStore);
+        }
+
         return view;
       });
     }
 
-    _basic.MetaData.resourceCaches[key] = componentOrPromise;
+    _basic.MetaData.componentCaches[key] = componentOrPromise;
+
+    if (componentOrPromise[_basic.config.ViewFlag] && initView && !_env.env.isServer) {
+      module.default.model(_basic.MetaData.clientStore);
+    }
+
     return componentOrPromise;
   };
 
@@ -123,8 +137,8 @@ function getComponet(moduleName, componentName) {
 
 function getComponentList(keys) {
   return Promise.all(keys.map(function (key) {
-    if (_basic.MetaData.resourceCaches[key]) {
-      return _basic.MetaData.resourceCaches[key];
+    if (_basic.MetaData.componentCaches[key]) {
+      return _basic.MetaData.componentCaches[key];
     }
 
     var _key$split = key.split(','),
@@ -133,6 +147,10 @@ function getComponentList(keys) {
 
     return getComponet(moduleName, componentName);
   }));
+}
+
+function getCachedModules() {
+  return _basic.MetaData.moduleCaches;
 }
 
 var CoreModuleHandlers = (0, _decorate2.default)(null, function (_initialize) {
@@ -306,4 +324,9 @@ function getRootModuleAPI(data) {
   }
 
   return _basic.MetaData.facadeMap;
+}
+
+function defineView(component) {
+  component[_basic.config.ViewFlag] = true;
+  return component;
 }

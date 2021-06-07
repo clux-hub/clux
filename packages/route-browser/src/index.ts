@@ -142,14 +142,14 @@ export class BrowserNativeRouter extends BaseNativeRouter {
 export class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> implements IRouter<P, N> {
   public declare nativeRouter: BrowserNativeRouter;
 
-  constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>) {
+  constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform) {
     super(browserNativeRouter.getUrl(), browserNativeRouter, locationTransform);
   }
 }
 
 export function createRouter<P extends RootParams, N extends string>(
   createHistory: 'Browser' | 'Hash' | 'Memory' | string,
-  locationTransform: LocationTransform<P>
+  locationTransform: LocationTransform
 ) {
   const browserNativeRouter = new BrowserNativeRouter(createHistory);
   const router = new Router<P, N>(browserNativeRouter, locationTransform);

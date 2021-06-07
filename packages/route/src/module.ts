@@ -93,7 +93,7 @@ class RouteModuleHandlers implements IRouteModuleHandlers {
   }
 }
 
-export type RouteModule = CommonModule & {locationTransform: LocationTransform<any>};
+export type RouteModule = CommonModule & {locationTransform: LocationTransform};
 
 const defaultNativeLocationMap: NativeLocationMap = {
   in(nativeLocation) {
@@ -109,7 +109,7 @@ export function createRouteModule<G extends PagenameMap<any>>(
   notfoundPagename: string = '/404',
   paramsKey: string = '_'
 ) {
-  const handlers: {new (): IRouteModuleHandlers} = RouteModuleHandlers as any;
+  const handlers: {new (): IRouteModuleHandlers} = RouteModuleHandlers;
   const locationTransform = createLocationTransform(pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
   const result = exportModule('route', handlers, {}, {} as {[k in keyof G]: any});
   return {

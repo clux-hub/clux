@@ -19,9 +19,9 @@ export declare class BrowserNativeRouter extends BaseNativeRouter {
 }
 export declare class Router<P extends RootParams, N extends string> extends BaseRouter<P, N> implements IRouter<P, N> {
     nativeRouter: BrowserNativeRouter;
-    constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform<P>);
+    constructor(browserNativeRouter: BrowserNativeRouter, locationTransform: LocationTransform);
 }
-export declare function createRouter<P extends RootParams, N extends string>(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationTransform: LocationTransform<P>): Router<P, N>;
+export declare function createRouter<P extends RootParams, N extends string>(createHistory: 'Browser' | 'Hash' | 'Memory' | string, locationTransform: LocationTransform): Router<P, N>;
 export interface IRouter<P extends RootParams, N extends string> extends IBaseRouter<P, N> {
     nativeRouter: BrowserNativeRouter;
 }

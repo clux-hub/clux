@@ -154,7 +154,7 @@ var defaultNativeLocationMap = {
   }
 };
 
-function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
+function createRouteModule(pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
   if (nativeLocationMap === void 0) {
     nativeLocationMap = defaultNativeLocationMap;
   }
@@ -168,7 +168,7 @@ function createRouteModule(defaultParams, pagenameMap, nativeLocationMap, notfou
   }
 
   var handlers = RouteModuleHandlers;
-  var locationTransform = (0, _transform.createLocationTransform)(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
+  var locationTransform = (0, _transform.createLocationTransform)(pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
   var result = (0, _core.exportModule)('route', handlers, {}, {});
   return {
     default: result,

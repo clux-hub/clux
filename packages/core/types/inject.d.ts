@@ -25,8 +25,9 @@ export declare function exportModule<N extends string, H extends IModuleHandlers
 export declare function getModule(moduleName: string): Promise<CommonModule> | CommonModule;
 export declare function getModuleList(moduleNames: string[]): Promise<CommonModule[]>;
 export declare function loadModel<MG extends ModuleGetter>(moduleName: keyof MG, store?: IStore): void | Promise<void>;
-export declare function getComponet<T>(moduleName: string, componentName: string): T | Promise<T>;
+export declare function getComponet<T = any>(moduleName: string, componentName: string, initView?: boolean): T | Promise<T>;
 export declare function getComponentList(keys: string[]): Promise<any[]>;
+export declare function getCachedModules(): Record<string, CommonModule<string>>;
 export declare abstract class CoreModuleHandlers<S extends CoreModuleState = CoreModuleState, R extends Record<string, any> = {}> implements IModuleHandlers {
     readonly moduleName: string;
     readonly initState: S;
@@ -77,4 +78,6 @@ export declare type RootModuleParams<A extends RootModuleFacade = RootModuleFaca
     [K in keyof A]: A[K]['params'];
 };
 export declare function getRootModuleAPI<T extends RootModuleFacade = any>(data?: Record<string, string[]>): RootModuleAPI<T>;
+export declare function defineView<T>(component: T): T;
+export declare type LoadComponent<A extends RootModuleFacade = {}, O = any> = <M extends keyof A, V extends keyof A[M]['components']>(moduleName: M, viewName: V, options?: O) => A[M]['components'][V];
 export {};

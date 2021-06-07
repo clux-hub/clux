@@ -1,16 +1,8 @@
 export declare function isPlainObject(obj: any): boolean;
-export declare function extendDefault(target: {
-    [key: string]: any;
-}, def: {
-    [key: string]: any;
-}): {
+export declare function extendDefault(target: any, def: any): {
     [key: string]: any;
 };
-export declare function excludeDefault(data: {
-    [key: string]: any;
-}, def: {
-    [key: string]: any;
-}, keepTopLevel: boolean): {
+export declare function excludeDefault(data: any, def: any, keepTopLevel: boolean): {
     [key: string]: any;
 };
 export declare function splitPrivate(data: {

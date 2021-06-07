@@ -1,8 +1,18 @@
 "use strict";
 
 exports.__esModule = true;
+exports.getDefaultParams = getDefaultParams;
 exports.assignDefaultData = assignDefaultData;
+exports.dataIsNativeLocation = dataIsNativeLocation;
 exports.createLocationTransform = createLocationTransform;
+exports.nativeLocationToCluxLocation = nativeLocationToCluxLocation;
+exports.nativeUrlToNativeLocation = nativeUrlToNativeLocation;
+exports.nativeUrlToCluxLocation = nativeUrlToCluxLocation;
+exports.nativeLocationToNativeUrl = nativeLocationToNativeUrl;
+exports.cluxLocationToNativeUrl = cluxLocationToNativeUrl;
+exports.cluxLocationToCluxUrl = cluxLocationToCluxUrl;
+exports.urlToCluxLocation = urlToCluxLocation;
+exports.payloadToCluxLocation = payloadToCluxLocation;
 
 var _core = require("@clux/core");
 
@@ -10,8 +20,20 @@ var _deepExtend = require("./deep-extend");
 
 var _basic = require("./basic");
 
+function getDefaultParams() {
+  if (_basic.routeConfig.defaultParams) {
+    return _basic.routeConfig.defaultParams;
+  }
+
+  var modules = (0, _core.getCachedModules)();
+  return Object.keys(modules).reduce(function (data, moduleName) {
+    data[moduleName] = modules[moduleName].default.params;
+    return data;
+  }, {});
+}
+
 function assignDefaultData(data) {
-  var def = _basic.routeConfig.defaultParams;
+  var def = getDefaultParams();
   return Object.keys(data).reduce(function (params, moduleName) {
     if (def.hasOwnProperty(moduleName)) {
       params[moduleName] = (0, _deepExtend.extendDefault)(data[moduleName], def[moduleName]);
@@ -25,7 +47,7 @@ function dataIsNativeLocation(data) {
   return data['pathname'];
 }
 
-function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
+function createLocationTransform(pagenameMap, nativeLocationMap, notfoundPagename, paramsKey) {
   if (notfoundPagename === void 0) {
     notfoundPagename = '/404';
   }
@@ -34,7 +56,6 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
     paramsKey = '_';
   }
 
-  _basic.routeConfig.defaultParams = defaultParams;
   var pagenames = Object.keys(pagenameMap);
   pagenameMap = pagenames.sort(function (a, b) {
     return b.length - a.length;
@@ -99,13 +120,13 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
 
       return {
         pagename: "/" + pagename.replace(/^\/+|\/+$/g, ''),
-        params: assignDefaultData(params)
+        params: params
       };
     },
     out: function out(cluxLocation) {
       var _ref, _ref2;
 
-      var params = (0, _deepExtend.excludeDefault)(cluxLocation.params, defaultParams, true);
+      var params = (0, _deepExtend.excludeDefault)(cluxLocation.params, getDefaultParams(), true);
       var pagename = ("/" + cluxLocation.pagename + "/").replace(/^\/+|\/+$/g, '/');
       var pathParams;
       var pathname;
@@ -131,5 +152,142 @@ function createLocationTransform(defaultParams, pagenameMap, nativeLocationMap, 
       };
       return nativeLocationMap.out(nativeLocation);
     }
+  };
+}
+
+function nativeLocationToCluxLocation(nativeLocation, locationTransform) {
+  var cluxLocation;
+
+  try {
+    cluxLocation = locationTransform.in(nativeLocation);
+  } catch (error) {
+    _core.env.console.warn(error);
+
+    cluxLocation = {
+      pagename: '/',
+      params: {}
+    };
+  }
+
+  return cluxLocation;
+}
+
+function splitQuery(query) {
+  return (query || '').split('&').reduce(function (params, str) {
+    var sections = str.split('=');
+
+    if (sections.length > 1) {
+      var key = sections[0],
+          arr = sections.slice(1);
+
+      if (!params) {
+        params = {};
+      }
+
+      params[key] = decodeURIComponent(arr.join('='));
+    }
+
+    return params;
+  }, undefined);
+}
+
+function nativeUrlToNativeLocation(url) {
+  if (!url) {
+    return {
+      pathname: '/',
+      searchData: undefined,
+      hashData: undefined
+    };
+  }
+
+  var arr = url.split(/[?#]/);
+
+  if (arr.length === 2 && url.indexOf('?') < 0) {
+    arr.splice(1, 0, '');
+  }
+
+  var path = arr[0],
+      search = arr[1],
+      hash = arr[2];
+  return {
+    pathname: "/" + path.replace(/^\/+|\/+$/g, ''),
+    searchData: splitQuery(search),
+    hashData: splitQuery(hash)
+  };
+}
+
+function nativeUrlToCluxLocation(nativeUrl, locationTransform) {
+  return nativeLocationToCluxLocation(nativeUrlToNativeLocation(nativeUrl), locationTransform);
+}
+
+function joinQuery(params) {
+  return Object.keys(params || {}).map(function (key) {
+    return key + "=" + encodeURIComponent(params[key]);
+  }).join('&');
+}
+
+function nativeLocationToNativeUrl(_ref3) {
+  var pathname = _ref3.pathname,
+      searchData = _ref3.searchData,
+      hashData = _ref3.hashData;
+  var search = joinQuery(searchData);
+  var hash = joinQuery(hashData);
+  return ["/" + pathname.replace(/^\/+|\/+$/g, ''), search && "?" + search, hash && "#" + hash].join('');
+}
+
+function cluxLocationToNativeUrl(location, locationTransform) {
+  var nativeLocation = locationTransform.out(location);
+  return nativeLocationToNativeUrl(nativeLocation);
+}
+
+function cluxLocationToCluxUrl(location) {
+  return [location.pagename, JSON.stringify(location.params || {})].join('?');
+}
+
+function urlToCluxLocation(url, locationTransform) {
+  var _url$split = url.split('?'),
+      pathname = _url$split[0],
+      others = _url$split.slice(1);
+
+  var query = others.join('?');
+  var location;
+
+  try {
+    if (query.startsWith('{')) {
+      var data = JSON.parse(query);
+      location = locationTransform.in({
+        pagename: pathname,
+        params: data
+      });
+    } else {
+      var _nativeLocation = nativeUrlToNativeLocation(url);
+
+      location = locationTransform.in(_nativeLocation);
+    }
+  } catch (error) {
+    _core.env.console.warn(error);
+
+    location = {
+      pagename: '/',
+      params: {}
+    };
+  }
+
+  return location;
+}
+
+function payloadToCluxLocation(payload, curRouteState) {
+  var params = payload.params;
+  var extendParams = payload.extendParams === 'current' ? curRouteState.params : payload.extendParams;
+
+  if (extendParams && params) {
+    params = (0, _core.deepMerge)({}, extendParams, params);
+  } else if (extendParams) {
+    params = extendParams;
+  }
+
+  return {
+    pagename: payload.pagename || curRouteState.pagename,
+    params: params || {}
   };
 }

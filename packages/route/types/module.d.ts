@@ -25,9 +25,9 @@ export declare function routeChangeAction<P extends RootParams>(routeState: Rout
 };
 export declare const routeMiddleware: IStoreMiddleware;
 export declare type RouteModule = CommonModule & {
-    locationTransform: LocationTransform<any>;
+    locationTransform: LocationTransform;
 };
-export declare function createRouteModule<P extends RootParams, G extends PagenameMap<P>>(defaultParams: P, pagenameMap: G, nativeLocationMap?: NativeLocationMap, notfoundPagename?: string, paramsKey?: string): {
+export declare function createRouteModule<G extends PagenameMap<any>>(pagenameMap: G, nativeLocationMap?: NativeLocationMap, notfoundPagename?: string, paramsKey?: string): {
     default: {
         moduleName: "route";
         model: import("@clux/core").Model;
@@ -35,5 +35,5 @@ export declare function createRouteModule<P extends RootParams, G extends Pagena
         actions: {};
         components: { [k in keyof G]: any; };
     };
-    locationTransform: LocationTransform<P>;
+    locationTransform: LocationTransform;
 };
