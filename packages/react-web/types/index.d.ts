@@ -8,7 +8,7 @@ export type { RouteState, PayloadLocation, LocationTransform, NativeLocation, Pa
 export type { LoadView } from './loadView';
 export type { ConnectRedux } from './lib/with-redux';
 export type { ReduxStore, ReduxOptions } from '@clux/core/lib/with-redux';
-export { ActionTypes, LoadingState, env, effect, errorAction, reducer, setLoading, logger, isServer, serverSide, clientSide, deepMerge, deepMergeState, exportModule, isProcessedError, setProcessedError, delayPromise, } from '@clux/core';
+export { ActionTypes, LoadingState, env, effect, errorAction, reducer, setLoading, logger, isServer, serverSide, clientSide, deepMerge, deepMergeState, exportModule, isProcessedError, setProcessedError, delayPromise, defineView, } from '@clux/core';
 export { ModuleWithRouteHandlers as BaseModuleHandlers, RouteActionTypes, createRouteModule } from '@clux/route';
 export { DocumentHead } from './components/DocumentHead';
 export { Else } from './components/Else';
@@ -47,6 +47,9 @@ export declare function createApp(moduleGetter: ModuleGetter, middlewares?: ISto
 };
 export declare function patchActions(typeName: string, json?: string): void;
 export declare type GetAPP<A extends RootModuleFacade> = {
+    State: {
+        [M in keyof A]: A[M]['state'];
+    };
     RouteParams: {
         [M in keyof A]: A[M]['params'];
     };

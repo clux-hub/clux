@@ -18,6 +18,7 @@ export declare function exportModule<N extends string, H extends IModuleHandlers
 }, params: P, components: CS): {
     moduleName: N;
     model: Model;
+    state: H['initState'];
     params: P;
     actions: Actions<H>;
     components: CS;
@@ -57,6 +58,7 @@ declare type ReturnComponents<CS extends Record<string, () => any>> = {
 declare type ModuleFacade<M extends CommonModule> = {
     name: string;
     components: ReturnComponents<M['default']['components']>;
+    state: M['default']['state'];
     params: M['default']['params'];
     actions: M['default']['actions'];
     actionNames: {

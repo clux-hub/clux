@@ -47,6 +47,7 @@ export {
   isProcessedError,
   setProcessedError,
   delayPromise,
+  defineView,
 } from '@clux/core';
 export {ModuleWithRouteHandlers as BaseModuleHandlers, RouteActionTypes, createRouteModule} from '@clux/route';
 
@@ -166,6 +167,7 @@ export function patchActions(typeName: string, json?: string): void {
 }
 
 export type GetAPP<A extends RootModuleFacade> = {
+  State: {[M in keyof A]: A[M]['state']};
   RouteParams: {[M in keyof A]: A[M]['params']};
   GetRouter: () => IRouter<{[M in keyof A]: A[M]['params']}, Extract<keyof A['route']['components'], string>>;
   GetActions<N extends keyof A>(...args: N[]): {[K in N]: A[K]['actions']};

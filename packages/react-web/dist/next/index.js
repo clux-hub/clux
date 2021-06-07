@@ -912,6 +912,7 @@ function exportModule(moduleName, ModuleHandles, params, components) {
     moduleName,
     model,
     components,
+    state: undefined,
     params,
     actions: undefined
   };
@@ -1168,6 +1169,10 @@ function getRootModuleAPI(data) {
   }
 
   return MetaData$1.facadeMap;
+}
+function defineView(component) {
+  component[config.ViewFlag] = true;
+  return component;
 }
 
 function isProcessedError(error) {
@@ -4860,4 +4865,4 @@ function getApp() {
   };
 }
 
-export { ActionTypes$1 as ActionTypes, ModuleWithRouteHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, RouteActionTypes, Switch, clientSide, connectRedux, createApp, createRedux, createRouteModule, deepMerge, deepMergeState, delayPromise, effect, env, errorAction, exportModule, getApp, isProcessedError, isServer, logger, patchActions, reducer, serverSide, setConfig, setLoading, setProcessedError, setSsrHtmlTpl };
+export { ActionTypes$1 as ActionTypes, ModuleWithRouteHandlers as BaseModuleHandlers, DocumentHead, Else, Link, LoadingState, RouteActionTypes, Switch, clientSide, connectRedux, createApp, createRedux, createRouteModule, deepMerge, deepMergeState, defineView, delayPromise, effect, env, errorAction, exportModule, getApp, isProcessedError, isServer, logger, patchActions, reducer, serverSide, setConfig, setLoading, setProcessedError, setSsrHtmlTpl };

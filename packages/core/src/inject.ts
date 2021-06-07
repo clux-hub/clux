@@ -42,14 +42,6 @@ type HandlerThis<T> = T extends (...args: infer P) => any
 
 type ActionsThis<T> = {[K in keyof T]: HandlerThis<T[K]>};
 
-// export interface Module<N extends string, H extends IModuleHandlers, P extends Record<string, any>, CS extends Record<string, () => any>> {
-//   moduleName: N;
-//   model: Model;
-//   params: P;
-//   actions: Actions<H>;
-//   components: CS;
-// }
-
 export function exportModule<N extends string, H extends IModuleHandlers, P extends Record<string, any>, CS extends Record<string, () => any>>(
   moduleName: N,
   ModuleHandles: {
@@ -60,6 +52,7 @@ export function exportModule<N extends string, H extends IModuleHandlers, P exte
 ): {
   moduleName: N;
   model: Model;
+  state: H['initState'];
   params: P;
   actions: Actions<H>;
   components: CS;
@@ -83,6 +76,7 @@ export function exportModule<N extends string, H extends IModuleHandlers, P exte
     moduleName,
     model,
     components,
+    state: undefined as any,
     params,
     actions: undefined as any,
   };
@@ -235,6 +229,7 @@ type ReturnComponents<CS extends Record<string, () => any>> = {
 type ModuleFacade<M extends CommonModule> = {
   name: string;
   components: ReturnComponents<M['default']['components']>;
+  state: M['default']['state'];
   params: M['default']['params'];
   actions: M['default']['actions'];
   actionNames: {[K in keyof M['default']['actions']]: string};

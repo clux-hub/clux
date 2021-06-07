@@ -1016,6 +1016,7 @@ function exportModule(moduleName, ModuleHandles, params, components) {
     moduleName: moduleName,
     model: model,
     components: components,
+    state: undefined,
     params: params,
     actions: undefined
   };
@@ -1286,6 +1287,10 @@ function getRootModuleAPI(data) {
   }
 
   return MetaData$1.facadeMap;
+}
+function defineView(component) {
+  component[config.ViewFlag] = true;
+  return component;
 }
 
 function isProcessedError(error) {
@@ -6242,6 +6247,7 @@ exports.createRedux = createRedux;
 exports.createRouteModule = createRouteModule;
 exports.deepMerge = deepMerge;
 exports.deepMergeState = deepMergeState;
+exports.defineView = defineView;
 exports.delayPromise = delayPromise;
 exports.effect = effect;
 exports.env = env;

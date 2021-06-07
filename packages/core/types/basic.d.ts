@@ -67,6 +67,7 @@ export interface CommonModule<ModuleName extends string = string> {
     default: {
         moduleName: ModuleName;
         model: Model;
+        state: Record<string, any>;
         params: Record<string, any>;
         actions: Record<string, (...args: any[]) => Action>;
         components: Record<string, () => any>;

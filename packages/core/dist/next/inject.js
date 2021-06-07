@@ -26,6 +26,7 @@ export function exportModule(moduleName, ModuleHandles, params, components) {
     moduleName,
     model,
     components,
+    state: undefined,
     params,
     actions: undefined
   };

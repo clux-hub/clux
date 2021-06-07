@@ -31,8 +31,13 @@ export declare function createRouteModule<G extends PagenameMap<any>>(pagenameMa
     default: {
         moduleName: "route";
         model: import("@clux/core").Model;
+        state: any;
         params: {};
-        actions: {};
+        actions: {
+            readonly initState: (...args: unknown[]) => {
+                type: string;
+            };
+        };
         components: { [k in keyof G]: any; };
     };
     locationTransform: LocationTransform;
