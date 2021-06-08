@@ -31,18 +31,20 @@ export declare function setConfig(conf: {
     disableNativeRoute?: boolean;
 }): void;
 export interface RenderOptions {
+    viewName?: string;
     id?: string;
     ssrKey?: string;
 }
 export interface SSROptions {
+    viewName?: string;
     id?: string;
     ssrKey?: string;
     url: string;
 }
-export declare function createApp(moduleGetter: ModuleGetter, middlewares?: IStoreMiddleware[], appModuleName?: string, appViewName?: string): {
+export declare function createApp(moduleGetter: ModuleGetter, middlewares?: IStoreMiddleware[], appModuleName?: string): {
     useStore<O extends BStoreOptions = BStoreOptions, B extends BStore<{}> = BStore<{}>>({ storeOptions, storeCreator }: StoreBuilder<O, B>): {
-        render({ id, ssrKey }?: RenderOptions): Promise<import("@clux/core").IStore<any> & B>;
-        ssr({ id, ssrKey, url }: SSROptions): Promise<string>;
+        render({ id, ssrKey, viewName }?: RenderOptions): Promise<import("@clux/core").IStore<any> & B>;
+        ssr({ id, ssrKey, url, viewName }: SSROptions): Promise<string>;
     };
 };
 export declare function patchActions(typeName: string, json?: string): void;
@@ -51,7 +53,7 @@ export declare type GetAPP<A extends RootModuleFacade> = {
         [M in keyof A]: A[M]['state'];
     };
     RouteParams: {
-        [M in keyof A]: A[M]['params'];
+        [M in keyof A]?: A[M]['params'];
     };
     GetRouter: () => IRouter<{
         [M in keyof A]: A[M]['params'];

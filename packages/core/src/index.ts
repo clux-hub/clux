@@ -26,7 +26,7 @@ export {
   defineView,
 } from './inject';
 export {LoadingState, deepMerge, SingleDispatcher, MultipleDispatcher, isPromise, isServer, serverSide, clientSide, delayPromise} from './sprite';
-export {renderApp, ssrApp} from './render';
+export {defineModuleGetter, renderApp, ssrApp} from './render';
 export {env} from './env';
 export type {IStoreMiddleware, StoreBuilder} from './store';
 export type {
@@ -34,7 +34,6 @@ export type {
   CoreModuleState,
   CommonModule,
   ModuleGetter,
-  Model,
   IStore,
   BStore,
   BStoreOptions,

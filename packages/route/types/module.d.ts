@@ -1,4 +1,4 @@
-import { CoreModuleHandlers, CoreModuleState, IStoreMiddleware, CommonModule } from '@clux/core';
+import { CoreModuleHandlers, CoreModuleState, IStoreMiddleware, IStore, CommonModule } from '@clux/core';
 import { LocationTransform } from './transform';
 import type { RootParams, RouteState, HistoryAction } from './basic';
 import type { PagenameMap, NativeLocationMap } from './transform';
@@ -30,14 +30,10 @@ export declare type RouteModule = CommonModule & {
 export declare function createRouteModule<G extends PagenameMap<any>>(pagenameMap: G, nativeLocationMap?: NativeLocationMap, notfoundPagename?: string, paramsKey?: string): {
     default: {
         moduleName: "route";
-        model: import("@clux/core").Model;
-        state: any;
+        model: (store: IStore<{}>) => void | Promise<void>;
+        state: RouteState<any>;
         params: {};
-        actions: {
-            readonly initState: (...args: unknown[]) => {
-                type: string;
-            };
-        };
+        actions: {};
         components: { [k in keyof G]: any; };
     };
     locationTransform: LocationTransform;

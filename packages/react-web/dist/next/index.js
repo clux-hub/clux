@@ -1395,14 +1395,19 @@ function enhanceStore(baseStore, middlewares) {
 
 const defFun = () => undefined;
 
-async function renderApp(baseStore, preloadModules, preloadComponents, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
+function defineModuleGetter(moduleGetter, appModuleName = 'stage') {
   MetaData$1.appModuleName = appModuleName;
   MetaData$1.moduleGetter = moduleGetter;
 
   if (typeof moduleGetter[appModuleName] !== 'function') {
     throw `${appModuleName} could not be found in moduleGetter`;
   }
-
+}
+async function renderApp(baseStore, preloadModules, preloadComponents, middlewares, appViewName = 'main') {
+  const {
+    moduleGetter,
+    appModuleName
+  } = MetaData$1;
   preloadModules = preloadModules.filter(moduleName => moduleGetter[moduleName] && moduleName !== appModuleName);
   preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares);
@@ -1417,14 +1422,11 @@ async function renderApp(baseStore, preloadModules, preloadComponents, moduleGet
     AppView
   };
 }
-async function ssrApp(baseStore, preloadModules, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
-  MetaData$1.appModuleName = appModuleName;
-  MetaData$1.moduleGetter = moduleGetter;
-
-  if (typeof moduleGetter[appModuleName] !== 'function') {
-    throw `${appModuleName} could not be found in moduleGetter`;
-  }
-
+async function ssrApp(baseStore, preloadModules, middlewares, appViewName = 'main') {
+  const {
+    moduleGetter,
+    appModuleName
+  } = MetaData$1;
   preloadModules = preloadModules.filter(moduleName => moduleGetter[moduleName] && moduleName !== appModuleName);
   preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares);
@@ -4750,7 +4752,8 @@ function setConfig(conf) {
   setRouteConfig(conf);
   setLoadViewOptions(conf);
 }
-function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
+function createApp(moduleGetter, middlewares = [], appModuleName) {
+  defineModuleGetter(moduleGetter, appModuleName);
   const istoreMiddleware = [routeMiddleware, ...middlewares];
   const {
     locationTransform
@@ -4763,7 +4766,8 @@ function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
       return {
         render({
           id = 'root',
-          ssrKey = 'cluxInitStore'
+          ssrKey = 'cluxInitStore',
+          viewName
         } = {}) {
           const router = createRouter('Browser', locationTransform);
           MetaData.router = router;
@@ -4778,7 +4782,7 @@ function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
             const baseStore = storeCreator({ ...storeOptions,
               initState
             });
-            return renderApp(baseStore, Object.keys(initState), ssrData.deps, moduleGetter, istoreMiddleware, appModuleName, appViewName).then(({
+            return renderApp(baseStore, Object.keys(initState), ssrData.deps, istoreMiddleware, viewName).then(({
               store,
               AppView
             }) => {
@@ -4798,7 +4802,8 @@ function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
         ssr({
           id = 'root',
           ssrKey = 'cluxInitStore',
-          url
+          url,
+          viewName
         }) {
           if (!SSRTPL) {
             SSRTPL = env.decodeBas64('process.env.CLUX_ENV_SSRTPL');
@@ -4813,7 +4818,7 @@ function createApp(moduleGetter, middlewares = [], appModuleName, appViewName) {
             const baseStore = storeCreator({ ...storeOptions,
               initState
             });
-            return ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, istoreMiddleware, appModuleName, appViewName).then(({
+            return ssrApp(baseStore, Object.keys(routeState.params), istoreMiddleware, viewName).then(({
               store,
               AppView
             }) => {

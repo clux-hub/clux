@@ -1,4 +1,4 @@
-import {getComponet, ModuleGetter, renderApp, BStore, BStoreOptions, IStore, IStoreMiddleware, StoreBuilder} from 'src/index';
+import {getComponet, ModuleGetter, defineModuleGetter, renderApp, BStore, BStoreOptions, IStore, IStoreMiddleware, StoreBuilder} from 'src/index';
 import {createRedux} from 'src/lib/with-redux';
 import {messages} from './utils';
 import {App, moduleGetter} from './modules';
@@ -10,12 +10,13 @@ export function createAppWithRedux(
   appModuleName?: string,
   appViewName?: string
 ) {
+  defineModuleGetter(moduleGetter, appModuleName);
   return {
     useStore<O extends BStoreOptions = BStoreOptions, B extends BStore = BStore>({storeOptions, storeCreator}: StoreBuilder<O, B>) {
       return {
         render() {
           const baseStore = storeCreator(storeOptions);
-          return renderApp(baseStore, [], [], moduleGetter, middlewares, appModuleName, appViewName);
+          return renderApp(baseStore, [], [], middlewares, appViewName);
         },
       };
     },

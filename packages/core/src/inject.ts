@@ -6,7 +6,6 @@ import {
   CoreModuleState,
   CommonModule,
   MetaData,
-  Model,
   ModuleGetter,
   IStore,
   FacadeMap,
@@ -51,13 +50,13 @@ export function exportModule<N extends string, H extends IModuleHandlers, P exte
   components: CS
 ): {
   moduleName: N;
-  model: Model;
+  model: (store: IStore) => void | Promise<void>;
   state: H['initState'];
   params: P;
   actions: Actions<H>;
   components: CS;
 } {
-  const model: Model = (store) => {
+  const model = (store: IStore) => {
     if (!store.injectedModules[moduleName]) {
       const moduleHandles = new ModuleHandles(moduleName);
       store.injectedModules[moduleName] = moduleHandles;

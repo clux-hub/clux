@@ -3,7 +3,7 @@ import './env';
 import React from 'react';
 import {hydrate, render} from 'react-dom';
 import {routeMiddleware, setRouteConfig, routeConfig} from '@clux/route';
-import {env, getRootModuleAPI, renderApp, ssrApp, setConfig as setCoreConfig} from '@clux/core';
+import {env, getRootModuleAPI, renderApp, ssrApp, defineModuleGetter, setConfig as setCoreConfig} from '@clux/core';
 import {createRouter} from '@clux/route-browser';
 import {loadView, setLoadViewOptions, depsContext} from './loadView';
 import {MetaData} from './sington';
@@ -83,22 +83,25 @@ export function setConfig(conf: {
 }
 
 export interface RenderOptions {
+  viewName?: string;
   id?: string;
   ssrKey?: string;
 }
 export interface SSROptions {
+  viewName?: string;
   id?: string;
   ssrKey?: string;
   url: string;
 }
 
-export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddleware[] = [], appModuleName?: string, appViewName?: string) {
+export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddleware[] = [], appModuleName?: string) {
+  defineModuleGetter(moduleGetter, appModuleName);
   const istoreMiddleware = [routeMiddleware, ...middlewares];
   const {locationTransform} = moduleGetter['route']() as RouteModule;
   return {
     useStore<O extends BStoreOptions = BStoreOptions, B extends BStore = BStore>({storeOptions, storeCreator}: StoreBuilder<O, B>) {
       return {
-        render({id = 'root', ssrKey = 'cluxInitStore'}: RenderOptions = {}) {
+        render({id = 'root', ssrKey = 'cluxInitStore', viewName}: RenderOptions = {}) {
           const router = createRouter('Browser', locationTransform);
           MetaData.router = router;
           const ssrData: {state: any; deps: string[]} = env[ssrKey];
@@ -107,23 +110,21 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddlew
           return router.initedPromise.then((routeState) => {
             const initState = {...storeOptions.initState, route: routeState, ...ssrData.state};
             const baseStore = storeCreator({...storeOptions, initState});
-            return renderApp(baseStore, Object.keys(initState), ssrData.deps, moduleGetter, istoreMiddleware, appModuleName, appViewName).then(
-              ({store, AppView}) => {
-                router.setStore(store);
-                const deps = {};
-                renderFun(
-                  <depsContext.Provider value={deps}>
-                    <AppView store={store} />
-                  </depsContext.Provider>,
-                  panel
-                );
-                env.console.log(deps as any);
-                return store;
-              }
-            );
+            return renderApp(baseStore, Object.keys(initState), ssrData.deps, istoreMiddleware, viewName).then(({store, AppView}) => {
+              router.setStore(store);
+              const deps = {};
+              renderFun(
+                <depsContext.Provider value={deps}>
+                  <AppView store={store} />
+                </depsContext.Provider>,
+                panel
+              );
+              env.console.log(deps as any);
+              return store;
+            });
           });
         },
-        ssr({id = 'root', ssrKey = 'cluxInitStore', url}: SSROptions) {
+        ssr({id = 'root', ssrKey = 'cluxInitStore', url, viewName}: SSROptions) {
           if (!SSRTPL) {
             SSRTPL = env.decodeBas64('process.env.CLUX_ENV_SSRTPL');
           }
@@ -132,27 +133,25 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddlew
           return router.initedPromise.then((routeState) => {
             const initState = {...storeOptions.initState, route: routeState};
             const baseStore = storeCreator({...storeOptions, initState});
-            return ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, istoreMiddleware, appModuleName, appViewName).then(
-              ({store, AppView}) => {
-                const data = store.getState();
-                const deps = {};
-                let html: string = require('react-dom/server').renderToString(
-                  <depsContext.Provider value={deps}>
-                    <AppView store={store} />
-                  </depsContext.Provider>
-                );
-                const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${id}['"][^<>]*>`, 'm'));
-                if (match) {
-                  const pageHead = html.split(/<head>|<\/head>/, 3);
-                  html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-                  return SSRTPL.replace(
-                    '</head>',
-                    `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify(data)};</script>\r\n</head>`
-                  ).replace(match[0], match[0] + html);
-                }
-                return html;
+            return ssrApp(baseStore, Object.keys(routeState.params), istoreMiddleware, viewName).then(({store, AppView}) => {
+              const data = store.getState();
+              const deps = {};
+              let html: string = require('react-dom/server').renderToString(
+                <depsContext.Provider value={deps}>
+                  <AppView store={store} />
+                </depsContext.Provider>
+              );
+              const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${id}['"][^<>]*>`, 'm'));
+              if (match) {
+                const pageHead = html.split(/<head>|<\/head>/, 3);
+                html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
+                return SSRTPL.replace(
+                  '</head>',
+                  `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify(data)};</script>\r\n</head>`
+                ).replace(match[0], match[0] + html);
               }
-            );
+              return html;
+            });
           });
         },
       };
@@ -168,7 +167,7 @@ export function patchActions(typeName: string, json?: string): void {
 
 export type GetAPP<A extends RootModuleFacade> = {
   State: {[M in keyof A]: A[M]['state']};
-  RouteParams: {[M in keyof A]: A[M]['params']};
+  RouteParams: {[M in keyof A]?: A[M]['params']};
   GetRouter: () => IRouter<{[M in keyof A]: A[M]['params']}, Extract<keyof A['route']['components'], string>>;
   GetActions<N extends keyof A>(...args: N[]): {[K in N]: A[K]['actions']};
   LoadView: LoadView<A>;

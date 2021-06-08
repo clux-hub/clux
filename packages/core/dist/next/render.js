@@ -4,14 +4,19 @@ import { enhanceStore } from './store';
 
 const defFun = () => undefined;
 
-export async function renderApp(baseStore, preloadModules, preloadComponents, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
+export function defineModuleGetter(moduleGetter, appModuleName = 'stage') {
   MetaData.appModuleName = appModuleName;
   MetaData.moduleGetter = moduleGetter;
 
   if (typeof moduleGetter[appModuleName] !== 'function') {
     throw `${appModuleName} could not be found in moduleGetter`;
   }
-
+}
+export async function renderApp(baseStore, preloadModules, preloadComponents, middlewares, appViewName = 'main') {
+  const {
+    moduleGetter,
+    appModuleName
+  } = MetaData;
   preloadModules = preloadModules.filter(moduleName => moduleGetter[moduleName] && moduleName !== appModuleName);
   preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares);
@@ -26,14 +31,11 @@ export async function renderApp(baseStore, preloadModules, preloadComponents, mo
     AppView
   };
 }
-export async function ssrApp(baseStore, preloadModules, moduleGetter, middlewares, appModuleName = 'stage', appViewName = 'main') {
-  MetaData.appModuleName = appModuleName;
-  MetaData.moduleGetter = moduleGetter;
-
-  if (typeof moduleGetter[appModuleName] !== 'function') {
-    throw `${appModuleName} could not be found in moduleGetter`;
-  }
-
+export async function ssrApp(baseStore, preloadModules, middlewares, appViewName = 'main') {
+  const {
+    moduleGetter,
+    appModuleName
+  } = MetaData;
   preloadModules = preloadModules.filter(moduleName => moduleGetter[moduleName] && moduleName !== appModuleName);
   preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares);

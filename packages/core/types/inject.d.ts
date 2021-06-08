@@ -1,4 +1,4 @@
-import { Action, IModuleHandlers, CoreModuleState, CommonModule, Model, ModuleGetter, IStore } from './basic';
+import { Action, IModuleHandlers, CoreModuleState, CommonModule, ModuleGetter, IStore } from './basic';
 declare type Handler<F> = F extends (...args: infer P) => any ? (...args: P) => {
     type: string;
 } : never;
@@ -17,7 +17,7 @@ export declare function exportModule<N extends string, H extends IModuleHandlers
     new (moduleName: string): H;
 }, params: P, components: CS): {
     moduleName: N;
-    model: Model;
+    model: (store: IStore) => void | Promise<void>;
     state: H['initState'];
     params: P;
     actions: Actions<H>;

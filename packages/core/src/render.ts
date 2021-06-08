@@ -4,20 +4,22 @@ import {IStoreMiddleware, enhanceStore} from './store';
 
 const defFun: any = () => undefined;
 
-export async function renderApp<ST extends BStore = BStore>(
-  baseStore: ST,
-  preloadModules: string[],
-  preloadComponents: string[],
-  moduleGetter: ModuleGetter,
-  middlewares?: IStoreMiddleware[],
-  appModuleName: string = 'stage',
-  appViewName: string = 'main'
-) {
+export function defineModuleGetter(moduleGetter: ModuleGetter, appModuleName: string = 'stage') {
   MetaData.appModuleName = appModuleName;
   MetaData.moduleGetter = moduleGetter;
   if (typeof moduleGetter[appModuleName] !== 'function') {
     throw `${appModuleName} could not be found in moduleGetter`;
   }
+}
+
+export async function renderApp<ST extends BStore = BStore>(
+  baseStore: ST,
+  preloadModules: string[],
+  preloadComponents: string[],
+  middlewares?: IStoreMiddleware[],
+  appViewName: string = 'main'
+) {
+  const {moduleGetter, appModuleName} = MetaData;
   preloadModules = preloadModules.filter((moduleName) => moduleGetter[moduleName] && moduleName !== appModuleName);
   preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares) as IStore<any> & ST;
@@ -37,16 +39,10 @@ export async function renderApp<ST extends BStore = BStore>(
 export async function ssrApp<ST extends BStore = BStore>(
   baseStore: ST,
   preloadModules: string[],
-  moduleGetter: ModuleGetter,
   middlewares?: IStoreMiddleware[],
-  appModuleName: string = 'stage',
   appViewName: string = 'main'
 ) {
-  MetaData.appModuleName = appModuleName;
-  MetaData.moduleGetter = moduleGetter;
-  if (typeof moduleGetter[appModuleName] !== 'function') {
-    throw `${appModuleName} could not be found in moduleGetter`;
-  }
+  const {moduleGetter, appModuleName} = MetaData;
   preloadModules = preloadModules.filter((moduleName) => moduleGetter[moduleName] && moduleName !== appModuleName);
   preloadModules.unshift(appModuleName);
   const store = enhanceStore(baseStore, middlewares) as IStore<any> & ST;

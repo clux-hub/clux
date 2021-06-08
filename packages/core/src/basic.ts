@@ -99,12 +99,10 @@ export interface CoreModuleState {
   loading?: Record<string, LoadingState>;
 }
 
-export type Model = (store: IStore) => void | Promise<void>;
-
 export interface CommonModule<ModuleName extends string = string> {
   default: {
     moduleName: ModuleName;
-    model: Model;
+    model: (store: IStore) => void | Promise<void>;
     state: Record<string, any>;
     params: Record<string, any>;
     actions: Record<string, (...args: any[]) => Action>;

@@ -2312,63 +2312,61 @@ var defFun = function defFun() {
   return undefined;
 };
 
-function renderApp(_x, _x2, _x3, _x4, _x5, _x6, _x7) {
+function defineModuleGetter(moduleGetter, appModuleName) {
+  if (appModuleName === void 0) {
+    appModuleName = 'stage';
+  }
+
+  MetaData$1.appModuleName = appModuleName;
+  MetaData$1.moduleGetter = moduleGetter;
+
+  if (typeof moduleGetter[appModuleName] !== 'function') {
+    throw appModuleName + " could not be found in moduleGetter";
+  }
+}
+function renderApp(_x, _x2, _x3, _x4, _x5) {
   return _renderApp.apply(this, arguments);
 }
 
 function _renderApp() {
-  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(baseStore, preloadModules, preloadComponents, moduleGetter, middlewares, appModuleName, appViewName) {
-    var store, modules, appModule, AppView;
+  _renderApp = _asyncToGenerator(regenerator.mark(function _callee(baseStore, preloadModules, preloadComponents, middlewares, appViewName) {
+    var moduleGetter, appModuleName, store, modules, appModule, AppView;
     return regenerator.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            if (appModuleName === void 0) {
-              appModuleName = 'stage';
-            }
-
             if (appViewName === void 0) {
               appViewName = 'main';
             }
 
-            MetaData$1.appModuleName = appModuleName;
-            MetaData$1.moduleGetter = moduleGetter;
-
-            if (!(typeof moduleGetter[appModuleName] !== 'function')) {
-              _context.next = 6;
-              break;
-            }
-
-            throw appModuleName + " could not be found in moduleGetter";
-
-          case 6:
+            moduleGetter = MetaData$1.moduleGetter, appModuleName = MetaData$1.appModuleName;
             preloadModules = preloadModules.filter(function (moduleName) {
               return moduleGetter[moduleName] && moduleName !== appModuleName;
             });
             preloadModules.unshift(appModuleName);
             store = enhanceStore(baseStore, middlewares);
             MetaData$1.clientStore = store;
-            _context.next = 12;
+            _context.next = 8;
             return getModuleList(preloadModules);
 
-          case 12:
+          case 8:
             modules = _context.sent;
-            _context.next = 15;
+            _context.next = 11;
             return getComponentList(preloadComponents);
 
-          case 15:
+          case 11:
             appModule = modules[0].default;
-            _context.next = 18;
+            _context.next = 14;
             return appModule.model(store);
 
-          case 18:
+          case 14:
             AppView = getComponet(appModuleName, appViewName);
             return _context.abrupt("return", {
               store: store,
               AppView: AppView
             });
 
-          case 20:
+          case 16:
           case "end":
             return _context.stop();
         }
@@ -2378,59 +2376,45 @@ function _renderApp() {
   return _renderApp.apply(this, arguments);
 }
 
-function ssrApp(_x8, _x9, _x10, _x11, _x12, _x13) {
+function ssrApp(_x6, _x7, _x8, _x9) {
   return _ssrApp.apply(this, arguments);
 }
 
 function _ssrApp() {
-  _ssrApp = _asyncToGenerator(regenerator.mark(function _callee2(baseStore, preloadModules, moduleGetter, middlewares, appModuleName, appViewName) {
-    var store, _yield$getModuleList, appModule, otherModules, AppView;
+  _ssrApp = _asyncToGenerator(regenerator.mark(function _callee2(baseStore, preloadModules, middlewares, appViewName) {
+    var moduleGetter, appModuleName, store, _yield$getModuleList, appModule, otherModules, AppView;
 
     return regenerator.wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            if (appModuleName === void 0) {
-              appModuleName = 'stage';
-            }
-
             if (appViewName === void 0) {
               appViewName = 'main';
             }
 
-            MetaData$1.appModuleName = appModuleName;
-            MetaData$1.moduleGetter = moduleGetter;
-
-            if (!(typeof moduleGetter[appModuleName] !== 'function')) {
-              _context2.next = 6;
-              break;
-            }
-
-            throw appModuleName + " could not be found in moduleGetter";
-
-          case 6:
+            moduleGetter = MetaData$1.moduleGetter, appModuleName = MetaData$1.appModuleName;
             preloadModules = preloadModules.filter(function (moduleName) {
               return moduleGetter[moduleName] && moduleName !== appModuleName;
             });
             preloadModules.unshift(appModuleName);
             store = enhanceStore(baseStore, middlewares);
-            _context2.next = 11;
+            _context2.next = 7;
             return getModuleList(preloadModules);
 
-          case 11:
+          case 7:
             _yield$getModuleList = _context2.sent;
             appModule = _yield$getModuleList[0].default;
             otherModules = _yield$getModuleList.slice(1);
-            _context2.next = 16;
+            _context2.next = 12;
             return appModule.model(store);
 
-          case 16:
-            _context2.next = 18;
+          case 12:
+            _context2.next = 14;
             return Promise.all(otherModules.map(function (module) {
               return module.default.model(store);
             }));
 
-          case 18:
+          case 14:
             store.dispatch = defFun;
             AppView = getComponet(appModuleName, appViewName);
             return _context2.abrupt("return", {
@@ -2438,7 +2422,7 @@ function _ssrApp() {
               AppView: AppView
             });
 
-          case 21:
+          case 17:
           case "end":
             return _context2.stop();
         }
@@ -6101,11 +6085,12 @@ function setConfig(conf) {
   setRouteConfig(conf);
   setLoadViewOptions(conf);
 }
-function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
+function createApp(moduleGetter, middlewares, appModuleName) {
   if (middlewares === void 0) {
     middlewares = [];
   }
 
+  defineModuleGetter(moduleGetter, appModuleName);
   var istoreMiddleware = [routeMiddleware].concat(middlewares);
 
   var _ref = moduleGetter['route'](),
@@ -6121,7 +6106,8 @@ function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
               _ref3$id = _ref3.id,
               id = _ref3$id === void 0 ? 'root' : _ref3$id,
               _ref3$ssrKey = _ref3.ssrKey,
-              ssrKey = _ref3$ssrKey === void 0 ? 'cluxInitStore' : _ref3$ssrKey;
+              ssrKey = _ref3$ssrKey === void 0 ? 'cluxInitStore' : _ref3$ssrKey,
+              viewName = _ref3.viewName;
 
           var router = createRouter('Browser', locationTransform);
           MetaData.router = router;
@@ -6136,7 +6122,7 @@ function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
             var baseStore = storeCreator(_extends({}, storeOptions, {
               initState: initState
             }));
-            return renderApp(baseStore, Object.keys(initState), ssrData.deps, moduleGetter, istoreMiddleware, appModuleName, appViewName).then(function (_ref4) {
+            return renderApp(baseStore, Object.keys(initState), ssrData.deps, istoreMiddleware, viewName).then(function (_ref4) {
               var store = _ref4.store,
                   AppView = _ref4.AppView;
               router.setStore(store);
@@ -6156,7 +6142,8 @@ function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
               id = _ref5$id === void 0 ? 'root' : _ref5$id,
               _ref5$ssrKey = _ref5.ssrKey,
               ssrKey = _ref5$ssrKey === void 0 ? 'cluxInitStore' : _ref5$ssrKey,
-              url = _ref5.url;
+              url = _ref5.url,
+              viewName = _ref5.viewName;
 
           if (!SSRTPL) {
             SSRTPL = env.decodeBas64('process.env.CLUX_ENV_SSRTPL');
@@ -6172,7 +6159,7 @@ function createApp(moduleGetter, middlewares, appModuleName, appViewName) {
             var baseStore = storeCreator(_extends({}, storeOptions, {
               initState: initState
             }));
-            return ssrApp(baseStore, Object.keys(routeState.params), moduleGetter, istoreMiddleware, appModuleName, appViewName).then(function (_ref6) {
+            return ssrApp(baseStore, Object.keys(routeState.params), istoreMiddleware, viewName).then(function (_ref6) {
               var store = _ref6.store,
                   AppView = _ref6.AppView;
               var data = store.getState();

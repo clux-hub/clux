@@ -69,9 +69,12 @@ export const routeMiddleware: IStoreMiddleware = ({dispatch, getState}) => (next
   }
   return next(action);
 };
-// export type RouteModuleState<P extends {[key: string]: any} = {}> = CoreModuleState & P;
 
-class RouteModuleHandlers implements IModuleHandlers {
+interface IRouteModuleHandlers extends IModuleHandlers {
+  initState: RouteState<any>;
+}
+
+class RouteModuleHandlers implements IRouteModuleHandlers {
   initState!: RouteState;
 
   moduleName!: string;
@@ -105,7 +108,7 @@ export function createRouteModule<G extends PagenameMap<any>>(
   notfoundPagename: string = '/404',
   paramsKey: string = '_'
 ) {
-  const handlers: {new (): IModuleHandlers} = RouteModuleHandlers;
+  const handlers: {new (): IRouteModuleHandlers} = RouteModuleHandlers;
   const locationTransform = createLocationTransform(pagenameMap, nativeLocationMap, notfoundPagename, paramsKey);
   const result = exportModule('route', handlers, {}, {} as {[k in keyof G]: any});
   return {
