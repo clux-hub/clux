@@ -1,5 +1,5 @@
 import React, {ComponentType, Component} from 'react';
-import {getComponet, isPromise, env} from '@clux/core';
+import {getComponet, isPromise, env, config} from '@clux/core';
 import type {LoadComponent as BaseLoadComponent, RootModuleFacade} from '@clux/core';
 
 export const DepsContext = React.createContext({});
@@ -62,8 +62,8 @@ export const loadView: LoadView<Record<string, any>> = (moduleName, viewName, op
 
     execute() {
       if (!this.view && !this.loading && !this.error) {
-        const deps = this.context;
-        deps[moduleName + viewName] = true;
+        const deps = this.context || {};
+        deps[moduleName + config.CSP + viewName] = true;
         this.loading = true;
         let result: ComponentType<any> | Promise<ComponentType<any>> | undefined;
         try {

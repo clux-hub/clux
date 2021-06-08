@@ -5,7 +5,7 @@ export { Provider } from 'react-redux';
 export { createRedux } from '@clux/core/lib/with-redux';
 export type { ReduxStore, ReduxOptions } from '@clux/core/lib/with-redux';
 export declare type GetProps<C> = C extends FunctionComponent<infer P> ? P : C extends ComponentClass<infer P> ? P : never;
-export declare type InferableComponentEnhancerWithProps<TInjectedProps> = <C extends ComponentType>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
+export declare type InferableComponentEnhancerWithProps<TInjectedProps> = <C>(component: C) => ComponentType<Omit<GetProps<C>, keyof TInjectedProps>>;
 export interface ConnectRedux {
     <S = {}, D = {}, W = {}>(mapStateToProps?: (state: any, owner: W) => S, options?: Options<any, S, W>): InferableComponentEnhancerWithProps<S & D & {
         dispatch: Dispatch;

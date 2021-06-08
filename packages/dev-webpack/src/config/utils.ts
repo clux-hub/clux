@@ -32,7 +32,7 @@ interface DevServerConfig {
 }
 
 function getCssScopedName(srcPath: string, localName: string, mfileName: string) {
-  if (mfileName.match(/[/\\]assets[/\\]css[/\\]global.module.\w+?$/)) {
+  if (mfileName.match(/[/\\]global.module.\w+?$/)) {
     return `g-${localName}`;
   }
   mfileName = mfileName

@@ -25,7 +25,7 @@ function moduleExports(_tsconfig, _entryFilePath, _echo) {
     else {
         tsconfig = _tsconfig;
     }
-    const entryFilePath = _entryFilePath || (fs_1.default.existsSync(path_1.default.join(srcPath, 'APP.ts')) ? path_1.default.join(srcPath, 'APP.ts') : path_1.default.join(srcPath, 'APP.tsx'));
+    const entryFilePath = _entryFilePath || (fs_1.default.existsSync(path_1.default.join(srcPath, 'Global.ts')) ? path_1.default.join(srcPath, 'Global.ts') : path_1.default.join(srcPath, 'Global.tsx'));
     const source = fs_1.default.readFileSync(entryFilePath).toString();
     const arr = source.match(/patchActions\s*\(([^)]+)\)/m);
     if (arr) {

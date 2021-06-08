@@ -22,7 +22,7 @@ function moduleExports(_tsconfig?: string | Object, _entryFilePath?: string, _ec
   }
 
   const entryFilePath =
-    _entryFilePath || (fs.existsSync(path.join(srcPath, 'APP.ts')) ? path.join(srcPath, 'APP.ts') : path.join(srcPath, 'APP.tsx'));
+    _entryFilePath || (fs.existsSync(path.join(srcPath, 'Global.ts')) ? path.join(srcPath, 'Global.ts') : path.join(srcPath, 'Global.tsx'));
   const source = fs.readFileSync(entryFilePath).toString();
   const arr = source.match(/patchActions\s*\(([^)]+)\)/m);
   if (arr) {

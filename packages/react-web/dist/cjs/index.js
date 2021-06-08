@@ -5346,8 +5346,8 @@ var loadView = function loadView(moduleName, viewName, options) {
       var _this2 = this;
 
       if (!this.view && !this.loading && !this.error) {
-        var deps = this.context;
-        deps[moduleName + viewName] = true;
+        var deps = this.context || {};
+        deps[moduleName + config.CSP + viewName] = true;
         this.loading = true;
         var result;
 
@@ -6090,7 +6090,7 @@ var connectRedux = function connectRedux() {
   }
 
   return function (component) {
-    defineView(component);
+    component['__clux_is_view__'] = true;
     return reactRedux.connect.apply(void 0, args)(component);
   };
 };
@@ -6150,13 +6150,9 @@ function createApp(moduleGetter, middlewares, appModuleName) {
               var store = _ref5.store,
                   AppView = _ref5.AppView;
               router.setStore(store);
-              var deps2 = {};
-              renderFun(React__default['default'].createElement(DepsContext.Provider, {
-                value: deps2
-              }, React__default['default'].createElement(AppView, {
+              renderFun(React__default['default'].createElement(AppView, {
                 store: store
-              })), panel);
-              env.console.log(deps2);
+              }), panel);
               return store;
             });
           });
@@ -6186,7 +6182,7 @@ function createApp(moduleGetter, middlewares, appModuleName) {
             return ssrApp(baseStore, Object.keys(routeState.params), istoreMiddleware, viewName).then(function (_ref7) {
               var store = _ref7.store,
                   AppView = _ref7.AppView;
-              var data = store.getState();
+              var state = store.getState();
               var deps = {};
 
               var html = require('react-dom/server').renderToString(React__default['default'].createElement(DepsContext.Provider, {
@@ -6200,7 +6196,10 @@ function createApp(moduleGetter, middlewares, appModuleName) {
               if (match) {
                 var pageHead = html.split(/<head>|<\/head>/, 3);
                 html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-                return SSRTPL.replace('</head>', (pageHead[1] || '') + "\r\n<script>window." + ssrKey + " = " + JSON.stringify(data) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
+                return SSRTPL.replace('</head>', (pageHead[1] || '') + "\r\n<script>window." + ssrKey + " = " + JSON.stringify({
+                  state: state,
+                  deps: deps
+                }) + ";</script>\r\n</head>").replace(match[0], match[0] + html);
               }
 
               return html;

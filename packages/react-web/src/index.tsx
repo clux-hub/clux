@@ -112,14 +112,7 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddlew
             const baseStore = storeCreator({...storeOptions, initState});
             return renderApp(baseStore, Object.keys(initState), deps, istoreMiddleware, viewName).then(({store, AppView}) => {
               router.setStore(store);
-              const deps2 = {};
-              renderFun(
-                <DepsContext.Provider value={deps2}>
-                  <AppView store={store} />
-                </DepsContext.Provider>,
-                panel
-              );
-              env.console.log(deps2 as any);
+              renderFun(<AppView store={store} />, panel);
               return store;
             });
           });
@@ -134,7 +127,7 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddlew
             const initState = {...storeOptions.initState, route: routeState};
             const baseStore = storeCreator({...storeOptions, initState});
             return ssrApp(baseStore, Object.keys(routeState.params), istoreMiddleware, viewName).then(({store, AppView}) => {
-              const data = store.getState();
+              const state = store.getState();
               const deps = {};
               let html: string = require('react-dom/server').renderToString(
                 <DepsContext.Provider value={deps}>
@@ -147,7 +140,7 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddlew
                 html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
                 return SSRTPL.replace(
                   '</head>',
-                  `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify(data)};</script>\r\n</head>`
+                  `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify({state, deps})};</script>\r\n</head>`
                 ).replace(match[0], match[0] + html);
               }
               return html;

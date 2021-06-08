@@ -13,7 +13,7 @@ const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin'
 const { getSsrInjectPlugin } = require('@clux/dev-webpack/dist/plugin/ssr-inject');
 const { VueLoaderPlugin } = require('vue-loader');
 function getCssScopedName(srcPath, localName, mfileName) {
-    if (mfileName.match(/[/\\]assets[/\\]css[/\\]global.module.\w+?$/)) {
+    if (mfileName.match(/[/\\]global.module.\w+?$/)) {
         return `g-${localName}`;
     }
     mfileName = mfileName

@@ -4006,8 +4006,8 @@ const loadView = (moduleName, viewName, options) => {
 
     execute() {
       if (!this.view && !this.loading && !this.error) {
-        const deps = this.context;
-        deps[moduleName + viewName] = true;
+        const deps = this.context || {};
+        deps[moduleName + config.CSP + viewName] = true;
         this.loading = true;
         let result;
 
@@ -4752,7 +4752,7 @@ function createRedux(storeOptions) {
 
 const connectRedux = function (...args) {
   return function (component) {
-    defineView(component);
+    component['__clux_is_view__'] = true;
     return connect(...args)(component);
   };
 };
@@ -4804,13 +4804,9 @@ function createApp(moduleGetter, middlewares = [], appModuleName) {
               AppView
             }) => {
               router.setStore(store);
-              const deps2 = {};
-              renderFun(React.createElement(DepsContext.Provider, {
-                value: deps2
-              }, React.createElement(AppView, {
+              renderFun(React.createElement(AppView, {
                 store: store
-              })), panel);
-              env.console.log(deps2);
+              }), panel);
               return store;
             });
           });
@@ -4839,7 +4835,7 @@ function createApp(moduleGetter, middlewares = [], appModuleName) {
               store,
               AppView
             }) => {
-              const data = store.getState();
+              const state = store.getState();
               const deps = {};
 
               let html = require('react-dom/server').renderToString(React.createElement(DepsContext.Provider, {
@@ -4853,7 +4849,10 @@ function createApp(moduleGetter, middlewares = [], appModuleName) {
               if (match) {
                 const pageHead = html.split(/<head>|<\/head>/, 3);
                 html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
-                return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify(data)};</script>\r\n</head>`).replace(match[0], match[0] + html);
+                return SSRTPL.replace('</head>', `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify({
+                  state,
+                  deps
+                })};</script>\r\n</head>`).replace(match[0], match[0] + html);
               }
 
               return html;

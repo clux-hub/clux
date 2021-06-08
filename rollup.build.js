@@ -71,6 +71,7 @@ export default function (root, aliasEntries) {
       inputFiles.push(`src/lib/${item}/`);
     });
   }
+  console.log(inputFiles);
   const pkg = require(path.resolve(root, './package.json'));
   const externals = Object.keys(pkg.externals ? pkg.externals : {...pkg.dependencies, ...pkg.peerDependencies});
   return inputFiles.map((bundle) => createConfig(bundle, externals, aliasEntries));
