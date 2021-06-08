@@ -96,6 +96,9 @@ export function getModule(moduleName: string): Promise<CommonModule> | CommonMod
   return moduleOrPromise;
 }
 export function getModuleList(moduleNames: string[]): Promise<CommonModule[]> {
+  if (moduleNames.length < 1) {
+    return Promise.resolve([]);
+  }
   return Promise.all(
     moduleNames.map((moduleName) => {
       if (MetaData.moduleCaches[moduleName]) {
@@ -141,6 +144,9 @@ export function getComponet<T = any>(moduleName: string, componentName: string, 
   return moduleCallback(moduleOrPromise);
 }
 export function getComponentList(keys: string[]): Promise<any[]> {
+  if (keys.length < 1) {
+    return Promise.resolve([]);
+  }
   return Promise.all(
     keys.map((key) => {
       if (MetaData.componentCaches[key]) {

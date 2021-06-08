@@ -104,22 +104,22 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddlew
         render({id = 'root', ssrKey = 'cluxInitStore', viewName}: RenderOptions = {}) {
           const router = createRouter('Browser', locationTransform);
           MetaData.router = router;
-          const ssrData: {state: any; deps: string[]} = env[ssrKey];
-          const renderFun = ssrData ? hydrate : render;
+          const renderFun = env[ssrKey] ? hydrate : render;
+          const {state, deps = []}: {state: any; deps: string[]} = env[ssrKey] || {};
           const panel = env.document.getElementById(id);
           return router.initedPromise.then((routeState) => {
-            const initState = {...storeOptions.initState, route: routeState, ...ssrData.state};
+            const initState = {...storeOptions.initState, route: routeState, ...state};
             const baseStore = storeCreator({...storeOptions, initState});
-            return renderApp(baseStore, Object.keys(initState), ssrData.deps, istoreMiddleware, viewName).then(({store, AppView}) => {
+            return renderApp(baseStore, Object.keys(initState), deps, istoreMiddleware, viewName).then(({store, AppView}) => {
               router.setStore(store);
-              const deps = {};
+              const deps2 = {};
               renderFun(
-                <depsContext.Provider value={deps}>
+                <depsContext.Provider value={deps2}>
                   <AppView store={store} />
                 </depsContext.Provider>,
                 panel
               );
-              env.console.log(deps as any);
+              env.console.log(deps2 as any);
               return store;
             });
           });

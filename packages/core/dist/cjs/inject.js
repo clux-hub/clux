@@ -71,6 +71,10 @@ function getModule(moduleName) {
 }
 
 function getModuleList(moduleNames) {
+  if (moduleNames.length < 1) {
+    return Promise.resolve([]);
+  }
+
   return Promise.all(moduleNames.map(function (moduleName) {
     if (_basic.MetaData.moduleCaches[moduleName]) {
       return _basic.MetaData.moduleCaches[moduleName];
@@ -137,6 +141,10 @@ function getComponet(moduleName, componentName, initView) {
 }
 
 function getComponentList(keys) {
+  if (keys.length < 1) {
+    return Promise.resolve([]);
+  }
+
   return Promise.all(keys.map(function (key) {
     if (_basic.MetaData.componentCaches[key]) {
       return _basic.MetaData.componentCaches[key];

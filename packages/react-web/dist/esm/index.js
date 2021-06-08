@@ -1032,6 +1032,10 @@ function getModule(moduleName) {
   return moduleOrPromise;
 }
 function getModuleList(moduleNames) {
+  if (moduleNames.length < 1) {
+    return Promise.resolve([]);
+  }
+
   return Promise.all(moduleNames.map(function (moduleName) {
     if (MetaData$1.moduleCaches[moduleName]) {
       return MetaData$1.moduleCaches[moduleName];
@@ -1096,6 +1100,10 @@ function getComponet(moduleName, componentName, initView) {
   return moduleCallback(moduleOrPromise);
 }
 function getComponentList(keys) {
+  if (keys.length < 1) {
+    return Promise.resolve([]);
+  }
+
   return Promise.all(keys.map(function (key) {
     if (MetaData$1.componentCaches[key]) {
       return MetaData$1.componentCaches[key];
@@ -6104,39 +6112,44 @@ function createApp(moduleGetter, middlewares, appModuleName) {
 
           var router = createRouter('Browser', locationTransform);
           MetaData.router = router;
-          var ssrData = env[ssrKey];
-          var renderFun = ssrData ? hydrate : render;
+          var renderFun = env[ssrKey] ? hydrate : render;
+
+          var _ref4 = env[ssrKey] || {},
+              state = _ref4.state,
+              _ref4$deps = _ref4.deps,
+              deps = _ref4$deps === void 0 ? [] : _ref4$deps;
+
           var panel = env.document.getElementById(id);
           return router.initedPromise.then(function (routeState) {
             var initState = _extends({}, storeOptions.initState, {
               route: routeState
-            }, ssrData.state);
+            }, state);
 
             var baseStore = storeCreator(_extends({}, storeOptions, {
               initState: initState
             }));
-            return renderApp(baseStore, Object.keys(initState), ssrData.deps, istoreMiddleware, viewName).then(function (_ref4) {
-              var store = _ref4.store,
-                  AppView = _ref4.AppView;
+            return renderApp(baseStore, Object.keys(initState), deps, istoreMiddleware, viewName).then(function (_ref5) {
+              var store = _ref5.store,
+                  AppView = _ref5.AppView;
               router.setStore(store);
-              var deps = {};
+              var deps2 = {};
               renderFun(React.createElement(depsContext.Provider, {
-                value: deps
+                value: deps2
               }, React.createElement(AppView, {
                 store: store
               })), panel);
-              env.console.log(deps);
+              env.console.log(deps2);
               return store;
             });
           });
         },
-        ssr: function ssr(_ref5) {
-          var _ref5$id = _ref5.id,
-              id = _ref5$id === void 0 ? 'root' : _ref5$id,
-              _ref5$ssrKey = _ref5.ssrKey,
-              ssrKey = _ref5$ssrKey === void 0 ? 'cluxInitStore' : _ref5$ssrKey,
-              url = _ref5.url,
-              viewName = _ref5.viewName;
+        ssr: function ssr(_ref6) {
+          var _ref6$id = _ref6.id,
+              id = _ref6$id === void 0 ? 'root' : _ref6$id,
+              _ref6$ssrKey = _ref6.ssrKey,
+              ssrKey = _ref6$ssrKey === void 0 ? 'cluxInitStore' : _ref6$ssrKey,
+              url = _ref6.url,
+              viewName = _ref6.viewName;
 
           if (!SSRTPL) {
             SSRTPL = env.decodeBas64('process.env.CLUX_ENV_SSRTPL');
@@ -6152,9 +6165,9 @@ function createApp(moduleGetter, middlewares, appModuleName) {
             var baseStore = storeCreator(_extends({}, storeOptions, {
               initState: initState
             }));
-            return ssrApp(baseStore, Object.keys(routeState.params), istoreMiddleware, viewName).then(function (_ref6) {
-              var store = _ref6.store,
-                  AppView = _ref6.AppView;
+            return ssrApp(baseStore, Object.keys(routeState.params), istoreMiddleware, viewName).then(function (_ref7) {
+              var store = _ref7.store,
+                  AppView = _ref7.AppView;
               var data = store.getState();
               var deps = {};
 

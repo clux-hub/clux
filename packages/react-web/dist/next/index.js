@@ -935,6 +935,10 @@ function getModule(moduleName) {
   return moduleOrPromise;
 }
 function getModuleList(moduleNames) {
+  if (moduleNames.length < 1) {
+    return Promise.resolve([]);
+  }
+
   return Promise.all(moduleNames.map(moduleName => {
     if (MetaData$1.moduleCaches[moduleName]) {
       return MetaData$1.moduleCaches[moduleName];
@@ -993,6 +997,10 @@ function getComponet(moduleName, componentName, initView) {
   return moduleCallback(moduleOrPromise);
 }
 function getComponentList(keys) {
+  if (keys.length < 1) {
+    return Promise.resolve([]);
+  }
+
   return Promise.all(keys.map(key => {
     if (MetaData$1.componentCaches[key]) {
       return MetaData$1.componentCaches[key];
@@ -4771,29 +4779,32 @@ function createApp(moduleGetter, middlewares = [], appModuleName) {
         } = {}) {
           const router = createRouter('Browser', locationTransform);
           MetaData.router = router;
-          const ssrData = env[ssrKey];
-          const renderFun = ssrData ? hydrate : render;
+          const renderFun = env[ssrKey] ? hydrate : render;
+          const {
+            state,
+            deps = []
+          } = env[ssrKey] || {};
           const panel = env.document.getElementById(id);
           return router.initedPromise.then(routeState => {
             const initState = { ...storeOptions.initState,
               route: routeState,
-              ...ssrData.state
+              ...state
             };
             const baseStore = storeCreator({ ...storeOptions,
               initState
             });
-            return renderApp(baseStore, Object.keys(initState), ssrData.deps, istoreMiddleware, viewName).then(({
+            return renderApp(baseStore, Object.keys(initState), deps, istoreMiddleware, viewName).then(({
               store,
               AppView
             }) => {
               router.setStore(store);
-              const deps = {};
+              const deps2 = {};
               renderFun(React.createElement(depsContext.Provider, {
-                value: deps
+                value: deps2
               }, React.createElement(AppView, {
                 store: store
               })), panel);
-              env.console.log(deps);
+              env.console.log(deps2);
               return store;
             });
           });

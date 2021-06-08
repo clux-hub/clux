@@ -49,6 +49,10 @@ export function getModule(moduleName) {
   return moduleOrPromise;
 }
 export function getModuleList(moduleNames) {
+  if (moduleNames.length < 1) {
+    return Promise.resolve([]);
+  }
+
   return Promise.all(moduleNames.map(moduleName => {
     if (MetaData.moduleCaches[moduleName]) {
       return MetaData.moduleCaches[moduleName];
@@ -109,6 +113,10 @@ export function getComponet(moduleName, componentName, initView) {
   return moduleCallback(moduleOrPromise);
 }
 export function getComponentList(keys) {
+  if (keys.length < 1) {
+    return Promise.resolve([]);
+  }
+
   return Promise.all(keys.map(key => {
     if (MetaData.componentCaches[key]) {
       return MetaData.componentCaches[key];
