@@ -4,12 +4,14 @@ import {LoadingState, TaskCounter, deepMerge, warn} from './sprite';
 export const config: {
   NSP: string;
   MSP: string;
+  CSP: string;
   MutableData: boolean;
   DepthTimeOnLoading: number;
   ViewFlag: string;
 } = {
   NSP: '.',
   MSP: ',',
+  CSP: ',',
   MutableData: false,
   DepthTimeOnLoading: 2,
   ViewFlag: '__clux_is_view__',

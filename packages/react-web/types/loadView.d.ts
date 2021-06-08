@@ -1,6 +1,6 @@
 import React, { ComponentType } from 'react';
 import type { LoadComponent as BaseLoadComponent, RootModuleFacade } from '@clux/core';
-export declare const depsContext: React.Context<{}>;
+export declare const DepsContext: React.Context<{}>;
 export declare type LoadView<A extends RootModuleFacade = {}> = BaseLoadComponent<A, {
     OnError?: ComponentType<{
         message: string;

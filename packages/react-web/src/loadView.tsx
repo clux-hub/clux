@@ -2,7 +2,8 @@ import React, {ComponentType, Component} from 'react';
 import {getComponet, isPromise, env} from '@clux/core';
 import type {LoadComponent as BaseLoadComponent, RootModuleFacade} from '@clux/core';
 
-export const depsContext = React.createContext({});
+export const DepsContext = React.createContext({});
+DepsContext.displayName = 'CluxComponentLoader';
 
 export type LoadView<A extends RootModuleFacade = {}> = BaseLoadComponent<
   A,
@@ -27,9 +28,7 @@ export function setLoadViewOptions({
 export const loadView: LoadView<Record<string, any>> = (moduleName, viewName, options) => {
   const {OnLoading, OnError} = options || {};
   class Loader extends Component<{forwardedRef: any}> {
-    static contextType = depsContext;
-
-    context!: React.ContextType<typeof depsContext>;
+    static contextType = DepsContext;
 
     private active: boolean = true;
 
@@ -43,7 +42,7 @@ export const loadView: LoadView<Record<string, any>> = (moduleName, viewName, op
       ver: 0,
     };
 
-    constructor(props: any) {
+    constructor(props: any, public context: React.ContextType<typeof DepsContext>) {
       super(props);
       this.execute();
     }

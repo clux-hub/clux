@@ -3,6 +3,7 @@ import { TaskCounter, deepMerge, warn } from './sprite';
 export const config = {
   NSP: '.',
   MSP: ',',
+  CSP: ',',
   MutableData: false,
   DepthTimeOnLoading: 2,
   ViewFlag: '__clux_is_view__'

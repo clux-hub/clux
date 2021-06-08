@@ -234,6 +234,7 @@ function delayPromise(second) {
 const config = {
   NSP: '.',
   MSP: ',',
+  CSP: ',',
   MutableData: false,
   DepthTimeOnLoading: 2,
   ViewFlag: '__clux_is_view__'
@@ -958,7 +959,7 @@ function _loadModel(moduleName, store = MetaData$1.clientStore) {
   return moduleOrPromise.default.model(store);
 }
 function getComponet(moduleName, componentName, initView) {
-  const key = `${moduleName},${componentName}`;
+  const key = [moduleName, componentName].join(config.CSP);
 
   if (MetaData$1.componentCaches[key]) {
     return MetaData$1.componentCaches[key];
@@ -1006,7 +1007,7 @@ function getComponentList(keys) {
       return MetaData$1.componentCaches[key];
     }
 
-    const [moduleName, componentName] = key.split(',');
+    const [moduleName, componentName] = key.split(config.CSP);
     return getComponet(moduleName, componentName);
   }));
 }
@@ -3945,7 +3946,8 @@ function createRouter(createHistory, locationTransform) {
   return router;
 }
 
-const depsContext = React.createContext({});
+const DepsContext = React.createContext({});
+DepsContext.displayName = 'CluxComponentLoader';
 const loadViewDefaultOptions = {
   LoadViewOnError: ({
     message
@@ -3970,10 +3972,8 @@ const loadView = (moduleName, viewName, options) => {
   } = options || {};
 
   class Loader extends Component$3 {
-    constructor(props) {
+    constructor(props, context) {
       super(props);
-
-      _defineProperty(this, "context", void 0);
 
       _defineProperty(this, "active", true);
 
@@ -3987,6 +3987,7 @@ const loadView = (moduleName, viewName, options) => {
         ver: 0
       });
 
+      this.context = context;
       this.execute();
     }
 
@@ -4066,7 +4067,7 @@ const loadView = (moduleName, viewName, options) => {
 
   }
 
-  _defineProperty(Loader, "contextType", depsContext);
+  _defineProperty(Loader, "contextType", DepsContext);
 
   return React.forwardRef((props, ref) => {
     return React.createElement(Loader, _extends({}, props, {
@@ -4749,7 +4750,12 @@ function createRedux(storeOptions) {
   };
 }
 
-const connectRedux = connect;
+const connectRedux = function (...args) {
+  return function (component) {
+    defineView(component);
+    return connect(...args)(component);
+  };
+};
 
 let SSRTPL;
 function setSsrHtmlTpl(tpl) {
@@ -4799,7 +4805,7 @@ function createApp(moduleGetter, middlewares = [], appModuleName) {
             }) => {
               router.setStore(store);
               const deps2 = {};
-              renderFun(React.createElement(depsContext.Provider, {
+              renderFun(React.createElement(DepsContext.Provider, {
                 value: deps2
               }, React.createElement(AppView, {
                 store: store
@@ -4836,7 +4842,7 @@ function createApp(moduleGetter, middlewares = [], appModuleName) {
               const data = store.getState();
               const deps = {};
 
-              let html = require('react-dom/server').renderToString(React.createElement(depsContext.Provider, {
+              let html = require('react-dom/server').renderToString(React.createElement(DepsContext.Provider, {
                 value: deps
               }, React.createElement(AppView, {
                 store: store

@@ -316,6 +316,7 @@ function delayPromise(second) {
 var config = {
   NSP: '.',
   MSP: ',',
+  CSP: ',',
   MutableData: false,
   DepthTimeOnLoading: 2,
   ViewFlag: '__clux_is_view__'
@@ -1068,7 +1069,7 @@ function _loadModel(moduleName, store) {
   return moduleOrPromise.default.model(store);
 }
 function getComponet(moduleName, componentName, initView) {
-  var key = moduleName + "," + componentName;
+  var key = [moduleName, componentName].join(config.CSP);
 
   if (MetaData$1.componentCaches[key]) {
     return MetaData$1.componentCaches[key];
@@ -1116,7 +1117,7 @@ function getComponentList(keys) {
       return MetaData$1.componentCaches[key];
     }
 
-    var _key$split = key.split(','),
+    var _key$split = key.split(config.CSP),
         moduleName = _key$split[0],
         componentName = _key$split[1];
 
@@ -5273,7 +5274,8 @@ function _objectWithoutPropertiesLoose(source, excluded) {
   return target;
 }
 
-var depsContext = React__default['default'].createContext({});
+var DepsContext = React__default['default'].createContext({});
+DepsContext.displayName = 'CluxComponentLoader';
 var loadViewDefaultOptions = {
   LoadViewOnError: function LoadViewOnError(_ref) {
     var message = _ref.message;
@@ -5301,12 +5303,10 @@ var loadView = function loadView(moduleName, viewName, options) {
   var Loader = function (_Component) {
     _inheritsLoose(Loader, _Component);
 
-    function Loader(props) {
+    function Loader(props, context) {
       var _this;
 
       _this = _Component.call(this, props) || this;
-
-      _defineProperty(_assertThisInitialized(_this), "context", void 0);
 
       _defineProperty(_assertThisInitialized(_this), "active", true);
 
@@ -5319,6 +5319,8 @@ var loadView = function loadView(moduleName, viewName, options) {
       _defineProperty(_assertThisInitialized(_this), "state", {
         ver: 0
       });
+
+      _this.context = context;
 
       _this.execute();
 
@@ -5406,7 +5408,7 @@ var loadView = function loadView(moduleName, viewName, options) {
     return Loader;
   }(React.Component);
 
-  _defineProperty(Loader, "contextType", depsContext);
+  _defineProperty(Loader, "contextType", DepsContext);
 
   return React__default['default'].forwardRef(function (props, ref) {
     return React__default['default'].createElement(Loader, _extends({}, props, {
@@ -6082,7 +6084,16 @@ function createRedux(storeOptions) {
   };
 }
 
-var connectRedux = reactRedux.connect;
+var connectRedux = function connectRedux() {
+  for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+    args[_key] = arguments[_key];
+  }
+
+  return function (component) {
+    defineView(component);
+    return reactRedux.connect.apply(void 0, args)(component);
+  };
+};
 
 var SSRTPL;
 function setSsrHtmlTpl(tpl) {
@@ -6140,7 +6151,7 @@ function createApp(moduleGetter, middlewares, appModuleName) {
                   AppView = _ref5.AppView;
               router.setStore(store);
               var deps2 = {};
-              renderFun(React__default['default'].createElement(depsContext.Provider, {
+              renderFun(React__default['default'].createElement(DepsContext.Provider, {
                 value: deps2
               }, React__default['default'].createElement(AppView, {
                 store: store
@@ -6178,7 +6189,7 @@ function createApp(moduleGetter, middlewares, appModuleName) {
               var data = store.getState();
               var deps = {};
 
-              var html = require('react-dom/server').renderToString(React__default['default'].createElement(depsContext.Provider, {
+              var html = require('react-dom/server').renderToString(React__default['default'].createElement(DepsContext.Provider, {
                 value: deps
               }, React__default['default'].createElement(AppView, {
                 store: store

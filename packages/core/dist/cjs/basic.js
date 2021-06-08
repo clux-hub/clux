@@ -22,6 +22,7 @@ var _sprite = require("./sprite");
 var config = {
   NSP: '.',
   MSP: ',',
+  CSP: ',',
   MutableData: false,
   DepthTimeOnLoading: 2,
   ViewFlag: '__clux_is_view__'

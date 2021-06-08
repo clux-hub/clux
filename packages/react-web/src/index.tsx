@@ -5,7 +5,7 @@ import {hydrate, render} from 'react-dom';
 import {routeMiddleware, setRouteConfig, routeConfig} from '@clux/route';
 import {env, getRootModuleAPI, renderApp, ssrApp, defineModuleGetter, setConfig as setCoreConfig} from '@clux/core';
 import {createRouter} from '@clux/route-browser';
-import {loadView, setLoadViewOptions, depsContext} from './loadView';
+import {loadView, setLoadViewOptions, DepsContext} from './loadView';
 import {MetaData} from './sington';
 import type {ComponentType} from 'react';
 import type {
@@ -114,9 +114,9 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddlew
               router.setStore(store);
               const deps2 = {};
               renderFun(
-                <depsContext.Provider value={deps2}>
+                <DepsContext.Provider value={deps2}>
                   <AppView store={store} />
-                </depsContext.Provider>,
+                </DepsContext.Provider>,
                 panel
               );
               env.console.log(deps2 as any);
@@ -137,9 +137,9 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddlew
               const data = store.getState();
               const deps = {};
               let html: string = require('react-dom/server').renderToString(
-                <depsContext.Provider value={deps}>
+                <DepsContext.Provider value={deps}>
                   <AppView store={store} />
-                </depsContext.Provider>
+                </DepsContext.Provider>
               );
               const match = SSRTPL.match(new RegExp(`<[^<>]+id=['"]${id}['"][^<>]*>`, 'm'));
               if (match) {

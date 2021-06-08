@@ -116,7 +116,7 @@ export function loadModel<MG extends ModuleGetter>(moduleName: keyof MG, store: 
   return moduleOrPromise.default.model(store);
 }
 export function getComponet<T = any>(moduleName: string, componentName: string, initView?: boolean): T | Promise<T> {
-  const key = `${moduleName},${componentName}`;
+  const key = [moduleName, componentName].join(config.CSP);
   if (MetaData.componentCaches[key]) {
     return MetaData.componentCaches[key];
   }
@@ -152,7 +152,7 @@ export function getComponentList(keys: string[]): Promise<any[]> {
       if (MetaData.componentCaches[key]) {
         return MetaData.componentCaches[key];
       }
-      const [moduleName, componentName] = key.split(',');
+      const [moduleName, componentName] = key.split(config.CSP);
       return getComponet(moduleName, componentName);
     })
   );
