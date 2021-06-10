@@ -27,6 +27,8 @@ interface Options {
   entryFileName: string;
 }
 
+const isWin32 = process.platform === 'win32';
+
 export class SsrInject {
   entryFileName: string;
 
@@ -65,8 +67,11 @@ export class SsrInject {
           const manifest = JSON.parse(compilation.assets[hotJsonFile].source().toString());
           const keys = [...manifest.c, ...manifest.r, ...manifest.m];
           keys.forEach((item) => {
-            const mpath = path.join(outputPath, `${item}.js`);
-            delete require.cache[slash(mpath)];
+            let mpath = path.join(outputPath, `${item}.js`);
+            if (isWin32) {
+              mpath = slash(mpath).replace(/^.+?:\//, '/');
+            }
+            delete require.cache[mpath];
           });
         }
         callback();
@@ -82,7 +87,11 @@ export class SsrInject {
           if (outputFileSystem.existsSync(entryFilePath)) {
             const source: string = outputFileSystem.readFileSync(entryFilePath).toString();
             outputFileSystem.writeFileSync(entryFilePath, replace(source, rawHtml, html));
-            delete require.cache[slash(entryFilePath)];
+            let mpath = entryFilePath;
+            if (isWin32) {
+              mpath = slash(mpath).replace(/^.+?:\//, '/');
+            }
+            delete require.cache[mpath];
           }
           callback(null, data);
         });

@@ -24,6 +24,7 @@ const schema = {
 function replace(source, htmlKey, html) {
     return source.replace(htmlKey, html);
 }
+const isWin32 = process.platform === 'win32';
 class SsrInject {
     constructor(options) {
         this.entryFilePath = '';
@@ -54,8 +55,11 @@ class SsrInject {
                     const manifest = JSON.parse(compilation.assets[hotJsonFile].source().toString());
                     const keys = [...manifest.c, ...manifest.r, ...manifest.m];
                     keys.forEach((item) => {
-                        const mpath = path_1.default.join(outputPath, `${item}.js`);
-                        delete require.cache[slash_1.default(mpath)];
+                        let mpath = path_1.default.join(outputPath, `${item}.js`);
+                        if (isWin32) {
+                            mpath = slash_1.default(mpath).replace(/^.+?:\//, '/');
+                        }
+                        delete require.cache[mpath];
                     });
                 }
                 callback();
@@ -72,7 +76,11 @@ class SsrInject {
                     if (outputFileSystem.existsSync(entryFilePath)) {
                         const source = outputFileSystem.readFileSync(entryFilePath).toString();
                         outputFileSystem.writeFileSync(entryFilePath, replace(source, rawHtml, html));
-                        delete require.cache[slash_1.default(entryFilePath)];
+                        let mpath = entryFilePath;
+                        if (isWin32) {
+                            mpath = slash_1.default(mpath).replace(/^.+?:\//, '/');
+                        }
+                        delete require.cache[mpath];
                     }
                     callback(null, data);
                 });

@@ -439,12 +439,12 @@ function moduleExports({ debugMode, nodeEnv, rootPath, srcPath, distPath, public
                             res.end(str);
                         })
                             .catch((e) => {
-                            console.log(e);
+                            console.error(e);
                             res.status(500).end(e.toString());
                         });
                     }
                     catch (e) {
-                        console.log(e);
+                        console.error(e);
                         res.status(500).end(e.toString());
                     }
                 }
