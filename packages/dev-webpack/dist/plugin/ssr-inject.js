@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSsrInjectPlugin = exports.SsrInject = void 0;
 const path_1 = __importDefault(require("path"));
+const slash_1 = __importDefault(require("slash"));
 const html_webpack_plugin_1 = __importDefault(require("html-webpack-plugin"));
 const fs_1 = __importDefault(require("fs"));
 const webpack_1 = __importDefault(require("webpack"));
@@ -24,12 +25,12 @@ function replace(source, htmlKey, html) {
     return source.replace(htmlKey, html);
 }
 class SsrInject {
-    constructor(options = {}) {
+    constructor(options) {
         this.entryFilePath = '';
         this.htmlKey = 'process.env.CLUX_ENV_SSRTPL';
         this.html = '';
         schema_utils_1.validate(schema, options, { name: '@clux/dev-webpack/ssr-inject' });
-        this.entryFileName = options.entryFileName || 'server.js';
+        this.entryFileName = options.entryFileName;
     }
     apply(compiler) {
         const htmlKey = this.htmlKey;
@@ -54,7 +55,7 @@ class SsrInject {
                     const keys = [...manifest.c, ...manifest.r, ...manifest.m];
                     keys.forEach((item) => {
                         const mpath = path_1.default.join(outputPath, `${item}.js`);
-                        delete require.cache[mpath];
+                        delete require.cache[slash_1.default(mpath)];
                     });
                 }
                 callback();
@@ -71,7 +72,7 @@ class SsrInject {
                     if (outputFileSystem.existsSync(entryFilePath)) {
                         const source = outputFileSystem.readFileSync(entryFilePath).toString();
                         outputFileSystem.writeFileSync(entryFilePath, replace(source, rawHtml, html));
-                        delete require.cache[entryFilePath];
+                        delete require.cache[slash_1.default(entryFilePath)];
                     }
                     callback(null, data);
                 });
@@ -82,7 +83,7 @@ class SsrInject {
         if (!this.outputFileSystem) {
             const { outputFileSystem } = res.locals.webpack.devMiddleware;
             unionfs_1.ufs.use(fs_1.default).use(outputFileSystem);
-            fs_monkey_1.patchRequire(unionfs_1.ufs);
+            fs_monkey_1.patchRequire(unionfs_1.ufs, true);
             this.outputFileSystem = unionfs_1.ufs;
         }
         return this.entryFilePath;

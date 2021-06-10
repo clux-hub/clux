@@ -140,7 +140,7 @@ export function createApp(moduleGetter: ModuleGetter, middlewares: IStoreMiddlew
                 html = pageHead.length === 3 ? pageHead[0] + pageHead[2] : html;
                 return SSRTPL.replace(
                   '</head>',
-                  `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify({state, deps})};</script>\r\n</head>`
+                  `${pageHead[1] || ''}\r\n<script>window.${ssrKey} = ${JSON.stringify({state, deps: Object.keys(deps)})};</script>\r\n</head>`
                 ).replace(match[0], match[0] + html);
               }
               return html;

@@ -15,6 +15,7 @@ interface ProjConfig {
   production: EnvConfig;
 }
 interface WebpackPreset {
+  resolveAlias: Record<string, string>;
   urlLoaderLimitSize: number;
   cssProcessors: {less: WebpackLoader | boolean; scss: WebpackLoader | boolean; sass: WebpackLoader | boolean};
 }
@@ -114,6 +115,9 @@ const CluxConfigSchema: any = {
             },
           },
         },
+        resolveAlias: {
+          type: 'object',
+        },
       },
     },
     devServerPreset: {
@@ -197,6 +201,7 @@ interface Config {
     projectType: 'vue' | 'react' | 'vue ssr' | 'react ssr';
     nodeEnvConfig: EnvConfig;
     vueRender: '' | 'templete' | 'jsx';
+    useSSR: boolean;
   };
 }
 
@@ -224,6 +229,7 @@ function moduleExports(rootPath: string, projEnv: string, nodeEnv: 'production' 
       vueWithJSX: false,
     },
     webpackPreset: {
+      resolveAlias: {'@': './src'},
       urlLoaderLimitSize: 8192,
       cssProcessors: {less: false, scss: false, sass: false},
     },
@@ -276,6 +282,7 @@ function moduleExports(rootPath: string, projEnv: string, nodeEnv: 'production' 
     apiProxy: proxy,
     useSSR,
     devServerPort: devServerPort || port,
+    resolveAlias: webpackPreset.resolveAlias,
   });
   devServerConfig = devServerConfigTransform(devServerConfig);
   clientWebpackConfig = webpackConfigTransform(clientWebpackConfig);
@@ -298,6 +305,7 @@ function moduleExports(rootPath: string, projEnv: string, nodeEnv: 'production' 
       projectType: type,
       nodeEnvConfig,
       vueRender: vueType,
+      useSSR,
     },
   };
 }

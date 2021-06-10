@@ -9,6 +9,7 @@ interface ProjConfig {
     production: EnvConfig;
 }
 interface WebpackPreset {
+    resolveAlias: Record<string, string>;
     urlLoaderLimitSize: number;
     cssProcessors: {
         less: WebpackLoader | boolean;
@@ -60,6 +61,7 @@ interface Config {
         projectType: 'vue' | 'react' | 'vue ssr' | 'react ssr';
         nodeEnvConfig: EnvConfig;
         vueRender: '' | 'templete' | 'jsx';
+        useSSR: boolean;
     };
 }
 declare function moduleExports(rootPath: string, projEnv: string, nodeEnv: 'production' | 'development', debugMode: boolean, devServerPort?: number): Config;

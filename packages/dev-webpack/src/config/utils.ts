@@ -1,3 +1,6 @@
+/* eslint-disable no-console */
+import {Express} from 'express';
+
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
@@ -27,7 +30,8 @@ interface DevServerConfig {
   port?: number;
   https?: boolean;
   host?: string;
-  dev?: {publicPath?: string};
+  devMiddleware?: {publicPath?: string; serverSideRender?: boolean};
+  onAfterSetupMiddleware?: (server: Express) => void;
   [key: string]: any;
 }
 
@@ -87,9 +91,7 @@ function oneOfCssLoader(
   } else if (extensionLoader) {
     cssProcessors = extensionLoader;
   }
-  const styleLoader = isServer
-    ? null
-    : isProdModel
+  const styleLoader = isProdModel
     ? {loader: MiniCssExtractPlugin.loader}
     : isVue
     ? {
@@ -124,16 +126,16 @@ function oneOfCssLoader(
       },
     },
   };
-  const postcssLoader = isServer
-    ? null
-    : {
-        loader: 'postcss-loader',
-        options: {
-          sourceMap: false,
-        },
-      };
-  const withModule = [styleLoader, cssLoaderWithModule, postcssLoader, cssProcessors].filter(Boolean) as WebpackLoader[];
-  const withoutModule = [styleLoader, cssLoader, postcssLoader, cssProcessors].filter(Boolean) as WebpackLoader[];
+  const postcssLoader = {
+    loader: 'postcss-loader',
+    options: {
+      sourceMap: false,
+    },
+  };
+  const withModule = (isServer ? [cssLoaderWithModule, cssProcessors] : [styleLoader, cssLoaderWithModule, postcssLoader, cssProcessors]).filter(
+    Boolean
+  ) as WebpackLoader[];
+  const withoutModule = (isServer ? ['null-loader'] : [styleLoader, cssLoader, postcssLoader, cssProcessors].filter(Boolean)) as WebpackLoader[];
   return isVue
     ? [
         {
@@ -207,6 +209,7 @@ interface ConfigOptions {
   useSSR: boolean;
   vueType: 'templete' | 'jsx' | '';
   devServerPort: number;
+  resolveAlias: Record<string, string>;
 }
 
 function moduleExports({
@@ -225,6 +228,7 @@ function moduleExports({
   apiProxy,
   useSSR,
   devServerPort,
+  resolveAlias,
 }: ConfigOptions): {clientWebpackConfig: WebpackConfig; serverWebpackConfig: WebpackConfig; devServerConfig: DevServerConfig} {
   /**
    * webpackConfig.output.path 决定生成文件的物理path ,output.publicPath 仅决定html中引入的url
@@ -256,9 +260,15 @@ function moduleExports({
   cssProcessors.scss && cssExtensions.push('scss');
   const resolve = {
     extensions: [...scriptExtensions, '.json'],
-    alias: {
-      '@': srcPath,
-    },
+    alias: Object.keys(resolveAlias).reduce((obj, key) => {
+      const target = resolveAlias[key];
+      if (target.startsWith('./')) {
+        obj[key] = path.join(rootPath, target);
+      } else {
+        obj[key] = target;
+      }
+      return obj;
+    }, {}),
   };
   if (isVue) {
     resolve.alias['vue$'] = 'vue/dist/vue.runtime.esm-bundler.js';
@@ -271,7 +281,7 @@ function moduleExports({
     target: 'browserslist',
     stats: 'minimal',
     devtool: clentDevtool,
-    entry: path.join(srcPath, useSSR ? './client' : './index'),
+    entry: path.join(srcPath, './index'),
     performance: false,
     watchOptions: {
       ignored: /node_modules/,
@@ -410,7 +420,7 @@ function moduleExports({
           publicPath: clientPublicPath,
           path: path.join(distPath, './server'),
           hashDigestLength: 8,
-          filename: 'js/[name].js',
+          filename: '[name].js',
         },
         resolve,
         module: {
@@ -488,6 +498,34 @@ function moduleExports({
       },
     },
   };
+  if (useSSR) {
+    devServerConfig.historyApiFallback = false;
+    devServerConfig.devMiddleware = {serverSideRender: true};
+    devServerConfig.onAfterSetupMiddleware = function (server: Express) {
+      server.use((req, res, next) => {
+        const passUrls = [/\w+.hot-update.\w+$/];
+        if (passUrls.some((reg) => reg.test(req.url))) {
+          next();
+        } else {
+          const serverBundle = require(SsrPlugin.getEntryPath(res));
+          try {
+            serverBundle
+              .default(req, res)
+              .then((str: string) => {
+                res.end(str);
+              })
+              .catch((e: Error) => {
+                console.error(e);
+                res.status(500).end(e.toString());
+              });
+          } catch (e) {
+            console.error(e);
+            res.status(500).end(e.toString());
+          }
+        }
+      });
+    };
+  }
   return {clientWebpackConfig, serverWebpackConfig, devServerConfig};
 }
 

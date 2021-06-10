@@ -1,4 +1,5 @@
 import path from 'path';
+import slash from 'slash';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import fs from 'fs';
 import webpack, {Compiler} from 'webpack';
@@ -23,7 +24,7 @@ function replace(source: string, htmlKey: string, html: string) {
 }
 
 interface Options {
-  entryFileName?: string;
+  entryFileName: string;
 }
 
 export class SsrInject {
@@ -37,9 +38,9 @@ export class SsrInject {
 
   outputFileSystem: any;
 
-  constructor(options: Options = {}) {
+  constructor(options: Options) {
     validate(schema, options, {name: '@clux/dev-webpack/ssr-inject'});
-    this.entryFileName = options.entryFileName || 'server.js';
+    this.entryFileName = options.entryFileName;
   }
 
   apply(compiler: Compiler) {
@@ -65,7 +66,7 @@ export class SsrInject {
           const keys = [...manifest.c, ...manifest.r, ...manifest.m];
           keys.forEach((item) => {
             const mpath = path.join(outputPath, `${item}.js`);
-            delete require.cache[mpath];
+            delete require.cache[slash(mpath)];
           });
         }
         callback();
@@ -81,7 +82,7 @@ export class SsrInject {
           if (outputFileSystem.existsSync(entryFilePath)) {
             const source: string = outputFileSystem.readFileSync(entryFilePath).toString();
             outputFileSystem.writeFileSync(entryFilePath, replace(source, rawHtml, html));
-            delete require.cache[entryFilePath];
+            delete require.cache[slash(entryFilePath)];
           }
           callback(null, data);
         });
@@ -98,7 +99,8 @@ export class SsrInject {
     if (!this.outputFileSystem) {
       const {outputFileSystem} = res.locals.webpack.devMiddleware;
       ufs.use(fs).use(outputFileSystem);
-      patchRequire(ufs);
+      patchRequire(ufs, true);
+
       this.outputFileSystem = ufs;
     }
     return this.entryFilePath;

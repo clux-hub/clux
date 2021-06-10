@@ -13,7 +13,7 @@ const webpack_1 = __importDefault(require("webpack"));
 const gen_1 = __importDefault(require("./gen"));
 async function dev(projEnvName, debug, devServerPort) {
     const config = gen_1.default(process.cwd(), projEnvName, 'development', debug, devServerPort);
-    const { devServerConfig, clientWebpackConfig, projectConfig: { projectType, nodeEnv, debugMode, projEnv, nodeEnvConfig: { clientPublicPath, clientGlobalVar, serverGlobalVar }, vueRender, }, } = config;
+    const { devServerConfig, clientWebpackConfig, serverWebpackConfig, projectConfig: { projectType, nodeEnv, debugMode, projEnv, nodeEnvConfig: { clientPublicPath, clientGlobalVar, serverGlobalVar }, vueRender, useSSR, }, } = config;
     const envInfo = {
         clientPublicPath,
         clientGlobalVar,
@@ -21,17 +21,33 @@ async function dev(projEnvName, debug, devServerPort) {
     };
     console.info(`projectType: ${chalk_1.default.magenta(projectType)}${vueRender ? ` (${chalk_1.default.green(vueRender)})` : ''} runMode: ${chalk_1.default.magenta(nodeEnv)} debugMode: ${chalk_1.default.magenta(debugMode)}`);
     console.info(`EnvName: ${chalk_1.default.magenta(projEnv)} EnvInfo: \n${chalk_1.default.blue(JSON.stringify(envInfo, null, 4))} \n`);
-    const compiler = webpack_1.default(clientWebpackConfig);
-    compiler.hooks.failed.tap('clux-webpack dev', (msg) => {
-        console.error(msg);
-        process.exit(1);
-    });
+    let webpackCompiler;
+    if (useSSR) {
+        const compiler = webpack_1.default([clientWebpackConfig, serverWebpackConfig]);
+        compiler.compilers[0].hooks.failed.tap('clux-webpack dev', (msg) => {
+            console.error(msg);
+            process.exit(1);
+        });
+        compiler.compilers[1].hooks.failed.tap('clux-webpack dev', (msg) => {
+            console.error(msg);
+            process.exit(1);
+        });
+        webpackCompiler = compiler;
+    }
+    else {
+        const compiler = webpack_1.default(clientWebpackConfig);
+        compiler.hooks.failed.tap('clux-webpack dev', (msg) => {
+            console.error(msg);
+            process.exit(1);
+        });
+        webpackCompiler = compiler;
+    }
     const protocol = devServerConfig.https ? 'https' : 'http';
     const host = devServerConfig.host || '0.0.0.0';
     const port = devServerConfig.port || 8080;
     const publicPath = devServerConfig.dev?.publicPath || '/';
     const localUrl = `${protocol}://localhost:${port}${publicPath}`;
-    const devServer = new webpack_dev_server_1.default(compiler, devServerConfig);
+    const devServer = new webpack_dev_server_1.default(webpackCompiler, devServerConfig);
     ['SIGINT', 'SIGTERM'].forEach((signal) => {
         process.on(signal, () => {
             devServer.close(() => {
@@ -40,7 +56,7 @@ async function dev(projEnvName, debug, devServerPort) {
         });
     });
     let isFirstCompile = true;
-    compiler.hooks.done.tap('clux-webpack dev', (stats) => {
+    webpackCompiler.hooks.done.tap('clux-webpack dev', (stats) => {
         if (stats.hasErrors()) {
             return;
         }
@@ -53,9 +69,8 @@ async function dev(projEnvName, debug, devServerPort) {
 *           ${chalk_1.default.green.bold('Welcome to Clux')}           *
 *                                     *
 ***************************************
-
 `);
-            console.info(`.....${chalk_1.default.magenta('DevServer')} running at ${chalk_1.default.magenta(localUrl)}`);
+            console.info(`.....${chalk_1.default.magenta(useSSR ? 'Enabled Server-Side Rendering!' : 'DevServer')} running at ${chalk_1.default.magenta(localUrl)}`);
         }
     });
     devServer.listen(port, host, (err) => {
@@ -68,7 +83,7 @@ async function dev(projEnvName, debug, devServerPort) {
 exports.dev = dev;
 function build(projEnvName, debug) {
     const config = gen_1.default(process.cwd(), projEnvName, 'production', debug);
-    const { clientWebpackConfig, projectConfig: { envPath, publicPath, distPath, projectType, nodeEnv, debugMode, projEnv, nodeEnvConfig: { clientPublicPath, clientGlobalVar, serverGlobalVar }, vueRender, }, } = config;
+    const { clientWebpackConfig, serverWebpackConfig, projectConfig: { envPath, publicPath, distPath, projectType, nodeEnv, debugMode, projEnv, nodeEnvConfig: { clientPublicPath, clientGlobalVar, serverGlobalVar }, vueRender, useSSR, }, } = config;
     const envInfo = {
         clientPublicPath,
         clientGlobalVar,
@@ -82,8 +97,8 @@ function build(projEnvName, debug) {
     if (fs_extra_1.default.existsSync(envPath)) {
         fs_extra_1.default.copySync(envPath, distPath, { dereference: true });
     }
-    const compiler = webpack_1.default(clientWebpackConfig);
-    compiler.run((err, stats) => {
+    const webpackCompiler = useSSR ? webpack_1.default([clientWebpackConfig, serverWebpackConfig]) : webpack_1.default(clientWebpackConfig);
+    webpackCompiler.run((err, stats) => {
         if (err)
             throw err;
         process.stdout.write(`${stats.toString({

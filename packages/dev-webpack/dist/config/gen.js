@@ -78,6 +78,9 @@ const CluxConfigSchema = {
                         },
                     },
                 },
+                resolveAlias: {
+                    type: 'object',
+                },
             },
         },
         devServerPreset: {
@@ -164,6 +167,7 @@ function moduleExports(rootPath, projEnv, nodeEnv, debugMode, devServerPort) {
             vueWithJSX: false,
         },
         webpackPreset: {
+            resolveAlias: { '@': './src' },
             urlLoaderLimitSize: 8192,
             cssProcessors: { less: false, scss: false, sass: false },
         },
@@ -205,6 +209,7 @@ function moduleExports(rootPath, projEnv, nodeEnv, debugMode, devServerPort) {
         apiProxy: proxy,
         useSSR,
         devServerPort: devServerPort || port,
+        resolveAlias: webpackPreset.resolveAlias,
     });
     devServerConfig = devServerConfigTransform(devServerConfig);
     clientWebpackConfig = webpackConfigTransform(clientWebpackConfig);
@@ -227,6 +232,7 @@ function moduleExports(rootPath, projEnv, nodeEnv, debugMode, devServerPort) {
             projectType: type,
             nodeEnvConfig,
             vueRender: vueType,
+            useSSR,
         },
     };
 }

@@ -6,7 +6,7 @@ import path from 'path';
 import WebpackDevServer from 'webpack-dev-server';
 import TerserPlugin from 'terser-webpack-plugin';
 import chalk from 'chalk';
-import webpack from 'webpack';
+import webpack, {Compiler, MultiCompiler} from 'webpack';
 import genConfig from './gen';
 
 export async function dev(projEnvName: string, debug: boolean, devServerPort: number) {
@@ -14,6 +14,7 @@ export async function dev(projEnvName: string, debug: boolean, devServerPort: nu
   const {
     devServerConfig,
     clientWebpackConfig,
+    serverWebpackConfig,
     projectConfig: {
       projectType,
       nodeEnv,
@@ -21,6 +22,7 @@ export async function dev(projEnvName: string, debug: boolean, devServerPort: nu
       projEnv,
       nodeEnvConfig: {clientPublicPath, clientGlobalVar, serverGlobalVar},
       vueRender,
+      useSSR,
     },
   } = config;
   const envInfo = {
@@ -35,11 +37,26 @@ export async function dev(projEnvName: string, debug: boolean, devServerPort: nu
   );
   console.info(`EnvName: ${chalk.magenta(projEnv)} EnvInfo: \n${chalk.blue(JSON.stringify(envInfo, null, 4))} \n`);
 
-  const compiler = webpack(clientWebpackConfig);
-  compiler.hooks.failed.tap('clux-webpack dev', (msg) => {
-    console.error(msg);
-    process.exit(1);
-  });
+  let webpackCompiler: MultiCompiler | Compiler;
+  if (useSSR) {
+    const compiler = webpack([clientWebpackConfig, serverWebpackConfig]);
+    compiler.compilers[0].hooks.failed.tap('clux-webpack dev', (msg) => {
+      console.error(msg);
+      process.exit(1);
+    });
+    compiler.compilers[1].hooks.failed.tap('clux-webpack dev', (msg) => {
+      console.error(msg);
+      process.exit(1);
+    });
+    webpackCompiler = compiler;
+  } else {
+    const compiler = webpack(clientWebpackConfig);
+    compiler.hooks.failed.tap('clux-webpack dev', (msg) => {
+      console.error(msg);
+      process.exit(1);
+    });
+    webpackCompiler = compiler;
+  }
 
   const protocol = devServerConfig.https ? 'https' : 'http';
   const host = devServerConfig.host || '0.0.0.0';
@@ -47,7 +64,7 @@ export async function dev(projEnvName: string, debug: boolean, devServerPort: nu
   const publicPath = devServerConfig.dev?.publicPath || '/';
   const localUrl = `${protocol}://localhost:${port}${publicPath}`;
 
-  const devServer = new WebpackDevServer(compiler, devServerConfig);
+  const devServer = new WebpackDevServer(webpackCompiler, devServerConfig);
 
   ['SIGINT', 'SIGTERM'].forEach((signal) => {
     process.on(signal, () => {
@@ -58,7 +75,7 @@ export async function dev(projEnvName: string, debug: boolean, devServerPort: nu
   });
 
   let isFirstCompile = true;
-  compiler.hooks.done.tap('clux-webpack dev', (stats) => {
+  webpackCompiler.hooks.done.tap('clux-webpack dev', (stats: any) => {
     if (stats.hasErrors()) {
       return;
     }
@@ -72,9 +89,8 @@ export async function dev(projEnvName: string, debug: boolean, devServerPort: nu
 *           ${chalk.green.bold('Welcome to Clux')}           *
 *                                     *
 ***************************************
-
 `);
-      console.info(`.....${chalk.magenta('DevServer')} running at ${chalk.magenta(localUrl)}`);
+      console.info(`.....${chalk.magenta(useSSR ? 'Enabled Server-Side Rendering!' : 'DevServer')} running at ${chalk.magenta(localUrl)}`);
     }
   });
 
@@ -90,6 +106,7 @@ export function build(projEnvName: string, debug: boolean) {
   const config = genConfig(process.cwd(), projEnvName, 'production', debug);
   const {
     clientWebpackConfig,
+    serverWebpackConfig,
     projectConfig: {
       envPath,
       publicPath,
@@ -100,6 +117,7 @@ export function build(projEnvName: string, debug: boolean) {
       projEnv,
       nodeEnvConfig: {clientPublicPath, clientGlobalVar, serverGlobalVar},
       vueRender,
+      useSSR,
     },
   } = config;
 
@@ -122,9 +140,9 @@ export function build(projEnvName: string, debug: boolean) {
     fs.copySync(envPath, distPath, {dereference: true});
   }
 
-  const compiler = webpack(clientWebpackConfig);
+  const webpackCompiler = useSSR ? webpack([clientWebpackConfig, serverWebpackConfig]) : webpack(clientWebpackConfig);
 
-  compiler.run((err, stats) => {
+  webpackCompiler.run((err: any, stats: any) => {
     if (err) throw err;
     process.stdout.write(
       `${stats!.toString({

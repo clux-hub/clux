@@ -1,3 +1,4 @@
+import { Express } from 'express';
 interface WebpackLoader {
     loader?: string;
     options?: Record<string, any>;
@@ -11,9 +12,11 @@ interface DevServerConfig {
     port?: number;
     https?: boolean;
     host?: string;
-    dev?: {
+    devMiddleware?: {
         publicPath?: string;
+        serverSideRender?: boolean;
     };
+    onAfterSetupMiddleware?: (server: Express) => void;
     [key: string]: any;
 }
 interface ConfigOptions {
@@ -41,8 +44,9 @@ interface ConfigOptions {
     useSSR: boolean;
     vueType: 'templete' | 'jsx' | '';
     devServerPort: number;
+    resolveAlias: Record<string, string>;
 }
-declare function moduleExports({ debugMode, nodeEnv, rootPath, srcPath, distPath, publicPath, clientPublicPath, envPath, cssProcessors, vueType, limitSize, globalVar, apiProxy, useSSR, devServerPort, }: ConfigOptions): {
+declare function moduleExports({ debugMode, nodeEnv, rootPath, srcPath, distPath, publicPath, clientPublicPath, envPath, cssProcessors, vueType, limitSize, globalVar, apiProxy, useSSR, devServerPort, resolveAlias, }: ConfigOptions): {
     clientWebpackConfig: WebpackConfig;
     serverWebpackConfig: WebpackConfig;
     devServerConfig: DevServerConfig;
